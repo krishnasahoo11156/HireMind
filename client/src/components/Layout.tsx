@@ -1,13 +1,28 @@
-import { Bell, BriefcaseBusiness, ChartNoAxesCombined, LayoutDashboard, LogOut, Moon, Search, Settings, Sparkles, Upload, UserCircle } from 'lucide-react';
+import {
+  BarChart3,
+  Bell,
+  BriefcaseBusiness,
+  ChevronDown,
+  LayoutDashboard,
+  LogOut,
+  Moon,
+  Search,
+  Settings,
+  Sparkles,
+  Sun,
+  Upload,
+  Users,
+} from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { api } from '../lib/api';
 
 const nav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/jobs', label: 'Jobs', icon: BriefcaseBusiness },
-  { to: '/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
-  { to: '/settings', label: 'Settings', icon: Settings }
+  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function Layout() {
@@ -17,17 +32,41 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-background text-primary dark:bg-darkbg dark:text-darktext">
-      <aside className="fixed left-0 top-0 z-30 h-screen w-60 border-r border-border bg-surface dark:border-darkborder dark:bg-darksurface">
-        <div className="flex h-16 items-center gap-3 border-b border-border px-5 dark:border-darkborder">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white dark:bg-darkaccent dark:text-darkbg">
-            <Sparkles className="h-5 w-5" />
+      {/* ── SIDEBAR ── */}
+      <aside className="fixed left-0 top-0 z-30 flex h-screen w-[280px] flex-col border-r border-border bg-surface dark:border-darkborder dark:bg-darksurface">
+        {/* Logo */}
+        <div className="flex h-[72px] flex-shrink-0 items-center gap-3 border-b border-border px-6 dark:border-darkborder">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-yellow-600 shadow-sm">
+            <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <div className="text-sm font-bold tracking-tight">HireMind</div>
-            <div className="text-xs text-secondary dark:text-darkmuted">Explainable Hiring OS</div>
+            <div className="text-[0.9375rem] font-bold tracking-tight text-primary dark:text-darktext">
+              HireMind
+            </div>
+            <div className="text-[0.6875rem] font-medium text-secondary dark:text-darkmuted">
+              AI Hiring Intelligence
+            </div>
           </div>
         </div>
-        <nav className="space-y-1 px-3 py-4">
+
+        {/* Workspace badge */}
+        <div className="mx-4 mt-4 flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2.5 dark:border-darkborder dark:bg-darkbg">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
+              <Users className="h-3.5 w-3.5" />
+            </div>
+            <span className="text-xs font-semibold text-primary dark:text-darktext">Acme Recruiting</span>
+          </div>
+          <ChevronDown className="h-3.5 w-3.5 text-secondary dark:text-darkmuted" />
+        </div>
+
+        {/* Nav section label */}
+        <div className="mt-5 px-6">
+          <p className="hm-label text-[10px]">Navigation</p>
+        </div>
+
+        {/* Nav items */}
+        <nav className="mt-2 flex-1 space-y-0.5 px-3">
           {nav.map((item) => {
             const Icon = item.icon;
             return (
@@ -35,59 +74,104 @@ export function Layout() {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition ${isActive ? 'bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent' : 'text-secondary hover:bg-gray-50 dark:text-darkmuted dark:hover:bg-darkborder/50'}`
+                  `hm-nav-item ${
+                    isActive
+                      ? 'bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent font-semibold'
+                      : 'text-secondary hover:bg-gray-50 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder/50 dark:hover:text-darktext'
+                  }`
                 }
               >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      className={`h-4 w-4 flex-none ${isActive ? 'text-accent dark:text-darkaccent' : ''}`}
+                    />
+                    {item.label}
+                  </>
+                )}
               </NavLink>
             );
           })}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 border-t border-border p-3 dark:border-darkborder">
+
+        {/* Bottom section */}
+        <div className="flex-shrink-0 border-t border-border p-4 dark:border-darkborder">
+          {/* Quick Upload CTA */}
           <button
             aria-label="Upload resumes"
             onClick={() => navigate('/jobs')}
-            className="hm-button w-full border border-border bg-white text-primary hover:bg-gray-50 dark:border-darkborder dark:bg-darkbg dark:text-darktext"
+            className="hm-button mb-3 w-full bg-accent/10 text-accent hover:bg-accent/20 dark:bg-darkaccent/10 dark:text-darkaccent dark:hover:bg-darkaccent/20"
           >
             <Upload className="h-4 w-4" />
             Upload Resumes
           </button>
+
+          {/* Recruiter profile card */}
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 dark:border-darkborder dark:bg-darkbg">
+            <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gradient-to-br from-accent to-yellow-600 text-sm font-bold text-white shadow-sm">
+              MK
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-primary dark:text-darktext">Maya Kapoor</div>
+              <div className="truncate text-xs text-secondary dark:text-darkmuted">Senior Recruiter</div>
+            </div>
+            <button
+              aria-label="Log out"
+              onClick={() => {
+                localStorage.removeItem(api.tokenKey);
+                navigate('/login');
+              }}
+              className="flex-none rounded-lg p-1.5 text-secondary transition-colors hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder dark:hover:text-darktext"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </aside>
 
-      <header className="sticky top-0 z-20 ml-60 flex h-16 items-center justify-between border-b border-border bg-surface/80 px-6 backdrop-blur dark:border-darkborder dark:bg-darksurface/80">
-        <div className="relative w-full max-w-md">
+      {/* ── NAVBAR ── */}
+      <header className="sticky top-0 z-20 ml-[280px] flex h-[72px] items-center justify-between border-b border-border bg-surface/90 px-8 backdrop-blur-md dark:border-darkborder dark:bg-darksurface/90">
+        <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary dark:text-darkmuted" />
-          <input aria-label="Search" className="hm-input w-full pl-9" placeholder="Search jobs, candidates, skills" />
+          <input
+            aria-label="Search"
+            className="hm-input w-full pl-9"
+            placeholder="Search jobs, candidates…"
+          />
         </div>
+
         <div className="flex items-center gap-2">
-          <button aria-label="Notifications" className="hm-button border border-border bg-white px-3 text-primary dark:border-darkborder dark:bg-darkbg dark:text-darktext">
+          <button
+            aria-label="Notifications"
+            className="hm-button border border-border bg-surface px-3 text-secondary hover:text-primary dark:border-darkborder dark:bg-darkbg dark:text-darkmuted dark:hover:text-darktext"
+          >
             <Bell className="h-4 w-4" />
           </button>
           <button
             aria-label="Toggle theme"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="hm-button border border-border bg-white px-3 text-primary dark:border-darkborder dark:bg-darkbg dark:text-darktext"
+            className="hm-button border border-border bg-surface px-3 text-secondary hover:text-primary dark:border-darkborder dark:bg-darkbg dark:text-darkmuted dark:hover:text-darktext"
           >
-            <Moon className="h-4 w-4" />
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <button
-            aria-label="Log out"
-            onClick={() => {
-              localStorage.removeItem(api.tokenKey);
-              navigate('/login');
-            }}
-            className="hm-button border border-border bg-white px-3 text-primary dark:border-darkborder dark:bg-darkbg dark:text-darktext"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-          <div className="ml-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white dark:bg-darkaccent dark:text-darkbg">MK</div>
+          <div className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-accent to-yellow-600 text-sm font-bold text-white shadow-sm">
+            MK
+          </div>
         </div>
       </header>
 
-      <main className="ml-60 p-6">
-        <Outlet />
+      {/* ── CONTENT ── */}
+      <main className="ml-[280px] min-h-[calc(100vh-72px)]">
+        <div className="mx-auto max-w-content px-8 py-8">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <Outlet />
+          </motion.div>
+        </div>
       </main>
     </div>
   );

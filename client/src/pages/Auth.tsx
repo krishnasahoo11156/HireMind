@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
-import { BrainCircuit, LogIn, UserPlus } from 'lucide-react';
+import { Sparkles, LogIn, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { Button, Card } from '../components/ui';
 
@@ -21,7 +22,9 @@ export function Login() {
     }
   }
 
-  return <AuthFrame mode="login" onSubmit={submit} error={error} email={email} setEmail={setEmail} password={password} setPassword={setPassword} />;
+  return (
+    <AuthFrame mode="login" onSubmit={submit} error={error} email={email} setEmail={setEmail} password={password} setPassword={setPassword} />
+  );
 }
 
 export function Register() {
@@ -45,8 +48,8 @@ export function Register() {
 
   return (
     <AuthFrame mode="register" onSubmit={submit} error={error} email={email} setEmail={setEmail} password={password} setPassword={setPassword}>
-      <input className="hm-input w-full" placeholder="Name" value={name} onChange={(event) => setName(event.target.value)} />
-      <select className="hm-input w-full" value={role} onChange={(event) => setRole(event.target.value)}>
+      <input className="hm-input w-full" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
+      <select className="hm-input w-full" value={role} onChange={(e) => setRole(e.target.value)}>
         <option value="recruiter">Recruiter</option>
         <option value="hiring_manager">Hiring Manager</option>
         <option value="admin">Admin</option>
@@ -69,38 +72,77 @@ function AuthFrame({
   onSubmit: (event: FormEvent) => void;
   error: string;
   email: string;
-  setEmail: (value: string) => void;
+  setEmail: (v: string) => void;
   password: string;
-  setPassword: (value: string) => void;
+  setPassword: (v: string) => void;
   children?: React.ReactNode;
 }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6 dark:bg-darkbg">
-      <Card className="w-full max-w-md p-8">
-        <div className="mb-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white dark:bg-darkaccent dark:text-darkbg">
-            <BrainCircuit className="h-6 w-6" />
+      {/* Background decoration */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-accent/8 blur-3xl dark:bg-darkaccent/8" />
+        <div className="absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-yellow-400/6 blur-3xl" />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative w-full max-w-md"
+      >
+        <Card className="p-8">
+          {/* Logo */}
+          <div className="mb-8 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-yellow-600 shadow-lg">
+              <Sparkles className="h-7 w-7 text-white" />
+            </div>
+            <h1 className="mt-4 text-2xl font-bold tracking-tight text-primary dark:text-darktext">
+              HireMind
+            </h1>
+            <p className="mt-1 text-sm text-secondary dark:text-darkmuted">
+              {mode === 'login' ? 'Sign in to your workspace' : 'Create your account'}
+            </p>
           </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-primary dark:text-darktext">HireMind</h1>
-          <p className="mt-1 text-sm text-secondary dark:text-darkmuted">AI-Powered Explainable Hiring Intelligence Platform</p>
-        </div>
-        <form className="space-y-4" onSubmit={onSubmit}>
-          {children}
-          <input className="hm-input w-full" placeholder="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-          <input className="hm-input w-full" placeholder="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
-          {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-danger">{error}</p> : null}
-          <Button className="w-full" type="submit">
-            {mode === 'login' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-            {mode === 'login' ? 'Log in' : 'Create account'}
-          </Button>
-        </form>
-        <p className="mt-6 text-center text-sm text-secondary dark:text-darkmuted">
-          {mode === 'login' ? 'Need an account?' : 'Already have an account?'}{' '}
-          <Link className="font-medium text-accent dark:text-darkaccent" to={mode === 'login' ? '/register' : '/login'}>
-            {mode === 'login' ? 'Register' : 'Log in'}
-          </Link>
-        </p>
-      </Card>
+
+          <form className="space-y-3" onSubmit={onSubmit}>
+            {children}
+            <input
+              className="hm-input w-full"
+              placeholder="Email address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+              className="hm-input w-full"
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger dark:border-red-800/40 dark:bg-red-950/30 dark:text-red-400">
+                {error}
+              </div>
+            )}
+            <Button className="mt-2 w-full" size="lg" type="submit" variant="accent">
+              {mode === 'login' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+              {mode === 'login' ? 'Sign in' : 'Create account'}
+            </Button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-secondary dark:text-darkmuted">
+            {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
+            <Link
+              className="font-semibold text-accent hover:underline dark:text-darkaccent"
+              to={mode === 'login' ? '/register' : '/login'}
+            >
+              {mode === 'login' ? 'Register' : 'Sign in'}
+            </Link>
+          </p>
+        </Card>
+      </motion.div>
     </div>
   );
 }

@@ -1,22 +1,49 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BrainCircuit, CheckCircle2, Github, Lightbulb, Send, Shield, XCircle } from 'lucide-react';
+import { BrainCircuit, CheckCircle2, Github, Lightbulb, Send, Shield, XCircle, Download, TrendingUp } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { useAppStore } from '../store/appStore';
 import type { Candidate, Job, Resume } from '../types';
-import { Badge, Button, Card, PageTitle, RecommendationBadge, ScoreBar, StatusCell } from '../components/ui';
+import { Badge, Button, Card, PageTitle, RecommendationBadge, ScoreGauge, SkillHeatmap, StatusCell } from '../components/ui';
 import { BlindToggle } from '../components/BlindToggle';
 
+// ─── Metric tile ───────────────────────────────────────────────────────────
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border border-border bg-background p-3.5 dark:border-darkborder dark:bg-darkbg">
+      <p className="text-xs font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">{label}</p>
+      <p className="mt-1.5 text-xl font-bold tabular-nums text-primary dark:text-darktext">{value}</p>
+    </div>
+  );
+}
+
+// ─── Confidence dot ────────────────────────────────────────────────────────
+function ConfidenceDot({ level }: { level: number }) {
+  const color = level >= 75 ? 'bg-success' : level >= 50 ? 'bg-warning' : 'bg-danger';
+  return (
+    <div className="flex items-center gap-1.5">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <span key={i} className={`h-1.5 w-4 rounded-full ${i < (level >= 75 ? 3 : level >= 50 ? 2 : 1) ? color : 'bg-gray-200 dark:bg-darkborder'}`} />
+      ))}
+    </div>
+  );
+}
+
+// ─── CandidateProfile ──────────────────────────────────────────────────────
 export function CandidateProfile() {
   const { id = 'candidate_sarah' } = useParams();
   const blindMode = useAppStore((state) => state.blindMode);
   const queryClient = useQueryClient();
   const [decision, setDecision] = useState<'override_select' | 'override_reject' | 'agree' | ''>('');
   const [reason, setReason] = useState('Strong backend skills transferable to frontend');
-  const data = useQuery({ queryKey: ['candidate', id], queryFn: () => api.candidate(id) as Promise<{ candidate: Candidate; resume: Resume; job: Job; feedback: Array<{ reason: string; createdAt: string }> }> });
+
+  const data = useQuery({
+    queryKey: ['candidate', id],
+    queryFn: () => api.candidate(id) as Promise<{ candidate: Candidate; resume: Resume; job: Job; feedback: Array<{ reason: string; createdAt: string }> }>
+  });
   const feedback = useMutation({
     mutationFn: () => api.feedback(id, { decision, reason }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['candidate', id] })
@@ -24,119 +51,313 @@ export function CandidateProfile() {
 
   const candidate = data.data?.candidate;
   const resume = data.data?.resume;
-  if (!candidate || !resume) return <Card className="p-8">Loading candidate intelligence...</Card>;
+
+  if (!candidate || !resume) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-border border-t-accent dark:border-darkborder dark:border-t-darkaccent" />
+          <p className="text-sm text-secondary dark:text-darkmuted">Loading candidate intelligence…</p>
+        </div>
+      </div>
+    );
+  }
 
   const displayName = blindMode ? candidate.blindId : candidate.name;
+  const initials = candidate.name.split(' ').map((p) => p[0]).join('').slice(0, 2);
 
   return (
     <>
-      <PageTitle title={displayName} subtitle={blindMode ? 'Blind screening active. PII and institution names are hidden.' : `${candidate.email} | ${data.data?.job.title}`} action={<BlindToggle />} />
-      <div className="grid grid-cols-[minmax(0,1fr)_420px] gap-6">
-        <div className="space-y-6">
+      <PageTitle
+        title={displayName}
+        subtitle={blindMode ? 'Blind screening active — PII and institutions hidden.' : `${candidate.email} · ${data.data?.job.title}`}
+        action={<BlindToggle />}
+      />
+
+      {/* 3-column grid */}
+      <div className="grid grid-cols-[260px_1fr_320px] gap-6">
+        {/* ── COLUMN 1: Candidate Overview ── */}
+        <div className="space-y-5">
+          {/* Avatar & identity */}
+          <Card className="p-5 text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent to-yellow-600 text-2xl font-bold text-white shadow-lg">
+                {blindMode ? <Shield className="h-8 w-8" /> : initials}
+              </div>
+            </div>
+            <h2 className="text-base font-semibold text-primary dark:text-darktext">{displayName}</h2>
+            {!blindMode && (
+              <p className="mt-0.5 text-xs text-secondary dark:text-darkmuted">{candidate.email}</p>
+            )}
+            <div className="mt-3 flex justify-center gap-2">
+              <RecommendationBadge recommendation={candidate.recommendation} />
+            </div>
+            <div className="mt-4 flex justify-center gap-2">
+              <Badge tone="gold">{candidate.matchPercentage}% Match</Badge>
+            </div>
+            <Button variant="secondary" size="sm" className="mt-4 w-full">
+              <Download className="h-3.5 w-3.5" />
+              Resume
+            </Button>
+          </Card>
+
+          {/* Skills */}
           <Card className="p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-white dark:bg-darkaccent dark:text-darkbg">{blindMode ? <Shield className="h-5 w-5" /> : candidate.name.split(' ').map((part) => part[0]).join('')}</div>
-                  <div>
-                    <h2 className="text-xl font-semibold">{displayName}</h2>
-                    {!blindMode ? <p className="text-sm text-secondary dark:text-darkmuted">{candidate.email}</p> : null}
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">Skills</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {resume.parsedData.skills.map((skill) => (
+                <Badge key={skill} tone="neutral">{skill}</Badge>
+              ))}
+            </div>
+          </Card>
+
+          {/* Experience */}
+          <Card className="p-5">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">Experience</h3>
+            <div className="space-y-3">
+              {resume.parsedData.experience.map((exp) => (
+                <div key={exp.title} className="border-l-2 border-accent/30 pl-3 dark:border-darkaccent/30">
+                  <div className="text-sm font-semibold text-primary dark:text-darktext">{exp.title}</div>
+                  <div className="mt-0.5 text-xs text-secondary dark:text-darkmuted">{exp.duration}</div>
+                  <p className="mt-1 text-xs leading-relaxed text-secondary dark:text-darkmuted line-clamp-2">{exp.description}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Education */}
+          <Card className="p-5">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">Education</h3>
+            <div className="space-y-2">
+              {resume.parsedData.education.map((edu) => (
+                <div key={edu.degree}>
+                  <div className="text-sm font-semibold text-primary dark:text-darktext">{edu.degree}</div>
+                  <div className="text-xs text-secondary dark:text-darkmuted">
+                    {blindMode ? edu.year : `${edu.institution}, ${edu.year}`}
                   </div>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Badge tone="gold">{candidate.matchPercentage}% Match</Badge>
-                  <Badge tone="neutral">Score {candidate.aiScore}/100</Badge>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        {/* ── COLUMN 2: AI Analysis ── */}
+        <div className="space-y-5">
+          {/* Score gauge */}
+          <Card className="p-6">
+            <div className="flex items-center gap-8">
+              <ScoreGauge value={candidate.aiScore} label="AI Score" />
+              <div>
+                <h2 className="text-xl font-bold text-primary dark:text-darktext">
+                  {candidate.matchPercentage}% Match
+                </h2>
+                <p className="mt-1 text-sm text-secondary dark:text-darkmuted">
+                  vs required job skills
+                </p>
+                <div className="mt-4">
                   <RecommendationBadge recommendation={candidate.recommendation} />
                 </div>
+                <div className="mt-4 flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setDecision('override_select')}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Select
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => setDecision('override_reject')}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </div>
               </div>
-              <Button variant="accent" onClick={() => setDecision('override_select')}>Override Decision</Button>
             </div>
           </Card>
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">Resume Summary</h2>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-semibold">Experience</h3>
-                {resume.parsedData.experience.map((item) => <p key={item.title} className="mt-2 text-sm leading-relaxed text-secondary dark:text-darkmuted">{item.title}, {item.duration}. {item.description}</p>)}
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold">Education</h3>
-                {resume.parsedData.education.map((item) => <p key={item.degree} className="mt-2 text-sm text-secondary dark:text-darkmuted">{item.degree}, {blindMode ? item.year : `${item.institution}, ${item.year}`}</p>)}
-              </div>
+
+          {/* Skill Gap Heatmap */}
+          <Card className="p-6">
+            <h2 className="mb-5 text-lg font-semibold text-primary dark:text-darktext">Skill Gap Analysis</h2>
+            <SkillHeatmap skillGap={candidate.skillGap} />
+          </Card>
+
+          {/* GitHub Analysis */}
+          <Card className="p-6">
+            <div className="mb-5 flex items-center gap-2">
+              <Github className="h-5 w-5" />
+              <h2 className="text-lg font-semibold text-primary dark:text-darktext">GitHub Analysis</h2>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">{resume.parsedData.skills.map((skill) => <Badge key={skill} tone="neutral">{skill}</Badge>)}</div>
-          </Card>
-          <Card className="overflow-hidden">
-            <div className="border-b border-border px-5 py-4 dark:border-darkborder"><h2 className="text-xl font-semibold">Skill Gap Heatmap</h2></div>
-            <table className="w-full text-left text-sm">
-              <thead className="bg-background text-xs uppercase text-secondary dark:bg-darkbg dark:text-darkmuted"><tr><th className="px-5 py-3">Skill</th><th>Required</th><th>Candidate</th></tr></thead>
-              <tbody>{candidate.skillGap.map((gap) => <tr key={gap.skill} className="border-t border-border dark:border-darkborder"><td className="px-5 py-3 font-semibold">{gap.skill}</td><td>{gap.isRequired ? 'Yes' : 'No'}</td><td><StatusCell status={gap.candidateHas} /></td></tr>)}</tbody>
-            </table>
-          </Card>
-          <Card className="p-5">
-            <div className="mb-4 flex items-center gap-2"><Github className="h-5 w-5 text-accent dark:text-darkaccent" /><h2 className="text-xl font-semibold">GitHub Analysis</h2></div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="mb-5 grid grid-cols-4 gap-3">
               <Metric label="Repos" value={candidate.githubAnalysis.publicRepos} />
               <Metric label="Commits" value={candidate.githubAnalysis.totalCommits} />
               <Metric label="Stars" value={candidate.githubAnalysis.stars} />
               <Metric label="Recent" value={candidate.githubAnalysis.contributions} />
             </div>
-            <div className="mt-5 h-44"><ResponsiveContainer><BarChart data={candidate.githubAnalysis.languageBreakdown}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="language" /><YAxis /><Tooltip /><Bar dataKey="value" fill="#A16207" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div>
-            <p className="mt-4 text-sm leading-relaxed text-secondary dark:text-darkmuted">{candidate.githubAnalysis.aiSummary}</p>
+            <div className="h-40">
+              <ResponsiveContainer>
+                <BarChart data={candidate.githubAnalysis.languageBreakdown}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                  <XAxis dataKey="language" tick={{ fontSize: 11 }} />
+                  <YAxis hide />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#A16207" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-secondary dark:text-darkmuted">
+              {candidate.githubAnalysis.aiSummary}
+            </p>
           </Card>
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">LeetCode Analysis</h2>
-            <div className="mt-4 grid grid-cols-4 gap-3">
+
+          {/* LeetCode Analysis */}
+          <Card className="p-6">
+            <div className="mb-5 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-accent dark:text-darkaccent" />
+              <h2 className="text-lg font-semibold text-primary dark:text-darktext">LeetCode Analysis</h2>
+            </div>
+            <div className="mb-5 grid grid-cols-4 gap-3">
               <Metric label="Solved" value={candidate.leetcodeAnalysis.problemsSolved} />
               <Metric label="Rating" value={candidate.leetcodeAnalysis.contestRating} />
               <Metric label="Ranking" value={candidate.leetcodeAnalysis.globalRanking.toLocaleString()} />
               <Metric label="Percentile" value={candidate.leetcodeAnalysis.percentile} />
             </div>
-            <div className="mt-5 h-36"><ResponsiveContainer><BarChart data={[candidate.leetcodeAnalysis]} layout="vertical"><XAxis type="number" hide /><YAxis type="category" dataKey="username" hide /><Tooltip /><Bar dataKey="easy" stackId="a" fill="#166534" /><Bar dataKey="medium" stackId="a" fill="#B45309" /><Bar dataKey="hard" stackId="a" fill="#B91C1C" /></BarChart></ResponsiveContainer></div>
-            <p className="text-sm leading-relaxed text-secondary dark:text-darkmuted">{candidate.leetcodeAnalysis.aiSummary}</p>
+            <div className="flex gap-2">
+              {[
+                { label: 'Easy', value: candidate.leetcodeAnalysis.easy, color: 'bg-success' },
+                { label: 'Medium', value: candidate.leetcodeAnalysis.medium, color: 'bg-warning' },
+                { label: 'Hard', value: candidate.leetcodeAnalysis.hard, color: 'bg-danger' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="flex-1 rounded-xl border border-border bg-background p-3 text-center dark:border-darkborder dark:bg-darkbg">
+                  <div className={`mx-auto mb-2 h-1.5 w-full rounded-full ${color} opacity-80`} />
+                  <div className="text-lg font-bold tabular-nums text-primary dark:text-darktext">{value}</div>
+                  <div className="text-xs text-secondary dark:text-darkmuted">{label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-secondary dark:text-darkmuted">
+              {candidate.leetcodeAnalysis.aiSummary}
+            </p>
           </Card>
+
+          {/* Recent GitHub Activity */}
+          <Card className="p-6">
+            <h2 className="mb-4 text-lg font-semibold text-primary dark:text-darktext">Recent Activity</h2>
+            <div className="h-40">
+              <ResponsiveContainer>
+                <LineChart data={candidate.githubAnalysis.activitySeries}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                  <YAxis hide />
+                  <Tooltip />
+                  <Line dataKey="commits" stroke="#A16207" strokeWidth={2.5} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          {/* Recruiter Feedback */}
+          {decision ? (
+            <Card className="p-6">
+              <h2 className="mb-4 text-lg font-semibold text-primary dark:text-darktext">Recruiter Override</h2>
+              <div className="mb-3 rounded-xl border border-border bg-background p-3 text-sm dark:border-darkborder dark:bg-darkbg">
+                Decision: <span className={`font-semibold ${decision === 'override_select' ? 'text-success' : 'text-danger'}`}>
+                  {decision === 'override_select' ? 'Select Anyway' : 'Reject Anyway'}
+                </span>
+              </div>
+              <textarea
+                className="hm-textarea min-h-20 w-full"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Why are you overriding the AI?"
+              />
+              <Button
+                className="mt-3 w-full"
+                variant="accent"
+                onClick={() => feedback.mutate()}
+                disabled={feedback.isPending || reason.length < 10}
+              >
+                <Send className="h-4 w-4" />
+                {feedback.isPending ? 'Submitting…' : 'Submit Feedback'}
+              </Button>
+            </Card>
+          ) : null}
+
+          {candidate.recruiterReason ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-800/40 dark:bg-amber-950/20">
+              <span className="font-semibold text-accent dark:text-darkaccent">Previous feedback: </span>
+              <span className="text-secondary dark:text-darkmuted">{candidate.recruiterReason}</span>
+            </div>
+          ) : null}
         </div>
-        <div className="space-y-6">
-          <Card className="bg-accent/5 p-5 dark:bg-darkaccent/10">
-            <div className="mb-4 flex items-center gap-2"><Lightbulb className="h-5 w-5 text-accent dark:text-darkaccent" /><h2 className="text-xl font-semibold">Why this ranking?</h2></div>
-            <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }} className="space-y-3">
-              <p className="text-sm font-semibold">Ranked because:</p>
-              {candidate.explanation.map((line) => (
-                <motion.div key={line} variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }} className="flex gap-2 rounded-xl border border-border bg-white p-3 text-sm leading-relaxed text-secondary dark:border-darkborder dark:bg-darksurface dark:text-darkmuted">
-                  <BrainCircuit className="mt-0.5 h-4 w-4 flex-none text-accent dark:text-darkaccent" />
-                  {line}
+
+        {/* ── COLUMN 3: Explainable AI (sticky) ── */}
+        <div className="sticky top-[88px] h-fit space-y-5">
+          <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-surface p-6 dark:border-darkaccent/20 dark:from-darkaccent/5 dark:to-darksurface">
+            <div className="mb-5 flex items-center gap-2">
+              <div className="rounded-xl bg-accent/15 p-2 dark:bg-darkaccent/15">
+                <Lightbulb className="h-5 w-5 text-accent dark:text-darkaccent" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-primary dark:text-darktext">Why Hire This Candidate?</h2>
+                <p className="text-xs text-secondary dark:text-darkmuted">AI-generated insight</p>
+              </div>
+            </div>
+
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
+              className="space-y-3"
+            >
+              {candidate.explanation.map((line, i) => (
+                <motion.div
+                  key={line}
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+                  }}
+                  className="rounded-xl border border-border bg-surface p-3.5 dark:border-darkborder dark:bg-darksurface"
+                >
+                  <div className="mb-2 flex items-start gap-2">
+                    <BrainCircuit className="mt-0.5 h-3.5 w-3.5 flex-none text-accent dark:text-darkaccent" />
+                    <p className="text-xs leading-relaxed text-secondary dark:text-darkmuted">{line}</p>
+                  </div>
+                  <ConfidenceDot level={85 - i * 8} />
                 </motion.div>
               ))}
             </motion.div>
-          </Card>
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">Recruiter Feedback Loop</h2>
-            <div className="mt-4 rounded-2xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg">
-              <p className="text-xs font-semibold uppercase text-secondary dark:text-darkmuted">Current AI Decision</p>
-              <div className="mt-2 flex items-center gap-3"><RecommendationBadge recommendation={candidate.recommendation} /><ScoreBar value={candidate.aiScore} /></div>
+
+            {/* Breakdown categories */}
+            <div className="mt-5 space-y-2.5 border-t border-border pt-5 dark:border-darkborder">
+              {[
+                { label: 'Skills Alignment', value: candidate.matchPercentage },
+                { label: 'Experience Match', value: Math.min(100, candidate.aiScore + 5) },
+                { label: 'Problem Solving', value: Math.min(100, candidate.leetcodeAnalysis?.contestRating ? 80 : 60) },
+                { label: 'GitHub Activity', value: Math.min(100, (candidate.githubAnalysis?.contributions ?? 0) * 2) },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <div className="mb-1 flex justify-between text-xs font-medium">
+                    <span className="text-secondary dark:text-darkmuted">{label}</span>
+                    <span className="font-semibold text-primary dark:text-darktext">{value}%</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-darkborder">
+                    <motion.div
+                      className={`h-1.5 rounded-full ${value >= 75 ? 'bg-success' : value >= 50 ? 'bg-warning' : 'bg-danger'}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${value}%` }}
+                      transition={{ duration: 0.9, ease: 'easeOut' }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Button variant="secondary" onClick={() => setDecision('override_select')}><CheckCircle2 className="h-4 w-4" />Select Anyway</Button>
-              <Button variant="danger" onClick={() => setDecision('override_reject')}><XCircle className="h-4 w-4" />Reject Anyway</Button>
-            </div>
-            {decision ? (
-              <div className="mt-4 space-y-3">
-                <textarea className="hm-textarea min-h-24 w-full" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Why are you overriding the AI?" />
-                <Button className="w-full" onClick={() => feedback.mutate()} disabled={feedback.isPending || reason.length < 10}><Send className="h-4 w-4" />Submit Feedback</Button>
-              </div>
-            ) : null}
-            {candidate.recruiterReason ? <div className="mt-4 rounded-2xl bg-yellow-50 p-3 text-sm text-accent">Previous feedback: {candidate.recruiterReason}</div> : null}
-          </Card>
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">Recent GitHub Activity</h2>
-            <div className="mt-4 h-44"><ResponsiveContainer><LineChart data={candidate.githubAnalysis.activitySeries}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="day" /><YAxis /><Tooltip /><Line dataKey="commits" stroke="#A16207" strokeWidth={2} /></LineChart></ResponsiveContainer></div>
           </Card>
         </div>
       </div>
     </>
   );
-}
-
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return <div className="rounded-2xl border border-border bg-background p-3 dark:border-darkborder dark:bg-darkbg"><p className="text-xs text-secondary dark:text-darkmuted">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>;
 }
