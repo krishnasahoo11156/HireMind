@@ -95,7 +95,7 @@ export interface Candidate {
   };
   skillGap: Array<{
     skill: string;
-    required: boolean;
+    isRequired: boolean;
     candidateHas: CandidateHas;
     evidence: string;
   }>;

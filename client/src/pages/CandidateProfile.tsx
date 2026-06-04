@@ -70,7 +70,7 @@ export function CandidateProfile() {
             <div className="border-b border-border px-5 py-4 dark:border-darkborder"><h2 className="text-xl font-semibold">Skill Gap Heatmap</h2></div>
             <table className="w-full text-left text-sm">
               <thead className="bg-background text-xs uppercase text-secondary dark:bg-darkbg dark:text-darkmuted"><tr><th className="px-5 py-3">Skill</th><th>Required</th><th>Candidate</th></tr></thead>
-              <tbody>{candidate.skillGap.map((gap) => <tr key={gap.skill} className="border-t border-border dark:border-darkborder"><td className="px-5 py-3 font-semibold">{gap.skill}</td><td>Yes</td><td><StatusCell status={gap.candidateHas} /></td></tr>)}</tbody>
+              <tbody>{candidate.skillGap.map((gap) => <tr key={gap.skill} className="border-t border-border dark:border-darkborder"><td className="px-5 py-3 font-semibold">{gap.skill}</td><td>{gap.isRequired ? 'Yes' : 'No'}</td><td><StatusCell status={gap.candidateHas} /></td></tr>)}</tbody>
             </table>
           </Card>
           <Card className="p-5">

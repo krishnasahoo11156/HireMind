@@ -84,7 +84,7 @@ export interface Candidate {
     activityLevel: string;
     aiSummary: string;
   };
-  skillGap: Array<{ skill: string; required: boolean; candidateHas: CandidateHas; evidence: string }>;
+  skillGap: Array<{ skill: string; isRequired: boolean; candidateHas: CandidateHas; evidence: string }>;
   explanation: string[];
   recruiterDecision: RecruiterDecision;
   recruiterReason: string;

@@ -8,7 +8,12 @@ import { Badge, Button, Card, EmptyState, PageTitle, RecommendationBadge, Skelet
 export function Dashboard() {
   const analytics = useQuery({ queryKey: ['analytics'], queryFn: () => api.analytics() as Promise<DashboardAnalytics> });
   const jobs = useQuery({ queryKey: ['jobs'], queryFn: () => api.jobs() as Promise<{ jobs: Job[] }> });
-  const candidates = useQuery({ queryKey: ['candidates', 'job_frontend'], queryFn: () => api.candidates('job_frontend') as Promise<{ candidates: Candidate[] }> });
+  const firstJobId = jobs.data?.jobs[0]?._id;
+  const candidates = useQuery({
+    queryKey: ['candidates', firstJobId],
+    queryFn: () => api.candidates(firstJobId!) as Promise<{ candidates: Candidate[] }>,
+    enabled: Boolean(firstJobId)
+  });
 
   if (analytics.isLoading || jobs.isLoading) {
     return <div className="grid grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} />)}</div>;
@@ -17,6 +22,7 @@ export function Dashboard() {
   const metrics = analytics.data?.metrics;
   const recentJobs = jobs.data?.jobs.slice(0, 5) ?? [];
   const recentCandidates = candidates.data?.candidates.slice(0, 5) ?? [];
+  const uploadHref = firstJobId ? `/jobs/${firstJobId}` : '/jobs';
 
   return (
     <>
@@ -76,7 +82,7 @@ export function Dashboard() {
               </div>
               <div className="flex gap-3">
                 <Link to="/jobs"><Button variant="secondary"><FilePlus2 className="h-4 w-4" />Create Job</Button></Link>
-                <Link to="/jobs/job_frontend"><Button variant="accent"><ArrowRight className="h-4 w-4" />Upload Resumes</Button></Link>
+                <Link to={uploadHref}><Button variant="accent"><ArrowRight className="h-4 w-4" />Upload Resumes</Button></Link>
                 <Link to="/analytics"><Button><BarChart3 className="h-4 w-4" />View Analytics</Button></Link>
               </div>
             </div>

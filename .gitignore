@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.yarn/
+
+# Build output
+dist/
+build/
+
+# Vite cache
+.vite/
+client/node_modules/.vite/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Uploads (runtime files)
+server/uploads/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

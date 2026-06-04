@@ -1,8 +1,8 @@
-import bcrypt from 'bcryptjs';
 import type { Candidate, Feedback, Job, Ranking, Resume, User } from './types.js';
 
 const now = new Date().toISOString();
-const password = bcrypt.hashSync('password123', 10);
+// Pre-hashed 'password123' with bcrypt salt rounds 10 - demo only
+const password = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 
 export const users: User[] = [
   {
@@ -85,7 +85,7 @@ export const resumes: Resume[] = [
 ];
 
 function gap(skill: string, candidateHas: 'match' | 'partial' | 'missing', evidence: string) {
-  return { skill, required: true, candidateHas, evidence };
+  return { skill, isRequired: true, candidateHas, evidence };
 }
 
 const activitySeries = [

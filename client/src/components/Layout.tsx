@@ -6,7 +6,6 @@ import { api } from '../lib/api';
 const nav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/jobs', label: 'Jobs', icon: BriefcaseBusiness },
-  { to: '/jobs/job_frontend/candidates', label: 'Candidates', icon: UserCircle },
   { to: '/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
   { to: '/settings', label: 'Settings', icon: Settings }
 ];
@@ -48,7 +47,7 @@ export function Layout() {
         <div className="absolute bottom-0 left-0 right-0 border-t border-border p-3 dark:border-darkborder">
           <button
             aria-label="Upload resumes"
-            onClick={() => navigate('/jobs/job_frontend')}
+            onClick={() => navigate('/jobs')}
             className="hm-button w-full border border-border bg-white text-primary hover:bg-gray-50 dark:border-darkborder dark:bg-darkbg dark:text-darktext"
           >
             <Upload className="h-4 w-4" />

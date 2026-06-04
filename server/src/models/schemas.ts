@@ -65,7 +65,12 @@ const candidateSchema = new Schema(
     recommendation: { type: String, enum: ['Strong Hire', 'Hire', 'Maybe', 'Reject'] },
     githubAnalysis: Schema.Types.Mixed,
     leetcodeAnalysis: Schema.Types.Mixed,
-    skillGap: [{ skill: String, required: Boolean, candidateHas: { type: String, enum: ['match', 'partial', 'missing'] }, evidence: String }],
+    skillGap: [{
+      skill: String,
+      isRequired: { type: Boolean, default: true },
+      candidateHas: { type: String, enum: ['match', 'partial', 'missing'] },
+      evidence: String
+    }],
     explanation: [String],
     recruiterDecision: { type: String, enum: ['pending', 'override_select', 'override_reject', 'agree'], default: 'pending' },
     recruiterReason: String,

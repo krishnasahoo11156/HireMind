@@ -22,7 +22,11 @@ export const api = {
   jobs: () => request('/api/jobs'),
   job: (id: string) => request(`/api/jobs/${id}`),
   createJob: (payload: unknown) => request('/api/jobs', { method: 'POST', body: JSON.stringify(payload) }),
-  uploadBatch: () => request('/api/resumes/batch-upload', { method: 'POST', body: new FormData() }),
+  uploadBatch: (files?: File[]) => {
+    const form = new FormData();
+    if (files) files.forEach((file) => form.append('files', file));
+    return request('/api/resumes/batch-upload', { method: 'POST', body: form });
+  },
   analyze: (jobId: string, resumeId: string) => request('/api/candidates/analyze', { method: 'POST', body: JSON.stringify({ jobId, resumeId }) }),
   candidates: (jobId: string) => request(`/api/candidates/job/${jobId}`),
   candidate: (id: string) => request(`/api/candidates/${id}`),
