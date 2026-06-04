@@ -33,27 +33,33 @@ export interface Job {
   updatedAt: string;
 }
 
+export interface ParsedResumeData {
+  name: string;
+  email: string;
+  phone?: string;
+  skills: string[];
+  experience: Array<{ title: string; company: string; duration: string; description: string }>;
+  projects: Array<{ name: string; description: string; technologies: string[] }>;
+  education: Array<{ degree: string; institution: string; year: string }>;
+  certifications: string[];
+  links: {
+    github?: string;
+    linkedin?: string;
+    portfolio?: string;
+    leetcode?: string;
+  };
+}
+
 export interface Resume {
   _id: string;
   fileName: string;
   fileUrl: string;
   fileType: 'pdf' | 'docx';
-  parsedData: {
-    name: string;
-    email: string;
-    phone?: string;
-    skills: string[];
-    experience: Array<{ title: string; company: string; duration: string; description: string }>;
-    projects: Array<{ name: string; description: string; technologies: string[] }>;
-    education: Array<{ degree: string; institution: string; year: string }>;
-    certifications: string[];
-    links: {
-      github?: string;
-      linkedin?: string;
-      portfolio?: string;
-      leetcode?: string;
-    };
-  };
+  parsedData: ParsedResumeData;
+  /** 'parsed' = AI succeeded, 'manual_review' = fallback mode */
+  parseStatus?: 'parsed' | 'manual_review';
+  /** Raw extracted text, stored when AI parsing fails so a human can review */
+  rawText?: string;
   uploadedAt: string;
 }
 

@@ -49,6 +49,10 @@ const resumeSchema = new Schema({
       leetcode: String
     }
   },
+  /** 'parsed' = AI succeeded; 'manual_review' = fallback, human review needed */
+  parseStatus: { type: String, enum: ['parsed', 'manual_review'], default: 'parsed' },
+  /** Raw extracted text stored when AI parsing fails */
+  rawText: String,
   uploadedAt: { type: Date, default: Date.now }
 });
 
