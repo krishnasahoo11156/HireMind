@@ -17,7 +17,7 @@ Built for the Summer Hackathon 2026 Problem Statement 3 (AI-Powered Resume Scree
 
 # ✨ Key Features
 
-## 🧠 Explainable AI Ranking
+##  Explainable AI Ranking
 
 Instead of only providing a score, HireMind explains:
 
@@ -283,22 +283,6 @@ Focus:
 
 ❌ Excessive glassmorphism
 
----
-
-# 🌗 Theme Support
-
-## Light Theme
-
-- Background: #F8F8F7
-- Surface: #FFFFFF
-- Primary: #1F2937
-- Accent: #A16207
-
-## Dark Theme
-
-- Background: #0F1115
-- Surface: #181B22
-- Accent: #D4A017
 
 ---
 
