@@ -16,8 +16,10 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.12.0",
     "mongoose": "^8.19.1",
     "multer": "^1.4.5-lts.2",
+    "pdf-parse": "^2.4.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -27,6 +29,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^1.4.13",
     "@types/node": "^24.9.1",
+    "@types/pdf-parse": "^1.1.5",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
