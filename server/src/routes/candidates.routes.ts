@@ -8,7 +8,7 @@ import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { getLeetCodeProfile } from '../services/external.js';
 import { getGitHubProfile } from '../services/github.service.js';
 import { scoreCandidate } from '../services/ai.service.js';
-import { mapJob } from '../utils/mappers.js';
+import { mapCandidate, mapJob } from '../utils/mappers.js';
 
 export const candidatesRouter = express.Router();
 
@@ -118,7 +118,7 @@ candidatesRouter.get('/', auth, async (req: AuthedRequest, res) => {
         .map(j => j.id);
       filteredList = list.filter(c => recruiterJobIds.includes(c.jobId));
     }
-    res.json({ candidates: filteredList });
+    res.json({ candidates: filteredList.map(mapCandidate) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -136,7 +136,7 @@ candidatesRouter.get('/job/:jobId', auth, async (req: AuthedRequest, res) => {
       return;
     }
     const list = await candidateService.findAll({ jobId: req.params.jobId });
-    res.json({ candidates: list });
+    res.json({ candidates: list.map(mapCandidate) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -149,9 +149,17 @@ candidatesRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
       res.status(404).json({ error: 'Candidate not found' });
       return;
     }
+    const resumePromise = candidate.resumeId && typeof candidate.resumeId === 'string'
+      ? resumeService.findById(candidate.resumeId)
+      : Promise.resolve(null);
+
+    const jobPromise = candidate.jobId && typeof candidate.jobId === 'string'
+      ? jobService.findById(candidate.jobId)
+      : Promise.resolve(null);
+
     const [resume, job, history] = await Promise.all([
-      resumeService.findById(candidate.resumeId),
-      jobService.findById(candidate.jobId),
+      resumePromise,
+      jobPromise,
       feedbackService.findAll({ candidateId: candidate.id })
     ]);
 
@@ -160,7 +168,7 @@ candidatesRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
       return;
     }
 
-    res.json({ candidate, resume, job: job ? mapJob(job) : null, feedback: history });
+    res.json({ candidate: mapCandidate(candidate), resume, job: job ? mapJob(job) : null, feedback: history });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

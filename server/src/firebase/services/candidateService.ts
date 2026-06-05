@@ -45,9 +45,9 @@ export const candidateService = {
   async findAll(filters?: Partial<{ jobId: string }>): Promise<FirestoreCandidate[]> {
     let q: admin.firestore.Query = col('candidates');
     if (filters?.jobId) q = q.where('jobId', '==', filters.jobId);
-    q = q.orderBy('aiScore', 'desc');
     const snap = await q.get();
-    return snapshotToArray<FirestoreCandidate>(snap);
+    const list = snapshotToArray<FirestoreCandidate>(snap);
+    return list.sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
   },
 
   async create(data: Omit<FirestoreCandidate, 'id'>): Promise<FirestoreCandidate> {
