@@ -6,7 +6,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif']
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['"Plus Jakarta Sans"', 'sans-serif']
       },
       colors: {
         // Light mode
@@ -19,6 +20,8 @@ const config: Config = {
         warning: '#B45309',
         danger: '#B91C1C',
         border: '#E5E7EB',
+        foreground: 'hsl(var(--foreground))',
+        'muted-foreground': 'hsl(var(--muted-foreground))',
         // Dark mode
         darkbg: '#0B0F14',
         darksurface: '#121722',
@@ -66,12 +69,17 @@ const config: Config = {
         pulse: {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.5' }
+        },
+        'slow-pulse': {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.08' },
+          '50%': { transform: 'scale(1.15)', opacity: '0.04' }
         }
       },
       animation: {
         shimmer: 'shimmer 2s infinite linear',
         'fade-up': 'fade-up 0.4s ease-out both',
-        'count-up': 'count-up 0.6s ease-out both'
+        'count-up': 'count-up 0.6s ease-out both',
+        'slow-pulse': 'slow-pulse 8s ease-in-out infinite'
       }
     }
   },

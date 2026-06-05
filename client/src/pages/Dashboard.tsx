@@ -14,6 +14,11 @@ import {
   SectionHeader,
   SkeletonCard,
   StatCard,
+  DisplayTitle,
+  SectionTitle,
+  CardTitle,
+  BodyText,
+  Caption,
 } from '../components/ui';
 
 // ─── Greeting helper ───────────────────────────────────────────────────────
@@ -37,10 +42,10 @@ function JobCard({ job }: { job: Job }) {
           <Badge tone={statusTone as any}>{job.status}</Badge>
         </div>
         <div>
-          <h3 className="font-semibold text-primary dark:text-darktext">{job.title}</h3>
-          <p className="mt-1 text-sm text-secondary dark:text-darkmuted">
+          <CardTitle>{job.title}</CardTitle>
+          <BodyText variant="small" color="secondary" className="mt-1">
             {job.candidateCount ?? 0} candidate{(job.candidateCount ?? 0) !== 1 ? 's' : ''}
-          </p>
+          </BodyText>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {job.extractedData.skills.slice(0, 3).map((s) => (
@@ -79,8 +84,8 @@ function PriorityCandidateCard({ candidate, rank }: { candidate: Candidate; rank
           <RecommendationBadge recommendation={candidate.recommendation} />
         </div>
         <div>
-          <div className="font-semibold text-primary dark:text-darktext">{candidate.name}</div>
-          <div className="mt-0.5 text-xs text-secondary dark:text-darkmuted">{candidate.email}</div>
+          <CardTitle>{candidate.name}</CardTitle>
+          <Caption className="mt-0.5 block">{candidate.email}</Caption>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex-1">
@@ -165,20 +170,20 @@ export function Dashboard() {
             <Sparkles className="h-4 w-4 text-accent dark:text-darkaccent" />
             AI Hiring Intelligence Platform
           </div>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-primary dark:text-darktext">
+          <DisplayTitle className="mt-1">
             {getGreeting()}, Maya 👋
-          </h1>
-          <p className="mt-2 text-[0.9375rem] text-secondary dark:text-darkmuted">
+          </DisplayTitle>
+          <BodyText variant="large" color="secondary" className="mt-2">
             Your hiring pipeline has{' '}
-            <span className="font-semibold text-primary dark:text-darktext">
+            <span className="font-semibold text-primary dark:text-darktext font-sans">
               {metrics?.resumesReviewed ?? 0} active candidates
             </span>{' '}
             across{' '}
-            <span className="font-semibold text-primary dark:text-darktext">
+            <span className="font-semibold text-primary dark:text-darktext font-sans">
               {recentJobs.length} jobs
             </span>
             .
-          </p>
+          </BodyText>
         </div>
         <div className="flex flex-shrink-0 items-center gap-3">
           <Link to="/jobs">

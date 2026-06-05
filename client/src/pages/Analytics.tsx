@@ -7,15 +7,15 @@ import {
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import type { DashboardAnalytics } from '../types';
-import { Card, PageTitle, StatCard } from '../components/ui';
+import { Card, PageTitle, StatCard, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 
 // ─── Chart Card ────────────────────────────────────────────────────────────
 function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactElement }) {
   return (
     <Card className="p-6">
       <div className="mb-1">
-        <h2 className="text-base font-semibold text-primary dark:text-darktext">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-xs text-secondary dark:text-darkmuted">{subtitle}</p>}
+        <CardTitle>{title}</CardTitle>
+        {subtitle && <Caption className="mt-0.5 block">{subtitle}</Caption>}
       </div>
       <div className="mt-4 h-72">
         <ResponsiveContainer>{children}</ResponsiveContainer>
@@ -180,20 +180,20 @@ export function Analytics() {
                 <Zap className="h-7 w-7 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="text-base font-semibold text-primary dark:text-darktext">Time Saved Calculator</h2>
-                <p className="mt-1 text-sm text-secondary dark:text-darkmuted">
+                <CardTitle>Time Saved Calculator</CardTitle>
+                <BodyText variant="default" color="secondary" className="mt-1">
                   Formula: {data?.metrics.resumesReviewed ?? 0} resumes × 15 min / 60 ={' '}
-                  <span className="font-bold text-accent dark:text-darkaccent">
+                  <span className="font-bold text-accent dark:text-darkaccent font-sans">
                     {data?.metrics.timeSaved ?? 0} hours saved
                   </span>{' '}
                   vs manual screening.
-                </p>
+                </BodyText>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold tabular-nums text-primary dark:text-darktext">
+                <div className="font-heading text-[40px] font-bold leading-[1.1] tracking-[-0.04em] tabular-nums text-primary dark:text-darktext">
                   {data?.metrics.timeSaved ?? 0}h
                 </div>
-                <div className="text-xs text-secondary dark:text-darkmuted">saved this cycle</div>
+                <Caption className="block">saved this cycle</Caption>
               </div>
             </div>
           </Card>

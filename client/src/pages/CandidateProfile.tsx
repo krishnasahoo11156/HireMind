@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { useAppStore } from '../store/appStore';
 import type { Candidate, Job, Resume } from '../types';
-import { Badge, Button, Card, PageTitle, RecommendationBadge, ScoreGauge, SkillHeatmap, StatusCell } from '../components/ui';
+import { Badge, Button, Card, PageTitle, RecommendationBadge, ScoreGauge, SkillHeatmap, StatusCell, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 import { BlindToggle } from '../components/BlindToggle';
 
 // ─── Metric tile ───────────────────────────────────────────────────────────
@@ -85,9 +85,9 @@ export function CandidateProfile() {
                 {blindMode ? <Shield className="h-8 w-8" /> : initials}
               </div>
             </div>
-            <h2 className="text-base font-semibold text-primary dark:text-darktext">{displayName}</h2>
+            <CardTitle>{displayName}</CardTitle>
             {!blindMode && (
-              <p className="mt-0.5 text-xs text-secondary dark:text-darkmuted">{candidate.email}</p>
+              <Caption className="mt-0.5 block">{candidate.email}</Caption>
             )}
             <div className="mt-3 flex justify-center gap-2">
               <RecommendationBadge recommendation={candidate.recommendation} />
@@ -103,7 +103,7 @@ export function CandidateProfile() {
 
           {/* Skills */}
           <Card className="p-5">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">Skills</h3>
+            <Caption className="mb-3 block font-semibold uppercase tracking-wider">Skills</Caption>
             <div className="flex flex-wrap gap-1.5">
               {resume.parsedData.skills.map((skill) => (
                 <Badge key={skill} tone="neutral">{skill}</Badge>
@@ -113,7 +113,7 @@ export function CandidateProfile() {
 
           {/* Experience */}
           <Card className="p-5">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">Experience</h3>
+            <Caption className="mb-3 block font-semibold uppercase tracking-wider">Experience</Caption>
             <div className="space-y-3">
               {resume.parsedData.experience.map((exp) => (
                 <div key={exp.title} className="border-l-2 border-accent/30 pl-3 dark:border-darkaccent/30">
@@ -127,7 +127,7 @@ export function CandidateProfile() {
 
           {/* Education */}
           <Card className="p-5">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">Education</h3>
+            <Caption className="mb-3 block font-semibold uppercase tracking-wider">Education</Caption>
             <div className="space-y-2">
               {resume.parsedData.education.map((edu) => (
                 <div key={edu.degree}>
@@ -148,12 +148,12 @@ export function CandidateProfile() {
             <div className="flex items-center gap-8">
               <ScoreGauge value={candidate.aiScore} label="AI Score" />
               <div>
-                <h2 className="text-xl font-bold text-primary dark:text-darktext">
+                <h2 className="font-heading text-[48px] font-bold leading-none tracking-tight text-primary dark:text-darktext">
                   {candidate.matchPercentage}% Match
                 </h2>
-                <p className="mt-1 text-sm text-secondary dark:text-darkmuted">
+                <BodyText variant="default" color="secondary" className="mt-1">
                   vs required job skills
-                </p>
+                </BodyText>
                 <div className="mt-4">
                   <RecommendationBadge recommendation={candidate.recommendation} />
                 </div>
@@ -181,7 +181,7 @@ export function CandidateProfile() {
 
           {/* Skill Gap Heatmap */}
           <Card className="p-6">
-            <h2 className="mb-5 text-lg font-semibold text-primary dark:text-darktext">Skill Gap Analysis</h2>
+            <SectionTitle className="mb-5">Skill Gap Analysis</SectionTitle>
             <SkillHeatmap skillGap={candidate.skillGap} />
           </Card>
 
@@ -189,7 +189,7 @@ export function CandidateProfile() {
           <Card className="p-6">
             <div className="mb-5 flex items-center gap-2">
               <Github className="h-5 w-5" />
-              <h2 className="text-lg font-semibold text-primary dark:text-darktext">GitHub Analysis</h2>
+              <SectionTitle>GitHub Analysis</SectionTitle>
             </div>
             <div className="mb-5 grid grid-cols-4 gap-3">
               <Metric label="Repos" value={candidate.githubAnalysis.publicRepos} />
@@ -217,7 +217,7 @@ export function CandidateProfile() {
           <Card className="p-6">
             <div className="mb-5 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-accent dark:text-darkaccent" />
-              <h2 className="text-lg font-semibold text-primary dark:text-darktext">LeetCode Analysis</h2>
+              <SectionTitle>LeetCode Analysis</SectionTitle>
             </div>
             <div className="mb-5 grid grid-cols-4 gap-3">
               <Metric label="Solved" value={candidate.leetcodeAnalysis.problemsSolved} />
@@ -245,7 +245,7 @@ export function CandidateProfile() {
 
           {/* Recent GitHub Activity */}
           <Card className="p-6">
-            <h2 className="mb-4 text-lg font-semibold text-primary dark:text-darktext">Recent Activity</h2>
+            <SectionTitle className="mb-4">Recent Activity</SectionTitle>
             <div className="h-40">
               <ResponsiveContainer>
                 <LineChart data={candidate.githubAnalysis.activitySeries}>
@@ -262,7 +262,7 @@ export function CandidateProfile() {
           {/* Recruiter Feedback */}
           {decision ? (
             <Card className="p-6">
-              <h2 className="mb-4 text-lg font-semibold text-primary dark:text-darktext">Recruiter Override</h2>
+              <SectionTitle className="mb-4">Recruiter Override</SectionTitle>
               <div className="mb-3 rounded-xl border border-border bg-background p-3 text-sm dark:border-darkborder dark:bg-darkbg">
                 Decision: <span className={`font-semibold ${decision === 'override_select' ? 'text-success' : 'text-danger'}`}>
                   {decision === 'override_select' ? 'Select Anyway' : 'Reject Anyway'}
@@ -302,8 +302,8 @@ export function CandidateProfile() {
                 <Lightbulb className="h-5 w-5 text-accent dark:text-darkaccent" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-primary dark:text-darktext">Why Hire This Candidate?</h2>
-                <p className="text-xs text-secondary dark:text-darkmuted">AI-generated insight</p>
+                <CardTitle>Why Hire This Candidate?</CardTitle>
+                <Caption>AI-generated insight</Caption>
               </div>
             </div>
 

@@ -5,7 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import type { Candidate, Job, Resume } from '../types';
-import { Badge, Button, Card, PageTitle, RecommendationBadge, ScoreBar, TabBar } from '../components/ui';
+import { Badge, Button, Card, PageTitle, RecommendationBadge, ScoreBar, TabBar, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 
 export function JobDetail() {
   const { id = 'job_frontend' } = useParams();
@@ -48,9 +48,9 @@ export function JobDetail() {
                 Created {data?.job.createdAt ? new Date(data.job.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
               </span>
             </div>
-            <h1 className="text-[2rem] font-bold tracking-tight text-primary dark:text-darktext">
+            <DisplayTitle>
               {data?.job.title ?? 'Job Detail'}
-            </h1>
+            </DisplayTitle>
             <p className="mt-2 flex items-center gap-2 text-secondary dark:text-darkmuted">
               <Users className="h-4 w-4" />
               {data?.candidates.length ?? 0} candidates analyzed
@@ -93,7 +93,7 @@ export function JobDetail() {
                 <div className="rounded-xl bg-accent/10 p-2 dark:bg-darkaccent/10">
                   <Tag className="h-4 w-4 text-accent dark:text-darkaccent" />
                 </div>
-                <h2 className="text-lg font-semibold text-primary dark:text-darktext">Job Intelligence</h2>
+                <SectionTitle>Job Intelligence</SectionTitle>
               </div>
               <p className="text-[0.9375rem] leading-relaxed text-secondary dark:text-darkmuted">
                 {data?.job.description}
@@ -112,7 +112,7 @@ export function JobDetail() {
 
             {/* Upload Zone */}
             <Card className="p-6">
-              <h2 className="mb-4 text-lg font-semibold text-primary dark:text-darktext">Upload Resumes</h2>
+              <SectionTitle className="mb-4">Upload Resumes</SectionTitle>
               <motion.div
                 whileHover={{ scale: 1.005 }}
                 className="flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border text-center transition-colors hover:border-accent hover:bg-accent/[0.02] dark:border-darkborder dark:hover:border-darkaccent"
@@ -142,9 +142,9 @@ export function JobDetail() {
             {(data?.resumes ?? []).length > 0 && (
               <Card className="overflow-hidden">
                 <div className="border-b border-border px-6 py-4 dark:border-darkborder">
-                  <h2 className="text-base font-semibold text-primary dark:text-darktext">
+                  <CardTitle>
                     Upload Queue ({data?.resumes.length ?? 0})
-                  </h2>
+                  </CardTitle>
                 </div>
                 <div className="divide-y divide-border dark:divide-darkborder">
                   {(data?.resumes ?? []).map((resume, i) => (
@@ -179,7 +179,7 @@ export function JobDetail() {
 
           {/* Live Ranking Preview */}
           <Card className="p-6">
-            <h2 className="mb-5 text-lg font-semibold text-primary dark:text-darktext">Live Ranking Preview</h2>
+            <SectionTitle className="mb-5">Live Ranking Preview</SectionTitle>
             {(data?.candidates ?? []).length === 0 ? (
               <div className="flex flex-col items-center py-12 text-center">
                 <div className="mb-3 rounded-xl border border-border bg-background p-3 dark:border-darkborder dark:bg-darkbg">
@@ -251,8 +251,8 @@ export function JobDetail() {
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-background p-3.5 dark:border-darkborder dark:bg-darkbg">
-      <p className="text-xs font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">{label}</p>
-      <p className="mt-1.5 text-sm font-semibold text-primary dark:text-darktext">{value}</p>
+      <Caption className="block font-semibold uppercase tracking-wider">{label}</Caption>
+      <BodyText variant="default" className="mt-1.5 font-semibold">{value}</BodyText>
     </div>
   );
 }
