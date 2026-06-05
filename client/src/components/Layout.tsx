@@ -6,6 +6,8 @@ import {
   LayoutDashboard,
   LogOut,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Search,
   Settings,
   Sparkles,
@@ -13,7 +15,7 @@ import {
   Upload,
   Users,
 } from 'lucide-react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { api } from '../lib/api';
@@ -28,56 +30,99 @@ const nav = [
 export function Layout() {
   const theme = useAppStore((state) => state.theme);
   const setTheme = useAppStore((state) => state.setTheme);
+  const sidebarCollapsed = useAppStore((state) => state.sidebarCollapsed);
+  const toggleSidebar = useAppStore((state) => state.toggleSidebar);
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div className="min-h-screen bg-background text-primary dark:bg-darkbg dark:text-darktext">
       {/* ── SIDEBAR ── */}
-      <aside className="fixed left-0 top-0 z-30 flex h-screen w-[280px] flex-col border-r border-border bg-surface dark:border-darkborder dark:bg-darksurface">
+      <aside className={`fixed left-0 top-0 z-30 flex h-screen ${sidebarCollapsed ? 'w-[80px]' : 'w-[280px]'} flex-col border-r border-border bg-surface dark:border-darkborder dark:bg-darksurface transition-all duration-300 ease-out`}>
         {/* Logo */}
-        <div className="flex h-[72px] flex-shrink-0 items-center gap-3 border-b border-border px-6 dark:border-darkborder">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-yellow-600 shadow-sm">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <div className="text-[0.9375rem] font-bold tracking-tight text-primary dark:text-darktext">
-              HireMind
+        <div className={`flex h-[68px] flex-shrink-0 items-center ${sidebarCollapsed ? 'justify-center px-4' : 'gap-3 px-5'} border-b border-border dark:border-darkborder transition-all duration-300`}>
+          <div className="relative flex-shrink-0 group cursor-pointer" onClick={toggleSidebar}>
+            {/* Animated accent ring */}
+            <div className="absolute -inset-1 rounded-full bg-accent/25 dark:bg-darkaccent/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none blur-sm" />
+            <div className={`absolute -inset-0.5 rounded-[12px] bg-accent/30 dark:bg-darkaccent/30 animate-slow-pulse opacity-100 pointer-events-none ${
+              sidebarCollapsed ? 'rounded-[10px]' : 'rounded-[12px]'
+            }`} />
+
+            {/* Logo Container */}
+            <div className={`relative flex items-center justify-center transition-all duration-300 ease-out shadow-[0_2px_8px_rgba(161,98,7,0.12)] bg-gradient-to-br from-[#C88908] to-[#A16207] dark:from-[#D4A017] dark:to-[#A16207] hover:-translate-y-0.5 hover:scale-[1.03] ${
+              sidebarCollapsed ? 'h-9 w-9 rounded-[10px]' : 'h-[38px] w-[38px] rounded-[12px]'
+            }`}>
+              {/* Custom Monogram H Neural SVG */}
+              <svg
+                className={`transition-all duration-300 ${sidebarCollapsed ? 'h-[20px] w-[20px]' : 'h-[22px] w-[22px]'}`}
+                viewBox="0 0 100 100"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Neural net links */}
+                <line x1="30" y1="75" x2="30" y2="25" stroke="white" strokeWidth="6" strokeLinecap="round" />
+                <line x1="70" y1="75" x2="70" y2="25" stroke="white" strokeWidth="6" strokeLinecap="round" />
+                <line x1="30" y1="50" x2="70" y2="50" stroke="white" strokeWidth="6" strokeLinecap="round" />
+                
+                <line x1="30" y1="75" x2="50" y2="50" stroke="white" strokeWidth="4" strokeOpacity="0.5" strokeLinecap="round" />
+                <line x1="50" y1="50" x2="70" y2="25" stroke="white" strokeWidth="4" strokeOpacity="0.5" strokeLinecap="round" />
+
+                {/* Nodes */}
+                <circle cx="30" cy="25" r="7" fill="white" />
+                <circle cx="30" cy="75" r="7" fill="white" />
+                <circle cx="70" cy="25" r="7" fill="white" />
+                <circle cx="70" cy="75" r="7" fill="white" />
+                <circle cx="50" cy="50" r="8.5" fill="white" stroke="#A16207" strokeWidth="2.5" />
+              </svg>
             </div>
-            <div className="text-[0.6875rem] font-medium text-secondary dark:text-darkmuted">
-              AI Hiring Intelligence
-            </div>
           </div>
+
+          {!sidebarCollapsed && (
+            <div className="flex flex-col select-none group cursor-pointer" onClick={toggleSidebar}>
+              <div className="font-heading text-[20px] font-extrabold tracking-[-0.04em] leading-none text-primary dark:text-white hover:text-accent dark:hover:text-darkaccent transition-colors duration-200">
+                HireMind
+              </div>
+              <div className="mt-[2px] font-sans text-[11px] font-medium tracking-[0.02em] text-secondary dark:text-darkmuted leading-normal whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px] block">
+                Explainable Hiring Intelligence
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Workspace badge */}
-        <div className="mx-4 mt-4 flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2.5 dark:border-darkborder dark:bg-darkbg">
+        <div className={`mx-4 mt-4 flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2.5'} rounded-xl border border-border bg-background dark:border-darkborder dark:bg-darkbg transition-all duration-300`}>
           <div className="flex items-center gap-2.5">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
               <Users className="h-3.5 w-3.5" />
             </div>
-            <span className="text-xs font-semibold text-primary dark:text-darktext">Acme Recruiting</span>
+            {!sidebarCollapsed && <span className="text-xs font-semibold text-primary dark:text-darktext">Acme Recruiting</span>}
           </div>
-          <ChevronDown className="h-3.5 w-3.5 text-secondary dark:text-darkmuted" />
+          {!sidebarCollapsed && <ChevronDown className="h-3.5 w-3.5 text-secondary dark:text-darkmuted" />}
         </div>
 
         {/* Nav section label */}
-        <div className="mt-5 px-6">
-          <p className="hm-label text-[10px]">Navigation</p>
+        <div className={`mt-5 px-6 ${sidebarCollapsed ? 'flex justify-center px-2' : ''}`}>
+          {sidebarCollapsed ? (
+            <div className="h-px w-full bg-border dark:bg-darkborder" />
+          ) : (
+            <p className="font-heading text-[11px] font-bold uppercase tracking-[0.08em] text-secondary dark:text-darkmuted">Navigation</p>
+          )}
         </div>
 
         {/* Nav items */}
-        <nav className="mt-2 flex-1 space-y-0.5 px-3">
+        <nav className={`mt-2 flex-1 space-y-0.5 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {nav.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
+                title={sidebarCollapsed ? item.label : undefined}
                 className={({ isActive }) =>
-                  `hm-nav-item ${
+                  `hm-nav-item text-[14px] ${sidebarCollapsed ? 'justify-center px-0' : ''} ${
                     isActive
                       ? 'bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent font-semibold'
-                      : 'text-secondary hover:bg-gray-50 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder/50 dark:hover:text-darktext'
+                      : 'text-secondary hover:bg-gray-50 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder/50 dark:hover:text-darktext font-medium'
                   }`
                 }
               >
@@ -86,7 +131,7 @@ export function Layout() {
                     <Icon
                       className={`h-4 w-4 flex-none ${isActive ? 'text-accent dark:text-darkaccent' : ''}`}
                     />
-                    {item.label}
+                    {!sidebarCollapsed && item.label}
                   </>
                 )}
               </NavLink>
@@ -95,49 +140,66 @@ export function Layout() {
         </nav>
 
         {/* Bottom section */}
-        <div className="flex-shrink-0 border-t border-border p-4 dark:border-darkborder">
+        <div className={`flex-shrink-0 border-t border-border ${sidebarCollapsed ? 'p-2' : 'p-4'} dark:border-darkborder transition-all duration-300`}>
           {/* Quick Upload CTA */}
           <button
             aria-label="Upload resumes"
             onClick={() => navigate('/jobs')}
-            className="hm-button mb-3 w-full bg-accent/10 text-accent hover:bg-accent/20 dark:bg-darkaccent/10 dark:text-darkaccent dark:hover:bg-darkaccent/20"
+            title="Upload Resumes"
+            className={`hm-button mb-3 w-full justify-center bg-accent/10 text-accent hover:bg-accent/20 dark:bg-darkaccent/10 dark:text-darkaccent dark:hover:bg-darkaccent/20 ${sidebarCollapsed ? 'px-0' : ''}`}
           >
             <Upload className="h-4 w-4" />
-            Upload Resumes
+            {!sidebarCollapsed && 'Upload Resumes'}
           </button>
 
           {/* Recruiter profile card */}
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 dark:border-darkborder dark:bg-darkbg">
-            <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gradient-to-br from-accent to-yellow-600 text-sm font-bold text-white shadow-sm">
+          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center p-2' : 'gap-3 p-3'} rounded-xl border border-border bg-background dark:border-darkborder dark:bg-darkbg transition-all duration-300`}>
+            <div
+              title={sidebarCollapsed ? "Maya Kapoor (Senior Recruiter)" : undefined}
+              className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gradient-to-br from-accent to-yellow-600 text-sm font-bold text-white shadow-sm cursor-pointer"
+            >
               MK
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-primary dark:text-darktext">Maya Kapoor</div>
-              <div className="truncate text-xs text-secondary dark:text-darkmuted">Senior Recruiter</div>
-            </div>
-            <button
-              aria-label="Log out"
-              onClick={() => {
-                localStorage.removeItem(api.tokenKey);
-                navigate('/login');
-              }}
-              className="flex-none rounded-lg p-1.5 text-secondary transition-colors hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder dark:hover:text-darktext"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            {!sidebarCollapsed && (
+              <>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold text-primary dark:text-darktext">Maya Kapoor</div>
+                  <div className="truncate text-xs text-secondary dark:text-darkmuted">Senior Recruiter</div>
+                </div>
+                <button
+                  aria-label="Log out"
+                  onClick={() => {
+                    localStorage.removeItem(api.tokenKey);
+                    navigate('/login');
+                  }}
+                  className="flex-none rounded-lg p-1.5 text-secondary transition-colors hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder dark:hover:text-darktext"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </aside>
 
       {/* ── NAVBAR ── */}
-      <header className="sticky top-0 z-20 ml-[280px] flex h-[72px] items-center justify-between border-b border-border bg-surface/90 px-8 backdrop-blur-md dark:border-darkborder dark:bg-darksurface/90">
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary dark:text-darkmuted" />
-          <input
-            aria-label="Search"
-            className="hm-input w-full pl-9"
-            placeholder="Search jobs, candidates…"
-          />
+      <header className={`sticky top-0 z-20 ${sidebarCollapsed ? 'ml-[80px]' : 'ml-[280px]'} flex h-[68px] items-center justify-between border-b border-border bg-surface/90 px-8 backdrop-blur-md dark:border-darkborder dark:bg-darksurface/90 transition-all duration-300 ease-out`}>
+        <div className="flex items-center gap-4 flex-1">
+          <button
+            onClick={toggleSidebar}
+            aria-label="Toggle sidebar"
+            className="rounded-xl border border-border bg-surface p-2 text-secondary hover:text-primary dark:border-darkborder dark:bg-darkbg dark:text-darkmuted dark:hover:text-darktext transition-colors"
+          >
+            {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary dark:text-darkmuted" />
+            <input
+              aria-label="Search"
+              className="hm-input w-full pl-9"
+              placeholder="Search jobs, candidates…"
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -161,7 +223,7 @@ export function Layout() {
       </header>
 
       {/* ── CONTENT ── */}
-      <main className="ml-[280px] min-h-[calc(100vh-72px)]">
+      <main className={`${sidebarCollapsed ? 'ml-[80px]' : 'ml-[280px]'} min-h-[calc(100vh-68px)] transition-all duration-300 ease-out`}>
         <div className="mx-auto max-w-content px-8 py-8">
           <motion.div
             key={location.pathname}

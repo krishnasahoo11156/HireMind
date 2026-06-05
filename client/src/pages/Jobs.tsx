@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import type { Job } from '../types';
-import { Badge, Button, Card, EmptyState, PageTitle } from '../components/ui';
+import { Badge, Button, Card, EmptyState, PageTitle, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 
 // ─── Job Card ──────────────────────────────────────────────────────────────
 function JobCard({ job, onDelete }: { job: Job; onDelete?: () => void }) {
@@ -33,10 +33,10 @@ function JobCard({ job, onDelete }: { job: Job; onDelete?: () => void }) {
       </div>
 
       <div className="flex-1">
-        <h3 className="text-base font-semibold text-primary dark:text-darktext">{job.title}</h3>
-        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-secondary dark:text-darkmuted">
+        <CardTitle>{job.title}</CardTitle>
+        <BodyText variant="default" color="secondary" className="mt-1 line-clamp-2">
           {job.description?.slice(0, 100)}…
-        </p>
+        </BodyText>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -94,7 +94,7 @@ function JobCard({ job, onDelete }: { job: Job; onDelete?: () => void }) {
 function Preview({ label, items }: { label: string; items: string[] }) {
   return (
     <div className="mb-4">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-secondary dark:text-darkmuted">{label}</p>
+      <Caption className="mb-2 block font-semibold uppercase tracking-wider">{label}</Caption>
       <div className="flex flex-wrap gap-1.5">
         {items.map((item) => <Badge key={item} tone="gold">{item}</Badge>)}
       </div>
@@ -208,7 +208,7 @@ export function Jobs() {
             <Card className="p-6">
               <div className="mb-6 flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight text-primary dark:text-darktext">Create Job</h2>
+                  <SectionTitle>Create Job</SectionTitle>
                   <p className="mt-1 text-sm text-secondary dark:text-darkmuted">
                     Paste the JD or write it directly. AI extracts requirements automatically.
                   </p>
@@ -241,9 +241,9 @@ export function Jobs() {
                 </div>
 
                 <div className="rounded-2xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg">
-                  <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-primary dark:text-darktext">
+                  <div className="mb-4 flex items-center gap-2">
                     <BrainCircuit className="h-4 w-4 text-accent dark:text-darkaccent" />
-                    AI Extraction Preview
+                    <CardTitle>AI Extraction Preview</CardTitle>
                   </div>
                   <Preview label="Skills" items={extracted.skills.length ? extracted.skills : ['React', 'TypeScript']} />
                   <Preview label="Experience" items={[extracted.experience]} />

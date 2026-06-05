@@ -3,7 +3,7 @@ import { Sparkles, LogIn, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
-import { Button, Card } from '../components/ui';
+import { Button, Card, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 
 export function Login() {
   const navigate = useNavigate();
@@ -97,12 +97,12 @@ function AuthFrame({
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-yellow-600 shadow-lg">
               <Sparkles className="h-7 w-7 text-white" />
             </div>
-            <h1 className="mt-4 text-2xl font-bold tracking-tight text-primary dark:text-darktext">
+            <DisplayTitle className="mt-4 !text-2xl">
               HireMind
-            </h1>
-            <p className="mt-1 text-sm text-secondary dark:text-darkmuted">
+            </DisplayTitle>
+            <BodyText variant="default" color="secondary" className="mt-1">
               {mode === 'login' ? 'Sign in to your workspace' : 'Create your account'}
-            </p>
+            </BodyText>
           </div>
 
           <form className="space-y-3" onSubmit={onSubmit}>
@@ -132,15 +132,15 @@ function AuthFrame({
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-secondary dark:text-darkmuted">
+          <BodyText variant="default" color="secondary" className="mt-6 text-center">
             {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
             <Link
-              className="font-semibold text-accent hover:underline dark:text-darkaccent"
+              className="font-semibold text-accent hover:underline dark:text-darkaccent font-sans"
               to={mode === 'login' ? '/register' : '/login'}
             >
               {mode === 'login' ? 'Register' : 'Sign in'}
             </Link>
-          </p>
+          </BodyText>
         </Card>
       </motion.div>
     </div>

@@ -2,6 +2,9 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CandidateHas, Recommendation } from '../types';
+import { DisplayTitle, PageTitleText, SectionTitle, CardTitle, BodyText, Caption, PageTitle } from './Typography';
+
+export { DisplayTitle, PageTitleText, SectionTitle, CardTitle, BodyText, Caption, PageTitle };
 
 // ─────────────────────────────────────────────
 // CARD
@@ -14,26 +17,7 @@ export function Card({ children, className = '', hover = false }: { children: Re
   );
 }
 
-// ─────────────────────────────────────────────
-// PAGE TITLE
-// ─────────────────────────────────────────────
-export function PageTitle({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
-  return (
-    <div className="mb-8 flex items-start justify-between gap-4">
-      <div>
-        <h1 className="text-[2rem] font-bold leading-tight tracking-tight text-primary dark:text-darktext">
-          {title}
-        </h1>
-        {subtitle ? (
-          <p className="mt-1.5 max-w-2xl text-[0.9375rem] leading-relaxed text-secondary dark:text-darkmuted">
-            {subtitle}
-          </p>
-        ) : null}
-      </div>
-      {action && <div className="flex-shrink-0">{action}</div>}
-    </div>
-  );
-}
+// PageTitle component is now imported and re-exported from Typography.tsx above.
 
 // ─────────────────────────────────────────────
 // BUTTON
@@ -57,8 +41,8 @@ export function Button({
   };
   const sizes = {
     sm: 'h-8 px-3 text-xs rounded-lg gap-1.5',
-    md: 'h-10 px-4 text-sm rounded-xl gap-2',
-    lg: 'h-12 px-6 text-[0.9375rem] rounded-xl gap-2'
+    md: 'h-10 px-4 text-sm font-semibold rounded-xl gap-2',
+    lg: 'h-12 px-6 text-[15px] font-semibold rounded-xl gap-2'
   };
   return (
     <button className={`hm-button ${variants[variant]} ${sizes[size]} ${className}`} {...props}>
@@ -96,7 +80,21 @@ export function RecommendationBadge({ recommendation }: { recommendation: Recomm
     recommendation === 'Strong Hire' ? 'green' :
     recommendation === 'Hire' ? 'emerald' :
     recommendation === 'Maybe' ? 'yellow' : 'red';
-  return <Badge tone={tone}>{recommendation}</Badge>;
+  const tones = {
+    neutral: 'bg-gray-100 text-gray-600 dark:bg-darkborder dark:text-darkmuted',
+    green: 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800/40',
+    emerald: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/40',
+    yellow: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/40',
+    red: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/40',
+    gold: 'bg-yellow-50 text-accent border border-yellow-200 dark:bg-darkaccent/10 dark:text-darkaccent dark:border-darkaccent/20',
+    blue: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/40',
+    purple: 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800/40'
+  };
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-[14px] font-semibold ${tones[tone]}`}>
+      {recommendation}
+    </span>
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -209,12 +207,12 @@ export function StatCard({
     >
       <Card hover className="p-6">
         <div className="flex items-start justify-between">
-          <p className="text-sm font-medium text-secondary dark:text-darkmuted">{label}</p>
+          <p className="text-[13px] font-medium text-secondary dark:text-darkmuted">{label}</p>
           <div className="rounded-xl border border-border bg-background p-2 text-accent dark:border-darkborder dark:bg-darkbg dark:text-darkaccent">
             {icon}
           </div>
         </div>
-        <p className="mt-4 text-3xl font-bold tracking-tight tabular-nums text-primary dark:text-darktext">{value}</p>
+        <p className="mt-4 font-heading text-[40px] font-bold leading-[1.1] tracking-[-0.04em] tabular-nums text-primary dark:text-darktext">{value}</p>
         {trendLabel && (
           <p className={`mt-2 flex items-center gap-1 text-xs font-medium ${trend === 'up' ? 'text-success' : trend === 'down' ? 'text-danger' : 'text-secondary dark:text-darkmuted'}`}>
             {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'} {trendLabel}
@@ -234,7 +232,7 @@ export function EmptyState({ title, body, icon, action }: { title: string; body:
       <div className="mb-6 rounded-2xl border border-border bg-background p-5 text-accent dark:border-darkborder dark:bg-darkbg dark:text-darkaccent">
         {icon}
       </div>
-      <h2 className="text-xl font-semibold text-primary dark:text-darktext">{title}</h2>
+      <h2 className="font-heading text-xl font-semibold tracking-tight text-primary dark:text-darktext">{title}</h2>
       <p className="mt-2 max-w-sm text-sm leading-relaxed text-secondary dark:text-darkmuted">{body}</p>
       {action && <div className="mt-6">{action}</div>}
     </Card>
@@ -351,7 +349,7 @@ export function RankBadge({ rank }: { rank: number }) {
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <div className="mb-5 flex items-center justify-between">
-      <h2 className="text-lg font-semibold tracking-tight text-primary dark:text-darktext">{title}</h2>
+      <h2 className="font-heading text-xl font-semibold tracking-tight text-primary dark:text-darktext">{title}</h2>
       {action}
     </div>
   );

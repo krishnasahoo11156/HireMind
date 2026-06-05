@@ -1,5 +1,5 @@
 import { Bell, Building2, Globe, Lock, Monitor, Moon, Shield, Sun, UserCircle } from 'lucide-react';
-import { Button, Card, PageTitle } from '../components/ui';
+import { Button, Card, PageTitle, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 import { useAppStore } from '../store/appStore';
 
 type Section = {
@@ -21,19 +21,19 @@ export function Settings() {
       content: (
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-secondary dark:text-darkmuted">Full Name</label>
+            <Caption as="label" className="mb-1.5 block font-semibold">Full Name</Caption>
             <input className="hm-input w-full" defaultValue="Maya Kapoor" />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-secondary dark:text-darkmuted">Email</label>
+            <Caption as="label" className="mb-1.5 block font-semibold">Email</Caption>
             <input className="hm-input w-full" defaultValue="recruiter@hiremind.ai" readOnly />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-secondary dark:text-darkmuted">Role</label>
+            <Caption as="label" className="mb-1.5 block font-semibold">Role</Caption>
             <input className="hm-input w-full" defaultValue="Senior Recruiter" />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-secondary dark:text-darkmuted">Phone</label>
+            <Caption as="label" className="mb-1.5 block font-semibold">Phone</Caption>
             <input className="hm-input w-full" placeholder="+1 (555) 000-0000" />
           </div>
           <div className="col-span-2 flex justify-end">
@@ -49,11 +49,11 @@ export function Settings() {
       content: (
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-secondary dark:text-darkmuted">Organization</label>
+            <Caption as="label" className="mb-1.5 block font-semibold">Organization</Caption>
             <input className="hm-input w-full" defaultValue="Acme Recruiting" />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-secondary dark:text-darkmuted">Industry</label>
+            <Caption as="label" className="mb-1.5 block font-semibold">Industry</Caption>
             <select className="hm-input w-full">
               <option>Technology</option>
               <option>Finance</option>
@@ -145,11 +145,11 @@ export function Settings() {
       content: (
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-secondary dark:text-darkmuted">Current Password</label>
+            <Caption as="label" className="mb-1.5 block font-semibold">Current Password</Caption>
             <input type="password" className="hm-input w-full max-w-sm" placeholder="••••••••" />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-secondary dark:text-darkmuted">New Password</label>
+            <Caption as="label" className="mb-1.5 block font-semibold">New Password</Caption>
             <input type="password" className="hm-input w-full max-w-sm" placeholder="••••••••" />
           </div>
           <div className="flex items-center justify-between rounded-xl border border-border p-4 dark:border-darkborder">
@@ -180,8 +180,8 @@ export function Settings() {
                 {section.icon}
               </div>
               <div>
-                <h2 className="text-base font-semibold text-primary dark:text-darktext">{section.title}</h2>
-                <p className="text-xs text-secondary dark:text-darkmuted">{section.description}</p>
+                <CardTitle>{section.title}</CardTitle>
+                <Caption className="block mt-0.5">{section.description}</Caption>
               </div>
             </div>
             <div className="p-6">{section.content}</div>
