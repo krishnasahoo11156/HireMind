@@ -1,9 +1,8 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrainCircuit, BriefcaseBusiness, Calendar, Plus, Search, Trash2, Users, X, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '../lib/api';
+import { useJobs, useCreateJob } from '../hooks/queries';
 import type { Job } from '../types';
 import { Badge, Button, Card, EmptyState, PageTitle, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 
@@ -104,7 +103,6 @@ function Preview({ label, items }: { label: string; items: string[] }) {
 
 // ─── Jobs Page ─────────────────────────────────────────────────────────────
 export function Jobs() {
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'draft'>('all');
@@ -129,22 +127,11 @@ export function Jobs() {
     keywords: ['React ecosystem', 'component architecture', 'state management', 'responsive UI']
   }), [description]);
 
-  const jobs = useQuery({ queryKey: ['jobs'], queryFn: () => api.jobs() as Promise<{ jobs: Job[] }> });
-  const create = useMutation({
-    mutationFn: () => api.createJob({
-      title,
-      description,
-      department,
-      weights: {
-        github: githubWeight,
-        leetcode: leetcodeWeight,
-        education: educationWeight
-      }
-    }),
+  const jobs = useJobs();
+  const create = useCreateJob({
     onSuccess: () => {
       setOpen(false);
       setStep(1);
-      void queryClient.invalidateQueries({ queryKey: ['jobs'] });
     }
   });
 
@@ -156,7 +143,16 @@ export function Jobs() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    create.mutate();
+    create.mutate({
+      title,
+      description,
+      department,
+      weights: {
+        github: githubWeight,
+        leetcode: leetcodeWeight,
+        education: educationWeight
+      }
+    });
   }
 
   return (

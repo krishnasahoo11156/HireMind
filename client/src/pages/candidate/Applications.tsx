@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { io as connectSocket, Socket } from 'socket.io-client';
 import { BriefcaseBusiness, CheckCircle, Clock, Sparkles, BrainCircuit, Bell, Shield, ArrowRight, Star } from 'lucide-react';
-import { api } from '../../lib/api';
+import { useJobs, useMyApplications } from '../../hooks/queries';
 import { getDecodedToken } from '../../lib/auth';
 import type { Application, Job } from '../../types';
 import { Badge, Card, PageTitle, SectionTitle, BodyText, Caption } from '../../components/ui';
@@ -14,7 +13,7 @@ interface Toast {
   message: string;
 }
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') : 'http://localhost:5001');
 
 const ALL_STAGES = [
   { key: 'Applied', label: 'Applied', desc: 'Application received and registered.' },
@@ -27,15 +26,8 @@ export function CandidateApplications() {
   const decoded = getDecodedToken();
   const userId = decoded?.sub ?? 'user_demo';
 
-  const { data: myApps, refetch: refetchApps } = useQuery({
-    queryKey: ['my-applications'],
-    queryFn: () => api.myApplications() as Promise<{ applications: Application[] }>
-  });
-
-  const { data: allJobs } = useQuery({
-    queryKey: ['jobs'],
-    queryFn: () => api.jobs() as Promise<{ jobs: Job[] }>
-  });
+  const { data: myApps, refetch: refetchApps } = useMyApplications();
+  const { data: allJobs } = useJobs();
 
   const applications = myApps?.applications ?? [];
   const jobs = allJobs?.jobs ?? [];

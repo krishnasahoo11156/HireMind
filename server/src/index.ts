@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import path from 'path';
 import router from './routes/index.js';
 import { initSocket } from './socket.js';
+import { connectDB } from './config/db.js';
 
 dotenv.config();
 
@@ -23,12 +24,7 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 });
 
 async function start() {
-  if (process.env.MONGODB_URI) {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB connected');
-  } else {
-    console.log('MongoDB URI not provided; using seeded in-memory demo data');
-  }
+  await connectDB();
 
   const httpServer = createServer(app);
   initSocket(httpServer);

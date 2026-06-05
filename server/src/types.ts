@@ -48,6 +48,10 @@ export interface Job {
   status: JobStatus;
   createdBy: string;
   department?: string;
+  location?: string;
+  salary?: string;
+  company?: string;
+  applicationsCount?: number;
   extractedData: {
     skills: string[];
     experience: string;

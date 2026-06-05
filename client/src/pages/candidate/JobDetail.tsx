@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { BriefcaseBusiness, Calendar, Clock, FileText, Globe, GraduationCap, Link2, MapPin, Send, Upload, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '../../lib/api';
+import { useJob, useApplyJob } from '../../hooks/queries';
 import type { Job } from '../../types';
 import { Badge, Button, Card, PageTitle, SectionTitle, BodyText, Caption } from '../../components/ui';
 
@@ -11,9 +10,8 @@ export function CandidateJobDetail() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({ queryKey: ['job', id], queryFn: () => api.job(id) as Promise<{ job: Job }> });
+  const { data, isLoading } = useJob(id);
   const [isApplyDrawerOpen, setIsApplyDrawerOpen] = useState(false);
 
   // Apply form state
@@ -30,10 +28,8 @@ export function CandidateJobDetail() {
     }
   }, [searchParams]);
 
-  const applyMutation = useMutation({
-    mutationFn: (formData: FormData) => api.applyJob(formData),
+  const applyMutation = useApplyJob({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       navigate('/candidate/applications');
     },
     onError: (err: any) => {

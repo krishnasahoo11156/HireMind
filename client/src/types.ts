@@ -59,6 +59,10 @@ export interface Job {
   status: 'draft' | 'active' | 'closed' | 'archived';
   createdBy: string;
   department?: string;
+  location?: string;
+  salary?: string;
+  company?: string;
+  applicationsCount?: number;
   extractedData: {
     skills: string[];
     experience: string;

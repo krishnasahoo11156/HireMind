@@ -1,8 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, BriefcaseBusiness, Sparkles, User, FileText, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { api } from '../../lib/api';
+import { useJobs, useMyApplications } from '../../hooks/queries';
 import type { Job, Application } from '../../types';
 import { Badge, Button, Card, SectionHeader, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../../components/ui';
 
@@ -14,8 +13,8 @@ function getGreeting() {
 }
 
 export function CandidateDashboard() {
-  const jobsQuery = useQuery({ queryKey: ['jobs'], queryFn: () => api.jobs() as Promise<{ jobs: Job[] }> });
-  const myAppsQuery = useQuery({ queryKey: ['my-applications'], queryFn: () => api.myApplications() as Promise<{ applications: Application[] }> });
+  const jobsQuery = useJobs();
+  const myAppsQuery = useMyApplications();
 
   const activeJobs = jobsQuery.data?.jobs ?? [];
   const applications = myAppsQuery.data?.applications ?? [];

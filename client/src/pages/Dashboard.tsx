@@ -3,6 +3,7 @@ import { ArrowRight, BarChart3, BriefcaseBusiness, Clock, FilePlus2, Gauge, Spar
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
+import { useJobs } from '../hooks/queries';
 import type { Candidate, DashboardAnalytics, Job } from '../types';
 import {
   Badge,
@@ -120,7 +121,7 @@ function PriorityCandidateCard({ candidate, rank }: { candidate: Candidate; rank
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 export function Dashboard() {
   const analytics = useQuery({ queryKey: ['analytics'], queryFn: () => api.analytics() as Promise<DashboardAnalytics> });
-  const jobs = useQuery({ queryKey: ['jobs'], queryFn: () => api.jobs() as Promise<{ jobs: Job[] }> });
+  const jobs = useJobs();
   const firstJobId = jobs.data?.jobs[0]?._id;
   const candidates = useQuery({
     queryKey: ['candidates', firstJobId],

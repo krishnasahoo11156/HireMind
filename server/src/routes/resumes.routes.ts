@@ -1,24 +1,20 @@
 import express from 'express';
 import path from 'path';
-import { resumes } from '../data.js';
+import { ResumeModel } from '../models/schemas.js';
 import { auth } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { extractResumeData, minimalFallback } from '../services/ai.service.js';
 import { extractText } from '../services/documentParser.js';
 import { getSocketServer } from '../socket.js';
-import type { Resume } from '../types.js';
 
 export const resumesRouter = express.Router();
 
-// ---------------------------------------------------------------------------
-// Helper: parse one uploaded file and return a Resume record
-// ---------------------------------------------------------------------------
-async function buildResume(file: Express.Multer.File, index = 0): Promise<Resume> {
+// Helper: parse one uploaded file and return a Resume record object (uncommitted)
+async function buildResume(file: Express.Multer.File): Promise<any> {
   const fileName = file.originalname;
   const publicBase = process.env.PUBLIC_FILE_BASE_URL ?? 'http://localhost:5001/uploads';
   const fileUrl = `${publicBase}/${path.basename(file.filename ?? fileName)}`;
   const fileType: 'pdf' | 'docx' = fileName.toLowerCase().endsWith('.docx') ? 'docx' : 'pdf';
-  const resumeId = `resume_${Date.now()}_${index}`;
 
   // 1. Extract raw text from the uploaded file
   let rawText = '';
@@ -33,13 +29,12 @@ async function buildResume(file: Express.Multer.File, index = 0): Promise<Resume
     try {
       const parsedData = await extractResumeData(rawText);
       return {
-        _id: resumeId,
         fileName,
         fileUrl,
         fileType,
         parsedData,
         parseStatus: 'parsed',
-        uploadedAt: new Date().toISOString()
+        rawText
       };
     } catch (aiErr) {
       console.warn(`[resumes] AI extraction failed for "${fileName}":`, aiErr);
@@ -48,41 +43,39 @@ async function buildResume(file: Express.Multer.File, index = 0): Promise<Resume
 
   // 3. Fallback — store raw text and mark for manual review
   return {
-    _id: resumeId,
     fileName,
     fileUrl,
     fileType,
     parsedData: minimalFallback(fileName),
     parseStatus: 'manual_review',
-    rawText: rawText || undefined,
-    uploadedAt: new Date().toISOString()
+    rawText: rawText || undefined
   };
 }
 
-// ---------------------------------------------------------------------------
 // POST /upload — single resume
-// ---------------------------------------------------------------------------
 resumesRouter.post('/upload', auth, upload.single('file'), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded' });
     return;
   }
 
-  // Skip duplicates already in the in-memory store
-  const existing = resumes.find((r) => r.fileName === req.file!.originalname);
-  if (existing) {
-    res.status(200).json({ resume: existing, status: existing.parseStatus ?? 'parsed' });
-    return;
-  }
+  try {
+    // Skip duplicates already in the DB
+    const existing = await ResumeModel.findOne({ fileName: req.file.originalname });
+    if (existing) {
+      res.status(200).json({ resume: existing, status: existing.parseStatus ?? 'parsed' });
+      return;
+    }
 
-  const resume = await buildResume(req.file);
-  resumes.unshift(resume);
-  res.status(201).json({ resume, status: resume.parseStatus });
+    const resumeObj = await buildResume(req.file);
+    const resume = await ResumeModel.create(resumeObj);
+    res.status(201).json({ resume, status: resume.parseStatus });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// ---------------------------------------------------------------------------
 // POST /batch-upload — up to 20 resumes
-// ---------------------------------------------------------------------------
 resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req, res) => {
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
   const jobId = (req.query.jobId as string | undefined) ?? req.body?.jobId ?? 'unknown';
@@ -91,123 +84,126 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req,
   function emitUploadStarted(payload: { jobId: string; total: number }) {
     try { getSocketServer().to(`job:${jobId}`).emit('resume_upload_started', payload); } catch { /* no-op */ }
   }
-  function emitResumeParsed(payload: Parameters<import('../socket.js').ServerToClientEvents['resume_parsed']>[0]) {
+  function emitResumeParsed(payload: any) {
     try { getSocketServer().to(`job:${jobId}`).emit('resume_parsed', payload); } catch { /* no-op */ }
   }
 
-  // If no files were sent, fall back to demo seed names (original behaviour)
-  if (files.length === 0) {
-    const demoNames = [
-      'sarah-chen-resume.pdf',
-      'alex-rodriguez-resume.pdf',
-      'rahul-patel-resume.pdf',
-      'emma-wilson-resume.pdf',
-      'jordan-smith-resume.pdf'
-    ];
+  try {
+    // If no files were sent, fall back to demo seed names (original behaviour)
+    if (files.length === 0) {
+      const demoNames = [
+        'sarah-chen-resume.pdf',
+        'alex-rodriguez-resume.pdf',
+        'rahul-patel-resume.pdf',
+        'emma-wilson-resume.pdf',
+        'jordan-smith-resume.pdf'
+      ];
 
-    emitUploadStarted({ jobId, total: demoNames.length });
+      emitUploadStarted({ jobId, total: demoNames.length });
 
-    const created: Resume[] = [];
-    for (let i = 0; i < demoNames.length; i++) {
-      const name = demoNames[i];
-      const hit = resumes.find((r) => r.fileName === name);
-      let r: Resume;
-      if (hit) {
-        r = hit;
-      } else {
-        r = {
-          _id: `resume_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          fileName: name,
-          fileUrl: `/uploads/${name}`,
-          fileType: 'pdf',
-          parsedData: minimalFallback(name),
-          parseStatus: 'manual_review',
-          uploadedAt: new Date().toISOString()
-        };
-        resumes.push(r);
+      const created: any[] = [];
+      for (let i = 0; i < demoNames.length; i++) {
+        const name = demoNames[i];
+        const hit = await ResumeModel.findOne({ fileName: name });
+        let r;
+        if (hit) {
+          r = hit;
+        } else {
+          r = await ResumeModel.create({
+            fileName: name,
+            fileUrl: `/uploads/${name}`,
+            fileType: 'pdf',
+            parsedData: minimalFallback(name),
+            parseStatus: 'manual_review'
+          });
+        }
+        created.push(r);
+
+        // Stagger demo emit slightly so UI shows progressive updates
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        emitResumeParsed({
+          jobId,
+          resumeId: r._id.toString(),
+          fileName: r.fileName,
+          candidateName: r.parsedData?.name ?? 'Unknown',
+          status: r.parseStatus ?? 'manual_review',
+          index: i,
+          total: demoNames.length
+        });
       }
-      created.push(r);
 
-      // Stagger demo emit slightly so UI shows progressive updates
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      res.status(201).json({
+        resumes: created,
+        progress: created.map((r) => ({ resumeId: r._id.toString(), status: r.parseStatus, progress: 100 }))
+      });
+      return;
+    }
+
+    // Real files: emit start, then parse sequentially to emit per-file events
+    emitUploadStarted({ jobId, total: files.length });
+
+    const created: any[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const existing = await ResumeModel.findOne({ fileName: file.originalname });
+      let resume;
+      if (existing) {
+        resume = existing;
+      } else {
+        try {
+          const resumeObj = await buildResume(file);
+          resume = await ResumeModel.create(resumeObj);
+        } catch {
+          continue;
+        }
+      }
+      created.push(resume);
+
       emitResumeParsed({
         jobId,
-        resumeId: r._id,
-        fileName: r.fileName,
-        candidateName: r.parsedData.name,
-        status: r.parseStatus ?? 'manual_review',
+        resumeId: resume._id.toString(),
+        fileName: resume.fileName,
+        candidateName: resume.parsedData?.name ?? 'Unknown',
+        status: resume.parseStatus ?? 'parsed',
         index: i,
-        total: demoNames.length
+        total: files.length
       });
     }
 
     res.status(201).json({
       resumes: created,
-      progress: created.map((r) => ({ resumeId: r._id, status: r.parseStatus, progress: 100 }))
+      progress: created.map((r) => ({ resumeId: r._id.toString(), status: r.parseStatus, progress: 100 }))
     });
-    return;
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
-
-  // Real files: emit start, then parse sequentially to emit per-file events
-  emitUploadStarted({ jobId, total: files.length });
-
-  const created: Resume[] = [];
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const existing = resumes.find((r) => r.fileName === file.originalname);
-    let resume: Resume;
-    if (existing) {
-      resume = existing;
-    } else {
-      try {
-        resume = await buildResume(file, i);
-      } catch {
-        continue;
-      }
-      if (!resumes.find((r) => r._id === resume._id)) {
-        resumes.push(resume);
-      }
-    }
-    created.push(resume);
-
-    emitResumeParsed({
-      jobId,
-      resumeId: resume._id,
-      fileName: resume.fileName,
-      candidateName: resume.parsedData.name,
-      status: resume.parseStatus ?? 'parsed',
-      index: i,
-      total: files.length
-    });
-  }
-
-  res.status(201).json({
-    resumes: created,
-    progress: created.map((r) => ({ resumeId: r._id, status: r.parseStatus, progress: 100 }))
-  });
 });
 
-// ---------------------------------------------------------------------------
 // GET /:id
-// ---------------------------------------------------------------------------
-resumesRouter.get('/:id', auth, (req, res) => {
-  const resume = resumes.find((item) => item._id === req.params.id);
-  if (!resume) {
-    res.status(404).json({ error: 'Resume not found' });
-    return;
+resumesRouter.get('/:id', auth, async (req, res) => {
+  try {
+    const resume = await ResumeModel.findById(req.params.id);
+    if (!resume) {
+      res.status(404).json({ error: 'Resume not found' });
+      return;
+    }
+    res.json({ resume });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
-  res.json({ resume });
 });
 
-// ---------------------------------------------------------------------------
 // DELETE /:id
-// ---------------------------------------------------------------------------
-resumesRouter.delete('/:id', auth, (req, res) => {
-  const index = resumes.findIndex((item) => item._id === req.params.id);
-  if (index === -1) {
-    res.status(404).json({ error: 'Resume not found' });
-    return;
+resumesRouter.delete('/:id', auth, async (req, res) => {
+  try {
+    const resume = await ResumeModel.findById(req.params.id);
+    if (!resume) {
+      res.status(404).json({ error: 'Resume not found' });
+      return;
+    }
+    await ResumeModel.findByIdAndDelete(req.params.id);
+    res.json({ resume });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
-  const [resume] = resumes.splice(index, 1);
-  res.json({ resume });
 });

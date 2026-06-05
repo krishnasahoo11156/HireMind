@@ -19,6 +19,10 @@ const jobSchema = new Schema(
     status: { type: String, enum: ['draft', 'active', 'closed', 'archived'], default: 'draft' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     department: String,
+    location: String,
+    salary: String,
+    company: String,
+    applicationsCount: { type: Number, default: 0 },
     extractedData: {
       skills: [String],
       experience: String,

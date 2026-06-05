@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Search, BriefcaseBusiness } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { api } from '../../lib/api';
+import { useJobs } from '../../hooks/queries';
 import type { Job } from '../../types';
 import { Badge, Button, Card, EmptyState, PageTitle, SectionTitle, BodyText } from '../../components/ui';
 
 export function CandidateJobs() {
-  const { data, isLoading } = useQuery({ queryKey: ['jobs'], queryFn: () => api.jobs() as Promise<{ jobs: Job[] }> });
+  const { data, isLoading } = useJobs();
   const [query, setQuery] = useState('');
 
   const activeJobs = data?.jobs ?? [];

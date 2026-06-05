@@ -13,7 +13,7 @@ import { applicationsRouter } from './applications.routes.js';
 const router = express.Router();
 
 router.get('/health', (_req, res) => {
-  res.json({ ok: true, mode: process.env.MONGODB_URI ? 'mongo-ready' : 'mock-memory' });
+  res.json({ ok: true, mode: 'mongo-ready' });
 });
 
 router.post('/seed/reset', (_req, res) => {
