@@ -61,7 +61,7 @@ authRouter.post('/register', async (req, res) => {
 // Accepts a Firebase ID token (obtained by client-side signInWithEmailAndPassword),
 // verifies it, and returns the enriched user profile.
 authRouter.post('/login', async (req, res) => {
-  const { idToken, role, name } = req.body;
+  const { idToken, role, name, password } = req.body;
 
   if (!idToken) {
     res.status(400).json({ error: 'Firebase ID token is required.' });
@@ -88,8 +88,14 @@ authRouter.post('/login', async (req, res) => {
       return;
     }
 
+    // Verify password if user exists
+    if (user && user.password && password && user.password !== password) {
+      res.status(401).json({ error: 'Incorrect password for this Google account.' });
+      return;
+    }
+
     // Create or update Firestore profile if missing or setup requested
-    if (!user || role || name) {
+    if (!user || role || name || (password && !user.password)) {
       const firebaseUser = await adminAuth.getUser(uid);
       const targetRole = role ?? (decoded as any).role ?? 'recruiter';
       const targetName = name ?? firebaseUser.displayName ?? firebaseUser.email ?? 'User';
@@ -103,13 +109,18 @@ authRouter.post('/login', async (req, res) => {
           uid,
           name: targetName,
           email: firebaseUser.email ?? '',
-          role: targetRole
+          role: targetRole,
+          password: password
         });
       } else {
-        await userService.update(uid, {
+        const updatePayload: any = {
           name: targetName,
           role: targetRole
-        });
+        };
+        if (password) {
+          updatePayload.password = password;
+        }
+        await userService.update(uid, updatePayload);
       }
       user = await userService.findById(uid);
     }

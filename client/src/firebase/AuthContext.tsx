@@ -31,7 +31,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<AppUser>;
   register: (payload: { name: string; email: string; password: string; role: string }) => Promise<AppUser>;
-  loginWithGoogle: (role?: 'candidate' | 'recruiter', name?: string) => Promise<AppUser>;
+  loginWithGoogle: (role?: 'candidate' | 'recruiter', name?: string, password?: string) => Promise<AppUser>;
   updateProfile: (payload: { name?: string; githubUrl?: string; linkedinUrl?: string; portfolioUrl?: string; leetcodeUsername?: string }) => Promise<AppUser>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<string | null>;
@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(USER_KEY);
   };
 
-  const loginWithGoogle = async (role?: 'candidate' | 'recruiter', name?: string): Promise<AppUser> => {
+  const loginWithGoogle = async (role?: 'candidate' | 'recruiter', name?: string, password?: string): Promise<AppUser> => {
     const provider = new GoogleAuthProvider();
     const cred = await signInWithPopup(auth, provider);
     let idToken = await cred.user.getIdToken(true);
@@ -187,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const resp = await fetch(`${apiBase}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken, role, name })
+      body: JSON.stringify({ idToken, role, name, password })
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ error: 'Google authentication failed' }));

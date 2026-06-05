@@ -7,6 +7,7 @@ export interface FirestoreUser {
   name: string;
   email: string;
   role: string;
+  password?: string;
   avatar?: string;
   githubUrl?: string;
   linkedinUrl?: string;
