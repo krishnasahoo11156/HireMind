@@ -1,4 +1,4 @@
-export type Role = 'recruiter' | 'hiring_manager' | 'admin';
+export type Role = 'recruiter' | 'candidate';
 export type JobStatus = 'draft' | 'active' | 'closed' | 'archived';
 export type Recommendation = 'Strong Hire' | 'Hire' | 'Maybe' | 'Reject';
 export type RecruiterDecision = 'pending' | 'override_select' | 'override_reject' | 'agree';
@@ -13,6 +13,31 @@ export interface User {
   avatar?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Application {
+  _id: string;
+  candidateId: string;
+  jobId: string;
+  recruiterId?: string;
+  status:
+    | 'Applied'
+    | 'Resume Parsed'
+    | 'AI Analysis'
+    | 'Under Review'
+    | 'Shortlisted'
+    | 'Interview'
+    | 'Selected'
+    | 'Rejected';
+  appliedAt: string;
+  updatedAt: string;
+  aiScore?: number;
+  recommendation?: string;
+  resumeUrl?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  leetcodeUsername?: string;
 }
 
 export interface Job {

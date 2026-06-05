@@ -19,12 +19,22 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { api } from '../lib/api';
+import { getDecodedToken } from '../lib/auth';
 
-const nav = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/jobs', label: 'Jobs', icon: BriefcaseBusiness },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/settings', label: 'Settings', icon: Settings },
+const recruiterNav = [
+  { to: '/recruiter/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/recruiter/jobs', label: 'Jobs', icon: BriefcaseBusiness },
+  { to: '/recruiter/candidates', label: 'Candidates', icon: Users },
+  { to: '/recruiter/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/recruiter/settings', label: 'Settings', icon: Settings },
+];
+
+const candidateNav = [
+  { to: '/candidate/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/candidate/jobs', label: 'Find Jobs', icon: BriefcaseBusiness },
+  { to: '/candidate/applications', label: 'Applications', icon: Bell },
+  { to: '/candidate/profile', label: 'My Profile', icon: Users },
+  { to: '/candidate/settings', label: 'Settings', icon: Settings },
 ];
 
 export function Layout() {
@@ -34,6 +44,14 @@ export function Layout() {
   const toggleSidebar = useAppStore((state) => state.toggleSidebar);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const decoded = getDecodedToken();
+  const role = decoded?.role ?? 'recruiter';
+  
+  const name = role === 'candidate' ? 'Sarah Chen' : 'Maya Kapoor';
+  const title = role === 'candidate' ? 'Software Engineer' : 'Senior Recruiter';
+  const initials = role === 'candidate' ? 'SC' : 'MK';
+  const nav = role === 'candidate' ? candidateNav : recruiterNav;
 
   return (
     <div className="min-h-screen bg-background text-primary dark:bg-darkbg dark:text-darktext">
@@ -95,7 +113,7 @@ export function Layout() {
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
               <Users className="h-3.5 w-3.5" />
             </div>
-            {!sidebarCollapsed && <span className="text-xs font-semibold text-primary dark:text-darktext">Acme Recruiting</span>}
+            {!sidebarCollapsed && <span className="text-xs font-semibold text-primary dark:text-darktext">{role === 'recruiter' ? 'Acme Recruiting' : 'Candidate Portal'}</span>}
           </div>
           {!sidebarCollapsed && <ChevronDown className="h-3.5 w-3.5 text-secondary dark:text-darkmuted" />}
         </div>
@@ -141,30 +159,32 @@ export function Layout() {
 
         {/* Bottom section */}
         <div className={`flex-shrink-0 border-t border-border ${sidebarCollapsed ? 'p-2' : 'p-4'} dark:border-darkborder transition-all duration-300`}>
-          {/* Quick Upload CTA */}
-          <button
-            aria-label="Upload resumes"
-            onClick={() => navigate('/jobs')}
-            title="Upload Resumes"
-            className={`hm-button mb-3 w-full justify-center bg-accent/10 text-accent hover:bg-accent/20 dark:bg-darkaccent/10 dark:text-darkaccent dark:hover:bg-darkaccent/20 ${sidebarCollapsed ? 'px-0' : ''}`}
-          >
-            <Upload className="h-4 w-4" />
-            {!sidebarCollapsed && 'Upload Resumes'}
-          </button>
+          {/* Quick Upload CTA - Only for Recruiter */}
+          {role === 'recruiter' && (
+            <button
+              aria-label="Upload resumes"
+              onClick={() => navigate('/recruiter/jobs')}
+              title="Upload Resumes"
+              className={`hm-button mb-3 w-full justify-center bg-accent/10 text-accent hover:bg-accent/20 dark:bg-darkaccent/10 dark:text-darkaccent dark:hover:bg-darkaccent/20 ${sidebarCollapsed ? 'px-0' : ''}`}
+            >
+              <Upload className="h-4 w-4" />
+              {!sidebarCollapsed && 'Upload Resumes'}
+            </button>
+          )}
 
-          {/* Recruiter profile card */}
+          {/* Profile card */}
           <div className={`flex items-center ${sidebarCollapsed ? 'justify-center p-2' : 'gap-3 p-3'} rounded-xl border border-border bg-background dark:border-darkborder dark:bg-darkbg transition-all duration-300`}>
             <div
-              title={sidebarCollapsed ? "Maya Kapoor (Senior Recruiter)" : undefined}
+              title={sidebarCollapsed ? `${name} (${title})` : undefined}
               className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gradient-to-br from-accent to-yellow-600 text-sm font-bold text-white shadow-sm cursor-pointer"
             >
-              MK
+              {initials}
             </div>
             {!sidebarCollapsed && (
               <>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-primary dark:text-darktext">Maya Kapoor</div>
-                  <div className="truncate text-xs text-secondary dark:text-darkmuted">Senior Recruiter</div>
+                  <div className="truncate text-sm font-semibold text-primary dark:text-darktext">{name}</div>
+                  <div className="truncate text-xs text-secondary dark:text-darkmuted">{title}</div>
                 </div>
                 <button
                   aria-label="Log out"
@@ -183,7 +203,7 @@ export function Layout() {
       </aside>
 
       {/* ── NAVBAR ── */}
-      <header className={`sticky top-0 z-20 ${sidebarCollapsed ? 'ml-[80px]' : 'ml-[280px]'} flex h-[68px] items-center justify-between border-b border-border bg-surface/90 px-8 backdrop-blur-md dark:border-darkborder dark:bg-darksurface/90 transition-all duration-300 ease-out`}>
+      <header className={`sticky top-0 z-20 ${sidebarCollapsed ? 'ml-[80px]' : 'ml-[280px]'} flex h-[68px] items-center justify-between border-b border-border bg-surface/90 px-8 backdrop-blur-md dark:border-darkborder dark:bg-darkbg/90 transition-all duration-300 ease-out`}>
         <div className="flex items-center gap-4 flex-1">
           <button
             onClick={toggleSidebar}
@@ -197,7 +217,7 @@ export function Layout() {
             <input
               aria-label="Search"
               className="hm-input w-full pl-9"
-              placeholder="Search jobs, candidates…"
+              placeholder={role === 'candidate' ? 'Search jobs…' : 'Search jobs, candidates…'}
             />
           </div>
         </div>
@@ -217,7 +237,7 @@ export function Layout() {
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <div className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-accent to-yellow-600 text-sm font-bold text-white shadow-sm">
-            MK
+            {initials}
           </div>
         </div>
       </header>
