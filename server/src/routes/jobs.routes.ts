@@ -5,6 +5,7 @@ import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { extractJobData } from '../services/extraction.js';
 import { analyzeJobDescription } from '../services/ai.service.js';
+import { userService } from '../firebase/services/userService.js';
 
 export const jobsRouter = express.Router();
 
@@ -92,13 +93,26 @@ jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), async (req, res) 
 });
 
 // GET / — List all jobs with applicant counts
-jobsRouter.get('/', auth, async (_req, res) => {
+jobsRouter.get('/', auth, async (req: AuthedRequest, res) => {
   try {
     const list = await jobService.findAll();
+    
+    // Filter list: Candidate / Admin see all jobs; Recruiter only sees their own
+    const filteredList = req.userRole === 'candidate' || req.userRole === 'admin'
+      ? list
+      : list.filter(job => job.createdBy === req.userId);
+
     const jobsWithCount = await Promise.all(
-      list.map(async (job) => {
+      filteredList.map(async (job) => {
         const applications = await applicationService.findAll({ jobId: job.id });
-        return { ...job, candidateCount: applications.length };
+        
+        let creatorName = 'Recruiter';
+        if (job.createdBy) {
+          const creator = await userService.findById(job.createdBy);
+          if (creator) creatorName = creator.name;
+        }
+
+        return { ...job, candidateCount: applications.length, creatorName };
       })
     );
     res.json({ jobs: jobsWithCount });
@@ -108,14 +122,26 @@ jobsRouter.get('/', auth, async (_req, res) => {
 });
 
 // GET /:id — Get a single job
-jobsRouter.get('/:id', auth, async (req, res) => {
+jobsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
   try {
     const job = await jobService.findById(req.params.id);
     if (!job) {
       res.status(404).json({ error: 'Job not found' });
       return;
     }
-    res.json({ job, resumes: [], candidates: [] });
+
+    if (req.userRole !== 'candidate' && req.userRole !== 'admin' && job.createdBy && job.createdBy !== req.userId) {
+      res.status(403).json({ error: 'Access denied: job owner only' });
+      return;
+    }
+
+    let creatorName = 'Recruiter';
+    if (job.createdBy) {
+      const creator = await userService.findById(job.createdBy);
+      if (creator) creatorName = creator.name;
+    }
+
+    res.json({ job: { ...job, creatorName }, resumes: [], candidates: [] });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

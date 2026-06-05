@@ -277,6 +277,13 @@ export function CandidateProfile() {
             {!blindMode && (
               <Caption className="mt-0.5 block">{candidate.email}</Caption>
             )}
+            {!blindMode && candidate.username && (
+              <div className="mt-1.5 flex justify-center">
+                <span className="text-[10px] bg-accent/10 text-accent font-semibold px-2 py-0.5 rounded-full inline-block">
+                  @{candidate.username}
+                </span>
+              </div>
+            )}
             <div className="mt-3 flex justify-center gap-2">
               <RecommendationBadge recommendation={candidate.recommendation} />
             </div>

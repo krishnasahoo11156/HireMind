@@ -62,6 +62,7 @@ export interface Job {
   location?: string;
   salary?: string;
   company?: string;
+  creatorName?: string;
   applicationsCount?: number;
   extractedData: {
     skills: string[];
@@ -109,6 +110,7 @@ export interface Candidate {
   jobId: string;
   name: string;
   email: string;
+  username?: string;
   blindId: string;
   isBlindMode: boolean;
   aiScore: number;

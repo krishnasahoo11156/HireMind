@@ -88,6 +88,11 @@ function PriorityCandidateCard({ candidate, rank }: { candidate: Candidate; rank
         <div>
           <CardTitle>{candidate.name}</CardTitle>
           <Caption className="mt-0.5 block">{candidate.email}</Caption>
+          {candidate.username && (
+            <span className="text-[10px] bg-accent/10 text-accent font-semibold px-2 py-0.5 rounded-full mt-1.5 inline-block">
+              @{candidate.username}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <div className="flex-1">

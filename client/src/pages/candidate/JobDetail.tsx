@@ -116,6 +116,10 @@ export function CandidateJobDetail() {
                 <span>Job Status: <Badge tone="emerald">{job.status}</Badge></span>
               </div>
               <div className="flex items-center gap-3 text-sm text-secondary dark:text-darkmuted">
+                <User className="h-4 w-4 text-accent dark:text-darkaccent" />
+                <span>Posted by: <span className="font-semibold text-primary dark:text-darktext">{job.creatorName || 'Recruiter'}</span></span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-secondary dark:text-darkmuted">
                 <Clock className="h-4 w-4 text-accent dark:text-darkaccent" />
                 <span>Exp Required: {experience}</span>
               </div>

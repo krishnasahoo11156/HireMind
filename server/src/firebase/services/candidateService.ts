@@ -7,6 +7,7 @@ export interface FirestoreCandidate {
   jobId: string;
   name?: string;
   email?: string;
+  username?: string;
   blindId?: string;
   isBlindMode?: boolean;
   aiScore?: number;

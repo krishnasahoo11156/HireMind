@@ -51,6 +51,11 @@ function CandidateCard({
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-semibold text-primary dark:text-darktext">
                     {blindMode ? candidate.blindId : candidate.name}
+                    {!blindMode && candidate.username && (
+                      <span className="text-xs font-normal text-secondary dark:text-darkmuted ml-2">
+                        (@{candidate.username})
+                      </span>
+                    )}
                   </h3>
                   {isTop3 && <Star className="h-3.5 w-3.5 fill-accent text-accent dark:fill-darkaccent dark:text-darkaccent" />}
                 </div>

@@ -106,17 +106,34 @@ candidatesRouter.post('/analyze', auth, async (req, res) => {
   }
 });
 
-candidatesRouter.get('/', auth, async (_req, res) => {
+candidatesRouter.get('/', auth, async (req: AuthedRequest, res) => {
   try {
     const list = await candidateService.findAll();
-    res.json({ candidates: list });
+    let filteredList = list;
+    if (req.userRole !== 'candidate' && req.userRole !== 'admin') {
+      const recruiterJobs = await jobService.findAll();
+      const recruiterJobIds = recruiterJobs
+        .filter(j => j.createdBy === req.userId)
+        .map(j => j.id);
+      filteredList = list.filter(c => recruiterJobIds.includes(c.jobId));
+    }
+    res.json({ candidates: filteredList });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-candidatesRouter.get('/job/:jobId', auth, async (req, res) => {
+candidatesRouter.get('/job/:jobId', auth, async (req: AuthedRequest, res) => {
   try {
+    const job = await jobService.findById(req.params.jobId);
+    if (!job) {
+      res.status(404).json({ error: 'Job not found' });
+      return;
+    }
+    if (req.userRole !== 'candidate' && req.userRole !== 'admin' && job.createdBy && job.createdBy !== req.userId) {
+      res.status(403).json({ error: 'Access denied: recruiter owner only' });
+      return;
+    }
     const list = await candidateService.findAll({ jobId: req.params.jobId });
     res.json({ candidates: list });
   } catch (error: any) {
@@ -124,7 +141,7 @@ candidatesRouter.get('/job/:jobId', auth, async (req, res) => {
   }
 });
 
-candidatesRouter.get('/:id', auth, async (req, res) => {
+candidatesRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
   try {
     const candidate = await candidateService.findById(req.params.id);
     if (!candidate) {
@@ -136,6 +153,12 @@ candidatesRouter.get('/:id', auth, async (req, res) => {
       jobService.findById(candidate.jobId),
       feedbackService.findAll({ candidateId: candidate.id })
     ]);
+
+    if (req.userRole !== 'candidate' && req.userRole !== 'admin' && job && job.createdBy !== req.userId) {
+      res.status(403).json({ error: 'Access denied: recruiter owner only' });
+      return;
+    }
+
     res.json({ candidate, resume, job, feedback: history });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -157,6 +180,12 @@ candidatesRouter.post('/:id/feedback', auth, async (req: AuthedRequest, res) => 
     const candidate = await candidateService.findById(req.params.id);
     if (!candidate) {
       res.status(404).json({ error: 'Candidate not found' });
+      return;
+    }
+
+    const job = await jobService.findById(candidate.jobId);
+    if (req.userRole !== 'candidate' && req.userRole !== 'admin' && job && job.createdBy !== req.userId) {
+      res.status(403).json({ error: 'Access denied: recruiter owner only' });
       return;
     }
 

@@ -79,9 +79,14 @@ export function CandidateJobs() {
               </div>
 
               <div className="mt-6 flex justify-between items-center border-t border-border pt-4 dark:border-darkborder">
-                <span className="text-xs text-secondary dark:text-darkmuted">
-                  Experience: {job.extractedData?.experience || '3-5 years'}
-                </span>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs text-secondary dark:text-darkmuted">
+                    Experience: {job.extractedData?.experience || '3-5 years'}
+                  </span>
+                  <span className="text-[10px] text-secondary/80 dark:text-darkmuted/80 mt-0.5">
+                    Posted by: <span className="font-semibold text-primary dark:text-darktext">{job.creatorName || 'Recruiter'}</span>
+                  </span>
+                </div>
                 <div className="flex gap-2">
                   <Link to={`/candidate/jobs/${job._id}`}>
                     <Button variant="secondary" size="sm">Details</Button>

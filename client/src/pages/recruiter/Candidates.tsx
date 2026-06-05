@@ -89,6 +89,11 @@ export function CandidatesDirectory() {
                       {blindMode ? candidate.blindId : candidate.name}
                     </h3>
                     {candidate.aiScore >= 85 && <Star className="h-3.5 w-3.5 fill-accent text-accent dark:fill-darkaccent dark:text-darkaccent" />}
+                    {!blindMode && candidate.username && (
+                      <span className="text-xs font-normal text-secondary dark:text-darkmuted ml-1">
+                        (@{candidate.username})
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-secondary dark:text-darkmuted mt-0.5">
                     {blindMode ? 'PII Hidden' : candidate.email}

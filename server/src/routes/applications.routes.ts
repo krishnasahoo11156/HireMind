@@ -209,6 +209,7 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           jobId,
           name: user.name,
           email: user.email,
+          username: user.leetcodeUsername || (user.githubUrl ? user.githubUrl.split('/').pop() : '') || user.email.split('@')[0],
           blindId: `Candidate-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
           isBlindMode: false,
           aiScore,
@@ -266,13 +267,27 @@ applicationsRouter.get('/my', auth, async (req: AuthedRequest, res) => {
 });
 
 // GET /api/applications/:id — Single application detail
-applicationsRouter.get('/:id', auth, async (req, res) => {
+applicationsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
   try {
     const app = await applicationService.findById(req.params.id);
     if (!app) {
       res.status(404).json({ error: 'Application not found' });
       return;
     }
+
+    if (req.userRole === 'candidate' && app.candidateId !== req.userId) {
+      res.status(403).json({ error: 'Access denied: not your application' });
+      return;
+    }
+
+    if (req.userRole === 'recruiter') {
+      const job = await jobService.findById(app.jobId);
+      if (job && job.createdBy !== req.userId) {
+        res.status(403).json({ error: 'Access denied: job owner only' });
+        return;
+      }
+    }
+
     const job = await jobService.findById(app.jobId);
     res.json({ application: app, job });
   } catch (error: any) {
@@ -287,6 +302,14 @@ applicationsRouter.patch('/:id/status', auth, async (req: AuthedRequest, res) =>
     if (!app) {
       res.status(404).json({ error: 'Application not found' });
       return;
+    }
+
+    if (req.userRole !== 'admin') {
+      const job = await jobService.findById(app.jobId);
+      if (!job || job.createdBy !== req.userId) {
+        res.status(403).json({ error: 'Access denied: job owner only' });
+        return;
+      }
     }
 
     const body = z.object({
