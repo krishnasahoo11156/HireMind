@@ -111,6 +111,12 @@ function AuthFrame({
         transition={{ duration: 0.4 }}
         className="relative w-full max-w-md"
       >
+        <Link
+          to="/"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-secondary hover:text-primary dark:text-darkmuted dark:hover:text-darktext transition-colors"
+        >
+          &larr; Back to home
+        </Link>
         <Card className="p-8">
           {/* Logo */}
           <div className="mb-8 text-center">
