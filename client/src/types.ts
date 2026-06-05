@@ -2,6 +2,22 @@ export type Recommendation = 'Strong Hire' | 'Hire' | 'Maybe' | 'Reject';
 export type CandidateHas = 'match' | 'partial' | 'missing';
 export type RecruiterDecision = 'pending' | 'override_select' | 'override_reject' | 'agree';
 
+export interface GitHubProfile {
+  username: string;
+  publicRepos: number;
+  totalCommits: number;
+  topLanguages: string[];
+  languageBreakdown: Array<{ language: string; value: number }>;
+  stars: number;
+  contributions: number;
+  recentActivity: string;
+  aiSummary: string;
+  repos: Array<{ name: string; stars: number; language: string }>;
+  activitySeries: Array<{ day: string; commits: number }>;
+  isLive: boolean;
+}
+
+
 export interface User {
   _id: string;
   email: string;

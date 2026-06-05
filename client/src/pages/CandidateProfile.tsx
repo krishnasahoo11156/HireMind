@@ -1,14 +1,58 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BrainCircuit, CheckCircle2, Github, Lightbulb, Send, Shield, XCircle, Download, TrendingUp } from 'lucide-react';
+import { BrainCircuit, CheckCircle2, Github, Lightbulb, Send, Shield, XCircle, Download, TrendingUp, RefreshCw, Wifi, WifiOff, Star, GitFork } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, PieChart, Pie, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { useAppStore } from '../store/appStore';
-import type { Candidate, Job, Resume } from '../types';
+import type { Candidate, GitHubProfile, Job, Resume } from '../types';
 import { Badge, Button, Card, PageTitle, RecommendationBadge, ScoreGauge, SkillHeatmap, StatusCell, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 import { BlindToggle } from '../components/BlindToggle';
+
+// Language palette for pie chart slices
+const LANG_COLORS = ['#A16207', '#D97706', '#F59E0B', '#6366F1', '#8B5CF6', '#EC4899', '#14B8A6'];
+
+// ─── GitHub Analysis Sub-components ───────────────────────────────────────────
+function GHLiveTag({ isLive }: { isLive: boolean }) {
+  return (
+    <span
+      title={isLive ? 'Live data from GitHub API' : 'Mock fallback data'}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+        isLive
+          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+      }`}
+    >
+      {isLive ? <Wifi className="h-2.5 w-2.5" /> : <WifiOff className="h-2.5 w-2.5" />}
+      {isLive ? 'Live' : 'Mock'}
+    </span>
+  );
+}
+
+function RepoCard({ name, stars, language }: { name: string; stars: number; language: string }) {
+  return (
+    <a
+      href={`https://github.com/${name}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs transition-colors hover:border-accent/50 hover:bg-accent/5 dark:border-darkborder dark:bg-darkbg dark:hover:border-darkaccent/50"
+    >
+      <span className="truncate font-medium text-primary dark:text-darktext">{name}</span>
+      <div className="ml-2 flex shrink-0 items-center gap-2 text-secondary dark:text-darkmuted">
+        {language && (
+          <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
+            {language}
+          </span>
+        )}
+        <span className="flex items-center gap-0.5">
+          <Star className="h-3 w-3 text-amber-500" />
+          {stars}
+        </span>
+      </div>
+    </a>
+  );
+}
 
 // ─── Metric tile ───────────────────────────────────────────────────────────
 function Metric({ label, value }: { label: string; value: string | number }) {
@@ -29,6 +73,150 @@ function ConfidenceDot({ level }: { level: number }) {
         <span key={i} className={`h-1.5 w-4 rounded-full ${i < (level >= 75 ? 3 : level >= 50 ? 2 : 1) ? color : 'bg-gray-200 dark:bg-darkborder'}`} />
       ))}
     </div>
+  );
+}
+
+// ─── GitHub Analysis Card (proper component so hooks are valid) ────────────
+function GitHubAnalysisCard({
+  fallback,
+  queryClient
+}: {
+  fallback: Candidate['githubAnalysis'];
+  queryClient: ReturnType<typeof useQueryClient>;
+}) {
+  const ghUsername = fallback.username;
+  const ghQuery = useQuery({
+    queryKey: ['github', ghUsername],
+    queryFn: () => api.githubProfile(ghUsername).then((r) => r.profile),
+    enabled: !!ghUsername,
+    staleTime: 10 * 60 * 1000,
+    retry: 1
+  });
+  const ghData: GitHubProfile = ghQuery.data ?? (fallback as unknown as GitHubProfile);
+  const isLive = ghQuery.data?.isLive ?? false;
+
+  return (
+    <Card className="p-6">
+      {/* Header */}
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Github className="h-5 w-5" />
+          <SectionTitle>GitHub Analysis</SectionTitle>
+          <GHLiveTag isLive={isLive} />
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={ghQuery.isFetching}
+          onClick={() => {
+            api.refreshGithubCache(ghUsername).finally(() =>
+              queryClient.invalidateQueries({ queryKey: ['github', ghUsername] })
+            );
+          }}
+        >
+          <RefreshCw className={`h-3 w-3 ${ghQuery.isFetching ? 'animate-spin' : ''}`} />
+          {ghQuery.isFetching ? 'Loading…' : 'Refresh'}
+        </Button>
+      </div>
+
+      {/* Metric tiles */}
+      <div className="mb-5 grid grid-cols-4 gap-3">
+        <Metric label="Repos" value={ghData.publicRepos} />
+        <Metric label="Commits" value={ghData.totalCommits.toLocaleString()} />
+        <Metric label="Stars" value={ghData.stars.toLocaleString()} />
+        <Metric label="30-day" value={ghData.contributions} />
+      </div>
+
+      {/* Language pie chart */}
+      {ghData.languageBreakdown?.length > 0 && (
+        <>
+          <Caption className="mb-2 block font-semibold uppercase tracking-wider">Language Breakdown</Caption>
+          <div className="mb-4 h-44">
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={ghData.languageBreakdown}
+                  dataKey="value"
+                  nameKey="language"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={64}
+                  innerRadius={36}
+                  paddingAngle={3}
+                  label={({ language, value }: { language: string; value: number }) => `${language} ${value}%`}
+                  labelLine={false}
+                >
+                  {ghData.languageBreakdown.map((_entry, idx) => (
+                    <Cell key={idx} fill={LANG_COLORS[idx % LANG_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => `${v}%`} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      )}
+
+      {/* Top Repos */}
+      {ghData.repos?.length > 0 && (
+        <>
+          <Caption className="mb-2 block font-semibold uppercase tracking-wider">Top Repositories</Caption>
+          <div className="mb-4 space-y-1.5">
+            {ghData.repos.slice(0, 4).map((repo) => (
+              <RepoCard key={repo.name} name={repo.name} stars={repo.stars} language={repo.language} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* AI Summary */}
+      <div className="rounded-xl border border-border bg-background p-3.5 dark:border-darkborder dark:bg-darkbg">
+        <Caption className="mb-1 block font-semibold uppercase tracking-wider">AI Summary</Caption>
+        <p className="text-sm leading-relaxed text-secondary dark:text-darkmuted">{ghData.aiSummary}</p>
+      </div>
+    </Card>
+  );
+}
+
+// ─── Commit Activity Card ──────────────────────────────────────────────────
+function CommitActivityCard({ fallback }: { fallback: Candidate['githubAnalysis'] }) {
+  const ghUsername = fallback.username;
+  const ghQuery = useQuery({
+    queryKey: ['github', ghUsername],
+    queryFn: () => api.githubProfile(ghUsername).then((r) => r.profile),
+    enabled: !!ghUsername,
+    staleTime: 10 * 60 * 1000,
+    retry: 1
+  });
+  const activityData = ghQuery.data?.activitySeries ?? fallback.activitySeries;
+  const subtitle = ghQuery.data?.recentActivity ?? fallback.recentActivity;
+
+  return (
+    <Card className="p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <SectionTitle>Commit Activity</SectionTitle>
+        <Caption className="text-secondary dark:text-darkmuted">{subtitle}</Caption>
+      </div>
+      <div className="h-44">
+        <ResponsiveContainer>
+          <BarChart data={activityData}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+            <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+            <YAxis hide />
+            <Tooltip
+              formatter={(v: number) => [`${v} commits`, 'Commits']}
+              contentStyle={{
+                background: 'var(--color-surface, #fff)',
+                border: '1px solid var(--color-border, #e2e8f0)',
+                borderRadius: 8,
+                fontSize: 12
+              }}
+            />
+            <Bar dataKey="commits" fill="#A16207" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </Card>
   );
 }
 
@@ -185,33 +373,7 @@ export function CandidateProfile() {
             <SkillHeatmap skillGap={candidate.skillGap} />
           </Card>
 
-          {/* GitHub Analysis */}
-          <Card className="p-6">
-            <div className="mb-5 flex items-center gap-2">
-              <Github className="h-5 w-5" />
-              <SectionTitle>GitHub Analysis</SectionTitle>
-            </div>
-            <div className="mb-5 grid grid-cols-4 gap-3">
-              <Metric label="Repos" value={candidate.githubAnalysis.publicRepos} />
-              <Metric label="Commits" value={candidate.githubAnalysis.totalCommits} />
-              <Metric label="Stars" value={candidate.githubAnalysis.stars} />
-              <Metric label="Recent" value={candidate.githubAnalysis.contributions} />
-            </div>
-            <div className="h-40">
-              <ResponsiveContainer>
-                <BarChart data={candidate.githubAnalysis.languageBreakdown}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                  <XAxis dataKey="language" tick={{ fontSize: 11 }} />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#A16207" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="mt-4 text-sm leading-relaxed text-secondary dark:text-darkmuted">
-              {candidate.githubAnalysis.aiSummary}
-            </p>
-          </Card>
+          <GitHubAnalysisCard fallback={candidate.githubAnalysis} queryClient={queryClient} />
 
           {/* LeetCode Analysis */}
           <Card className="p-6">
@@ -243,21 +405,7 @@ export function CandidateProfile() {
             </p>
           </Card>
 
-          {/* Recent GitHub Activity */}
-          <Card className="p-6">
-            <SectionTitle className="mb-4">Recent Activity</SectionTitle>
-            <div className="h-40">
-              <ResponsiveContainer>
-                <LineChart data={candidate.githubAnalysis.activitySeries}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Line dataKey="commits" stroke="#A16207" strokeWidth={2.5} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
+          <CommitActivityCard fallback={candidate.githubAnalysis} />
 
           {/* Recruiter Feedback */}
           {decision ? (

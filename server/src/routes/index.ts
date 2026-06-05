@@ -7,6 +7,7 @@ import { rankingsRouter } from './rankings.routes.js';
 import { analyticsRouter } from './analytics.routes.js';
 import { externalRouter } from './external.routes.js';
 import { aiRouter } from './ai.routes.js';
+import { githubRouter } from './github.routes.js';
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ router.use('/candidates', candidatesRouter);
 router.use('/rankings', rankingsRouter);
 router.use('/analytics', analyticsRouter);
 router.use('/ai', aiRouter);
+router.use('/github', githubRouter);
 router.use(externalRouter);
 
 export default router;

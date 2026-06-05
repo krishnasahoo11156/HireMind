@@ -34,5 +34,9 @@ export const api = {
   ranking: (jobId: string) => request(`/api/rankings/${jobId}`),
   generateRanking: (jobId: string) => request(`/api/rankings/generate/${jobId}`, { method: 'POST' }),
   feedback: (id: string, payload: unknown) => request(`/api/candidates/${id}/feedback`, { method: 'POST', body: JSON.stringify(payload) }),
-  analytics: () => request('/api/analytics/dashboard')
+  analytics: () => request('/api/analytics/dashboard'),
+  githubProfile: (username: string) =>
+    request<{ profile: import('../types').GitHubProfile }>(`/api/github/${username}`),
+  refreshGithubCache: (username: string) =>
+    request(`/api/github/${username}/cache`, { method: 'DELETE' })
 };

@@ -1,3 +1,11 @@
+/**
+ * external.ts (legacy shim)
+ * The old `getGithubProfile` / `getLeetCodeProfile` synchronous functions used by
+ * candidates.routes.ts are preserved here for backward compatibility.
+ *
+ * The new async `getGitHubProfile` lives in github.service.ts.
+ */
+
 import * as db from '../data.js';
 
 const githubCache = new Map<string, unknown>();
