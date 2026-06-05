@@ -10,6 +10,7 @@ import { externalRouter } from './external.routes.js';
 import { aiRouter } from './ai.routes.js';
 import { githubRouter } from './github.routes.js';
 import { applicationsRouter } from './applications.routes.js';
+import { debugRouter } from './debug.routes.js';
 
 const router = express.Router();
 
@@ -53,6 +54,7 @@ router.use('/analytics', analyticsRouter);
 router.use('/ai', aiRouter);
 router.use('/github', githubRouter);
 router.use('/applications', applicationsRouter);
+router.use('/debug', debugRouter);
 router.use(externalRouter);
 
 export default router;

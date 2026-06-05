@@ -4,9 +4,11 @@ import express from 'express';
 import { createServer } from 'http';
 import mongoose from 'mongoose';
 import path from 'path';
+import bcrypt from 'bcryptjs';
 import router from './routes/index.js';
 import { initSocket } from './socket.js';
 import { connectDB } from './config/db.js';
+import { UserModel } from './models/schemas.js';
 
 dotenv.config();
 
@@ -23,6 +25,48 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: message });
 });
 
+async function seedDefaultUsers() {
+  console.log('[Startup Auto-Seed] Checking for default users...');
+  const recruiterEmail = 'recruiter@hiremind.ai';
+  const candidateEmail = 'candidate@hiremind.ai';
+
+  try {
+    const recruiterExists = await UserModel.findOne({ email: recruiterEmail });
+    if (!recruiterExists) {
+      console.log(`[Startup Auto-Seed] Recruiter '${recruiterEmail}' is missing. Seeding...`);
+      const hashedPassword = await bcrypt.hash('password', 10);
+      await UserModel.create({
+        email: recruiterEmail,
+        password: hashedPassword,
+        name: 'Default Recruiter',
+        role: 'recruiter',
+        avatar: 'DR'
+      });
+      console.log(`[Startup Auto-Seed] Successfully seeded '${recruiterEmail}'`);
+    } else {
+      console.log(`[Startup Auto-Seed] Recruiter '${recruiterEmail}' already exists.`);
+    }
+
+    const candidateExists = await UserModel.findOne({ email: candidateEmail });
+    if (!candidateExists) {
+      console.log(`[Startup Auto-Seed] Candidate '${candidateEmail}' is missing. Seeding...`);
+      const hashedPassword = await bcrypt.hash('password', 10);
+      await UserModel.create({
+        email: candidateEmail,
+        password: hashedPassword,
+        name: 'Default Candidate',
+        role: 'candidate',
+        avatar: 'DC'
+      });
+      console.log(`[Startup Auto-Seed] Successfully seeded '${candidateEmail}'`);
+    } else {
+      console.log(`[Startup Auto-Seed] Candidate '${candidateEmail}' already exists.`);
+    }
+  } catch (error: any) {
+    console.error('[Startup Auto-Seed] Error checking or seeding default users:', error?.message || error);
+  }
+}
+
 async function start() {
   // Verify required environment variables
   if (!process.env.MONGODB_URI) {
@@ -35,6 +79,8 @@ async function start() {
   // Connect to database before starting the server
   try {
     await connectDB();
+    // Auto-seed default users if they don't exist
+    await seedDefaultUsers();
   } catch (error: any) {
     console.error("Database connection failed:", error?.message || error);
     process.exit(1);
