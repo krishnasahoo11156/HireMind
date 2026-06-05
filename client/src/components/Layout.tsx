@@ -190,7 +190,7 @@ export function Layout() {
                   aria-label="Log out"
                   onClick={() => {
                     localStorage.removeItem(api.tokenKey);
-                    navigate('/login');
+                    navigate('/');
                   }}
                   className="flex-none rounded-lg p-1.5 text-secondary transition-colors hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder dark:hover:text-darktext"
                 >
