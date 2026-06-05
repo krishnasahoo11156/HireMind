@@ -13,6 +13,7 @@ import {
   EyeOff,
   ChevronRight,
   Play,
+  Quote,
   Check,
   Calendar,
   ChevronLeft,
@@ -864,10 +865,13 @@ export default function Landing() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6.5 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm">
-              <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
-                "We migrated from basic keyword parsers to HireMind and saved weeks of screening time. The GitHub integration and LeetCode scoring give us high-fidelity signals before we even hop on a call."
-              </p>
+            <div className="p-6 md:p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+              <div>
+                <Quote className="h-7 w-7 text-accent/25 dark:text-darkaccent/25 mb-4" />
+                <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
+                  We migrated from basic keyword parsers to HireMind and saved weeks of screening time. The GitHub integration and LeetCode scoring give us high-fidelity signals before we even hop on a call.
+                </p>
+              </div>
               <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border/60 dark:border-darkborder/50">
                 <div className="h-9 w-9 rounded-full bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">MK</div>
                 <div>
@@ -877,10 +881,13 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="p-6.5 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm">
-              <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
-                "The blind screening toggle is revolutionary for our DEI audits. It completely filters out unnecessary demographics during early resumes triage, letting candidates shine purely based on their technical credentials."
-              </p>
+            <div className="p-6 md:p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+              <div>
+                <Quote className="h-7 w-7 text-accent/25 dark:text-darkaccent/25 mb-4" />
+                <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
+                  The blind screening toggle is revolutionary for our DEI audits. It completely filters out unnecessary demographics during early resumes triage, letting candidates shine purely based on their technical credentials.
+                </p>
+              </div>
               <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border/60 dark:border-darkborder/50">
                 <div className="h-9 w-9 rounded-full bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">JH</div>
                 <div>
@@ -890,10 +897,13 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="p-6.5 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm">
-              <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
-                "The typewriter match explanations from Gemini have changed the way we align with our recruiters. Instead of just seeing a fit score, we understand exactly which skills are matched and what needs further probing."
-              </p>
+            <div className="p-6 md:p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+              <div>
+                <Quote className="h-7 w-7 text-accent/25 dark:text-darkaccent/25 mb-4" />
+                <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
+                  The typewriter match explanations from Gemini have changed the way we align with our recruiters. Instead of just seeing a fit score, we understand exactly which skills are matched and what needs further probing.
+                </p>
+              </div>
               <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border/60 dark:border-darkborder/50">
                 <div className="h-9 w-9 rounded-full bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">SD</div>
                 <div>
