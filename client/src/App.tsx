@@ -9,6 +9,7 @@ import { JobDetail as RecruiterJobDetail } from './pages/JobDetail';
 import { Jobs as RecruiterJobs } from './pages/Jobs';
 import { Settings as RecruiterSettings } from './pages/Settings';
 import Landing from './pages/Landing';
+import { CandidateJobPortal } from './pages/CandidateJobPortal';
 
 // Candidate experience page imports (to be created)
 import { CandidateDashboard } from './pages/candidate/Dashboard';

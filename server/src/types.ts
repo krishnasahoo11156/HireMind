@@ -1,4 +1,4 @@
-export type Role = 'recruiter' | 'candidate';
+export type Role = 'recruiter' | 'hiring_manager' | 'admin' | 'candidate';
 export type JobStatus = 'draft' | 'active' | 'closed' | 'archived';
 export type Recommendation = 'Strong Hire' | 'Hire' | 'Maybe' | 'Reject';
 export type RecruiterDecision = 'pending' | 'override_select' | 'override_reject' | 'agree';

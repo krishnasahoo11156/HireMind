@@ -16,7 +16,12 @@ export function Login() {
     try {
       const response = await api.login(email, password);
       localStorage.setItem(api.tokenKey, response.token);
-      navigate('/dashboard');
+      const userRole = (response.user as any)?.role;
+      if (userRole === 'candidate') {
+        navigate('/candidate/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in');
     }
@@ -59,7 +64,11 @@ export function Register() {
     try {
       const response = await api.register({ name, email, password, role });
       localStorage.setItem(api.tokenKey, response.token);
-      navigate('/dashboard');
+      if (role === 'candidate') {
+        navigate('/candidate/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to register');
     }
@@ -70,6 +79,8 @@ export function Register() {
       <input className="hm-input w-full" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
       <select className="hm-input w-full" value={role} onChange={(e) => setRole(e.target.value)}>
         <option value="recruiter">Recruiter</option>
+        <option value="hiring_manager">Hiring Manager</option>
+        <option value="admin">Admin</option>
         <option value="candidate">Candidate</option>
       </select>
     </AuthFrame>

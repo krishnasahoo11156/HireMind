@@ -28,7 +28,7 @@ export const api = {
     const qs = jobId ? `?jobId=${encodeURIComponent(jobId)}` : '';
     return request(`/api/resumes/batch-upload${qs}`, { method: 'POST', body: form });
   },
-  analyze: (jobId: string, resumeId: string) => request('/api/candidates/analyze', { method: 'POST', body: JSON.stringify({ jobId, resumeId }) }),
+  analyze: (jobId: string, resumeId: string, githubUsername?: string, leetcodeUsername?: string) => request('/api/candidates/analyze', { method: 'POST', body: JSON.stringify({ jobId, resumeId, githubUsername, leetcodeUsername }) }),
   candidates: (jobId: string) => request(`/api/candidates/job/${jobId}`),
   allCandidates: () => request<{ candidates: import('../types').Candidate[] }>('/api/candidates'),
   candidate: (id: string) => request(`/api/candidates/${id}`),

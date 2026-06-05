@@ -22,7 +22,7 @@ export interface User {
   _id: string;
   email: string;
   name: string;
-  role: 'recruiter' | 'candidate';
+  role: 'recruiter' | 'hiring_manager' | 'admin' | 'candidate';
   avatar?: string;
 }
 

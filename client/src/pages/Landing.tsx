@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { Button, Badge, Card, ScoreBar } from '../components/ui';
+import { api } from '../lib/api';
 
 // ─────────────────────────────────────────────
 // TYPES & MOCK DATA FOR INTERACTIVE FEATURES
@@ -118,6 +119,27 @@ export default function Landing() {
   const navigate = useNavigate();
   
   const hasToken = Boolean(localStorage.getItem('hiremind_token'));
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (hasToken) {
+      api.me()
+        .then((res: any) => {
+          setUserRole(res.user?.role);
+        })
+        .catch(() => {
+          localStorage.removeItem('hiremind_token');
+        });
+    }
+  }, [hasToken]);
+
+  const handleGoToDashboard = () => {
+    if (userRole === 'candidate') {
+      navigate('/candidate/dashboard');
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   // Responsive mobile menu state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -225,7 +247,7 @@ export default function Landing() {
             </button>
 
             {hasToken ? (
-              <Button onClick={() => navigate('/dashboard')} variant="accent">
+              <Button onClick={handleGoToDashboard} variant="accent">
                 Go to Dashboard
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -264,7 +286,7 @@ export default function Landing() {
                 <div className="h-px bg-border dark:bg-darkborder my-2" />
                 
                 {hasToken ? (
-                  <Button onClick={() => { setMobileMenuOpen(false); navigate('/dashboard'); }} variant="accent" className="w-full">
+                  <Button onClick={() => { setMobileMenuOpen(false); handleGoToDashboard(); }} variant="accent" className="w-full">
                     Go to Dashboard
                   </Button>
                 ) : (
@@ -304,7 +326,7 @@ export default function Landing() {
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 {hasToken ? (
-                  <Button onClick={() => navigate('/dashboard')} variant="accent" size="lg" className="w-full sm:w-auto shadow-md">
+                  <Button onClick={handleGoToDashboard} variant="accent" size="lg" className="w-full sm:w-auto shadow-md">
                     Go to Dashboard
                     <ArrowRight className="h-4.5 w-4.5" />
                   </Button>
@@ -503,7 +525,7 @@ export default function Landing() {
               </div>
 
               <div className="mt-8 pt-4">
-                <Button onClick={() => navigate(hasToken ? '/jobs' : '/login')} variant="secondary" className="w-full justify-between">
+                <Button onClick={() => navigate(hasToken ? (userRole === 'candidate' ? '/candidate/dashboard' : '/jobs') : '/login')} variant="secondary" className="w-full justify-between">
                   <span>Find Jobs</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -552,7 +574,7 @@ export default function Landing() {
               </div>
 
               <div className="mt-8 pt-4">
-                <Button onClick={() => navigate(hasToken ? '/dashboard' : '/login')} variant="accent" className="w-full justify-between shadow-sm shadow-accent/15">
+                <Button onClick={() => navigate(hasToken ? (userRole === 'candidate' ? '/candidate/dashboard' : '/dashboard') : '/login')} variant="accent" className="w-full justify-between shadow-sm shadow-accent/15">
                   <span>Start Hiring</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>

@@ -17,7 +17,7 @@ function tokenFor(userId: string, role: string) {
 }
 
 authRouter.post('/register', async (req, res) => {
-  const body = z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(8), role: z.enum(['recruiter', 'candidate']) }).safeParse(req.body);
+  const body = z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(8), role: z.enum(['recruiter', 'hiring_manager', 'admin', 'candidate']) }).safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: 'Invalid registration payload', details: body.error.flatten() });
     return;
