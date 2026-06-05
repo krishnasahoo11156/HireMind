@@ -411,21 +411,90 @@ export function JobDetail() {
       )}
 
       {activeTab === 'Candidates' && (
-        <Card className="flex items-center justify-center p-16 text-center">
-          <div>
-            <p className="text-secondary dark:text-darkmuted">
-              View the full candidate dashboard for this role.
-            </p>
-            <div className="mt-4">
-              <Link to={`/jobs/${id}/candidates`}>
-                <Button variant="accent">
-                  <ArrowRight className="h-4 w-4" />
-                  Open Rankings
-                </Button>
-              </Link>
-            </div>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <SectionTitle>Applied Candidates ({mergedCandidates.length})</SectionTitle>
+            <Link to={`/jobs/${id}/candidates`}>
+              <Button size="sm">
+                <ArrowRight className="h-4 w-4" />
+                View Rankings Dashboard
+              </Button>
+            </Link>
           </div>
-        </Card>
+
+          {mergedCandidates.length === 0 ? (
+            <Card className="p-16 text-center flex flex-col items-center justify-center">
+              <Users className="h-10 w-10 text-secondary dark:text-darkmuted mb-3" />
+              <p className="text-secondary dark:text-darkmuted">
+                No candidates have applied or been analyzed for this role yet.
+              </p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {mergedCandidates.map((candidate, i) => (
+                <Card key={candidate._id} className="p-5 flex flex-col justify-between hover:border-accent/30 dark:hover:border-darkaccent/30 transition-all border border-border dark:border-darkborder">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-accent/10 dark:bg-darkaccent/10 text-accent dark:text-darkaccent text-sm font-bold">
+                        #{i + 1}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Link to={`/recruiter/candidates/${candidate._id}`} className="hover:underline">
+                            <h3 className="text-base font-bold text-primary dark:text-darktext">
+                              {candidate.name}
+                            </h3>
+                          </Link>
+                          {candidate.username && (
+                            <span className="text-xs text-accent font-semibold px-2 py-0.5 bg-accent/10 rounded-full">
+                              @{candidate.username}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-secondary dark:text-darkmuted mt-0.5">
+                          {candidate.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+                      <div className="text-center">
+                        <div className="text-base font-bold text-primary dark:text-darktext">{candidate.matchPercentage}%</div>
+                        <div className="text-[9px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">Match</div>
+                      </div>
+
+                      <div className="text-center">
+                        <div className="text-base font-bold text-primary dark:text-darktext">{candidate.aiScore}</div>
+                        <div className="text-[9px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">AI Score</div>
+                      </div>
+
+                      <div className="text-right">
+                        <RecommendationBadge recommendation={candidate.recommendation} />
+                      </div>
+
+                      <Link to={`/recruiter/candidates/${candidate._id}`}>
+                        <Button variant="secondary" size="sm">
+                          View Details
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {candidate.whyApplying && (
+                    <div className="mt-4 border-t border-border dark:border-darkborder pt-3">
+                      <span className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block mb-1">
+                        Candidate Statement:
+                      </span>
+                      <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed whitespace-pre-line italic">
+                        "{candidate.whyApplying}"
+                      </p>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {activeTab === 'Activity' && (
