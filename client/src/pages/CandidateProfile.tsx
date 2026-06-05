@@ -79,10 +79,12 @@ function ConfidenceDot({ level }: { level: number }) {
 // ─── GitHub Analysis Card (proper component so hooks are valid) ────────────
 function GitHubAnalysisCard({
   fallback,
-  queryClient
+  queryClient,
+  blindMode
 }: {
   fallback: Candidate['githubAnalysis'];
   queryClient: ReturnType<typeof useQueryClient>;
+  blindMode?: boolean;
 }) {
   const ghUsername = fallback.username;
   const ghQuery = useQuery({
@@ -158,7 +160,7 @@ function GitHubAnalysisCard({
       )}
 
       {/* Top Repos */}
-      {ghData.repos?.length > 0 && (
+      {ghData.repos?.length > 0 && !blindMode && (
         <>
           <Caption className="mb-2 block font-semibold uppercase tracking-wider">Top Repositories</Caption>
           <div className="mb-4 space-y-1.5">
@@ -303,7 +305,7 @@ export function CandidateProfile() {
                 Candidate Statement
               </Caption>
               <p className="text-xs leading-relaxed text-secondary dark:text-darkmuted whitespace-pre-line italic">
-                "{candidate.whyApplying}"
+                {blindMode ? '[Statement Hidden in Blind Mode]' : `"${candidate.whyApplying}"`}
               </p>
             </Card>
           )}
@@ -392,7 +394,7 @@ export function CandidateProfile() {
             <SkillHeatmap skillGap={candidate.skillGap} />
           </Card>
 
-          <GitHubAnalysisCard fallback={candidate.githubAnalysis} queryClient={queryClient} />
+          <GitHubAnalysisCard fallback={candidate.githubAnalysis} queryClient={queryClient} blindMode={blindMode} />
 
           {/* LeetCode Analysis */}
           <Card className="p-6">

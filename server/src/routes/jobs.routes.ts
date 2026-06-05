@@ -1,12 +1,14 @@
 import express from 'express';
 import { jobService } from '../firebase/services/jobService.js';
 import { applicationService } from '../firebase/services/applicationService.js';
+import { candidateService } from '../firebase/services/candidateService.js';
+import { resumeService } from '../firebase/services/resumeService.js';
 import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { extractJobData } from '../services/extraction.js';
 import { analyzeJobDescription } from '../services/ai.service.js';
 import { userService } from '../firebase/services/userService.js';
-import { mapJob } from '../utils/mappers.js';
+import { mapJob, mapCandidate } from '../utils/mappers.js';
 
 export const jobsRouter = express.Router();
 
@@ -142,7 +144,25 @@ jobsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
       if (creator) creatorName = creator.name;
     }
 
-    res.json({ job: mapJob({ ...job, creatorName }), resumes: [], candidates: [] });
+    let candidates: any[] = [];
+    let resumes: any[] = [];
+    if (req.userRole !== 'candidate') {
+      const dbCandidates = await candidateService.findAll({ jobId: req.params.id });
+      candidates = dbCandidates.map(mapCandidate);
+
+      const dbResumes = await Promise.all(
+        dbCandidates
+          .filter((c) => c.resumeId)
+          .map((c) => resumeService.findById(c.resumeId))
+      );
+      resumes = dbResumes.filter((r) => r !== null);
+    }
+
+    res.json({
+      job: mapJob({ ...job, creatorName }),
+      resumes,
+      candidates
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
