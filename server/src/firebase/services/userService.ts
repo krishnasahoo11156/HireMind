@@ -8,6 +8,10 @@ export interface FirestoreUser {
   email: string;
   role: string;
   avatar?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  leetcodeUsername?: string;
   createdAt?: admin.firestore.Timestamp;
 }
 

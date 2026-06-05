@@ -61,10 +61,10 @@ authRouter.post('/register', async (req, res) => {
 // Accepts a Firebase ID token (obtained by client-side signInWithEmailAndPassword),
 // verifies it, and returns the enriched user profile.
 authRouter.post('/login', async (req, res) => {
-  const { idToken } = req.body;
+  const { idToken, role, name } = req.body;
 
   if (!idToken) {
-    res.status(400).json({ error: 'Firebase ID token is required. Login via client-side Firebase Auth then pass the idToken.' });
+    res.status(400).json({ error: 'Firebase ID token is required.' });
     return;
   }
 
@@ -75,22 +75,57 @@ authRouter.post('/login', async (req, res) => {
     // Load profile from Firestore
     let user = await userService.findById(uid);
 
-    // If Firestore profile missing (e.g., manually created in Auth console), create one
-    if (!user) {
+    // If Firestore profile is missing and no role is provided, notify client to prompt for profile setup
+    if (!user && !role) {
       const firebaseUser = await adminAuth.getUser(uid);
-      const role = (decoded as any).role ?? 'recruiter';
-      await userService.create(uid, {
+      res.json({
+        success: true,
+        requiresProfileSetup: true,
         uid,
-        name: firebaseUser.displayName ?? firebaseUser.email ?? 'User',
-        email: firebaseUser.email ?? '',
-        role
+        email: firebaseUser.email,
+        name: firebaseUser.displayName ?? ''
       });
+      return;
+    }
+
+    // Create or update Firestore profile if missing or setup requested
+    if (!user || role || name) {
+      const firebaseUser = await adminAuth.getUser(uid);
+      const targetRole = role ?? (decoded as any).role ?? 'recruiter';
+      const targetName = name ?? firebaseUser.displayName ?? firebaseUser.email ?? 'User';
+
+      if (role) {
+        await adminAuth.setCustomUserClaims(uid, { role: targetRole });
+      }
+
+      if (!user) {
+        await userService.create(uid, {
+          uid,
+          name: targetName,
+          email: firebaseUser.email ?? '',
+          role: targetRole
+        });
+      } else {
+        await userService.update(uid, {
+          name: targetName,
+          role: targetRole
+        });
+      }
       user = await userService.findById(uid);
     }
 
     res.json({
       success: true,
-      user: { id: uid, name: user?.name, email: user?.email, role: user?.role }
+      user: {
+        id: uid,
+        name: user?.name,
+        email: user?.email,
+        role: user?.role,
+        githubUrl: user?.githubUrl,
+        linkedinUrl: user?.linkedinUrl,
+        portfolioUrl: user?.portfolioUrl,
+        leetcodeUsername: user?.leetcodeUsername
+      }
     });
   } catch (error: any) {
     console.error('[auth] login error:', error);
@@ -136,11 +171,65 @@ authRouter.get('/me', async (req: AuthedRequest, res) => {
     }
 
     res.json({
-      user: { id: uid, name: user.name, email: user.email, role: user.role }
+      user: {
+        id: uid,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        githubUrl: user.githubUrl,
+        linkedinUrl: user.linkedinUrl,
+        portfolioUrl: user.portfolioUrl,
+        leetcodeUsername: user.leetcodeUsername
+      }
     });
   } catch (error: any) {
     console.error('[auth] /me error:', error);
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// ─── PATCH /api/auth/me ───────────────────────────────────────────────────
+authRouter.patch('/me', async (req: AuthedRequest, res) => {
+  const header = req.headers.authorization;
+  const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+
+  if (!token) {
+    res.status(401).json({ error: 'No token provided' });
+    return;
+  }
+
+  try {
+    const decoded = await adminAuth.verifyIdToken(token);
+    const uid = decoded.uid;
+
+    const { name, githubUrl, linkedinUrl, portfolioUrl, leetcodeUsername } = req.body;
+
+    const updatePayload: any = {};
+    if (name !== undefined) updatePayload.name = name;
+    if (githubUrl !== undefined) updatePayload.githubUrl = githubUrl;
+    if (linkedinUrl !== undefined) updatePayload.linkedinUrl = linkedinUrl;
+    if (portfolioUrl !== undefined) updatePayload.portfolioUrl = portfolioUrl;
+    if (leetcodeUsername !== undefined) updatePayload.leetcodeUsername = leetcodeUsername;
+
+    await userService.update(uid, updatePayload);
+
+    const user = await userService.findById(uid);
+    res.json({
+      success: true,
+      user: {
+        id: uid,
+        name: user?.name,
+        email: user?.email,
+        role: user?.role,
+        githubUrl: user?.githubUrl,
+        linkedinUrl: user?.linkedinUrl,
+        portfolioUrl: user?.portfolioUrl,
+        leetcodeUsername: user?.leetcodeUsername
+      }
+    });
+  } catch (error: any) {
+    console.error('[auth] patch /me error:', error);
+    res.status(401).json({ error: 'Invalid token or update failed' });
   }
 });
 

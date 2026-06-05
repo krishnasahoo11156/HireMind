@@ -1,6 +1,8 @@
-import { Bell, Building2, Globe, Lock, Monitor, Moon, Shield, Sun, UserCircle } from 'lucide-react';
+import { Bell, Building2, Globe, Lock, Monitor, Moon, Shield, Sun, UserCircle, CheckCircle } from 'lucide-react';
 import { Button, Card, PageTitle, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 import { useAppStore } from '../store/appStore';
+import { useAuth } from '../firebase/AuthContext';
+import { useState, useEffect } from 'react';
 
 type Section = {
   icon: React.ReactNode;
@@ -12,6 +14,31 @@ type Section = {
 export function Settings() {
   const theme = useAppStore((state) => state.theme);
   const setTheme = useAppStore((state) => state.setTheme);
+  const { user, updateProfile } = useAuth();
+
+  const [name, setName] = useState(user?.name || '');
+  const [role, setRole] = useState('Senior Recruiter');
+  const [phone, setPhone] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+    }
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    setError('');
+    setSaved(false);
+    try {
+      await updateProfile({ name });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to update profile');
+    }
+  };
 
   const sections: Section[] = [
     {
@@ -22,22 +49,33 @@ export function Settings() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Caption as="label" className="mb-1.5 block font-semibold">Full Name</Caption>
-            <input className="hm-input w-full" defaultValue="Maya Kapoor" />
+            <input className="hm-input w-full" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
             <Caption as="label" className="mb-1.5 block font-semibold">Email</Caption>
-            <input className="hm-input w-full" defaultValue="recruiter@hiremind.ai" readOnly />
+            <input className="hm-input w-full" value={user?.email || 'recruiter@hiremind.ai'} readOnly />
           </div>
           <div>
             <Caption as="label" className="mb-1.5 block font-semibold">Role</Caption>
-            <input className="hm-input w-full" defaultValue="Senior Recruiter" />
+            <input className="hm-input w-full" value={role} onChange={(e) => setRole(e.target.value)} />
           </div>
           <div>
             <Caption as="label" className="mb-1.5 block font-semibold">Phone</Caption>
-            <input className="hm-input w-full" placeholder="+1 (555) 000-0000" />
+            <input className="hm-input w-full" placeholder="+1 (555) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
+          {saved && (
+            <div className="col-span-2 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 px-4 py-3 text-xs text-success">
+              <CheckCircle className="h-4 w-4" />
+              Profile details updated successfully!
+            </div>
+          )}
+          {error && (
+            <div className="col-span-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-danger dark:border-red-800/40 dark:bg-red-950/30 dark:text-red-400">
+              {error}
+            </div>
+          )}
           <div className="col-span-2 flex justify-end">
-            <Button variant="accent">Save Profile</Button>
+            <Button variant="accent" onClick={handleSaveProfile}>Save Profile</Button>
           </div>
         </div>
       )

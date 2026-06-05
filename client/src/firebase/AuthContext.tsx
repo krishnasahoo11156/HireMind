@@ -5,6 +5,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
   type User as FirebaseUser
 } from 'firebase/auth';
 import { auth } from './config';
@@ -17,6 +19,10 @@ export interface AppUser {
   name: string;
   email: string;
   role: 'candidate' | 'recruiter';
+  githubUrl?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  leetcodeUsername?: string;
 }
 
 interface AuthContextValue {
@@ -25,6 +31,8 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<AppUser>;
   register: (payload: { name: string; email: string; password: string; role: string }) => Promise<AppUser>;
+  loginWithGoogle: (role?: 'candidate' | 'recruiter', name?: string) => Promise<AppUser>;
+  updateProfile: (payload: { name?: string; githubUrl?: string; linkedinUrl?: string; portfolioUrl?: string; leetcodeUsername?: string }) => Promise<AppUser>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<string | null>;
 }
@@ -63,7 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 id: fbUser.uid,
                 name: data.user?.name ?? fbUser.displayName ?? 'User',
                 email: fbUser.email ?? '',
-                role: data.user?.role ?? 'recruiter'
+                role: data.user?.role ?? 'recruiter',
+                githubUrl: data.user?.githubUrl,
+                linkedinUrl: data.user?.linkedinUrl,
+                portfolioUrl: data.user?.portfolioUrl,
+                leetcodeUsername: data.user?.leetcodeUsername
               };
               setUser(appUser);
               localStorage.setItem(USER_KEY, JSON.stringify(appUser));
@@ -110,7 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: cred.user.uid,
       name: data.user?.name ?? cred.user.displayName ?? 'User',
       email: cred.user.email ?? '',
-      role: data.user?.role ?? 'recruiter'
+      role: data.user?.role ?? 'recruiter',
+      githubUrl: data.user?.githubUrl,
+      linkedinUrl: data.user?.linkedinUrl,
+      portfolioUrl: data.user?.portfolioUrl,
+      leetcodeUsername: data.user?.leetcodeUsername
     };
     setUser(appUser);
     localStorage.setItem(USER_KEY, JSON.stringify(appUser));
@@ -143,7 +159,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: cred.user.uid,
       name: data.user?.name ?? payload.name,
       email: cred.user.email ?? payload.email,
-      role: data.user?.role ?? payload.role ?? 'recruiter'
+      role: data.user?.role ?? payload.role ?? 'recruiter',
+      githubUrl: data.user?.githubUrl,
+      linkedinUrl: data.user?.linkedinUrl,
+      portfolioUrl: data.user?.portfolioUrl,
+      leetcodeUsername: data.user?.leetcodeUsername
     };
     setUser(appUser);
     localStorage.setItem(USER_KEY, JSON.stringify(appUser));
@@ -158,6 +178,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(USER_KEY);
   };
 
+  const loginWithGoogle = async (role?: 'candidate' | 'recruiter', name?: string): Promise<AppUser> => {
+    const provider = new GoogleAuthProvider();
+    const cred = await signInWithPopup(auth, provider);
+    let idToken = await cred.user.getIdToken(true);
+
+    const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
+    const resp = await fetch(`${apiBase}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken, role, name })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: 'Google authentication failed' }));
+      throw new Error(err.error ?? 'Google authentication failed');
+    }
+    const data = await resp.json();
+
+    if (role) {
+      idToken = await cred.user.getIdToken(true);
+    }
+    localStorage.setItem(TOKEN_KEY, idToken);
+
+    const appUser: AppUser = {
+      id: cred.user.uid,
+      name: data.user?.name ?? cred.user.displayName ?? name ?? 'User',
+      email: cred.user.email ?? '',
+      role: data.user?.role ?? role ?? 'recruiter',
+      githubUrl: data.user?.githubUrl,
+      linkedinUrl: data.user?.linkedinUrl,
+      portfolioUrl: data.user?.portfolioUrl,
+      leetcodeUsername: data.user?.leetcodeUsername
+    };
+    setUser(appUser);
+    localStorage.setItem(USER_KEY, JSON.stringify(appUser));
+    return appUser;
+  };
+
+  const updateProfile = async (payload: { name?: string; githubUrl?: string; linkedinUrl?: string; portfolioUrl?: string; leetcodeUsername?: string }): Promise<AppUser> => {
+    const idToken = localStorage.getItem(TOKEN_KEY);
+    if (!idToken) throw new Error('No authentication token found');
+
+    const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
+    const resp = await fetch(`${apiBase}/api/auth/me`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: 'Profile update failed' }));
+      throw new Error(err.error ?? 'Profile update failed');
+    }
+    const data = await resp.json();
+
+    const appUser: AppUser = {
+      id: user?.id ?? '',
+      name: data.user?.name ?? payload.name ?? user?.name ?? 'User',
+      email: data.user?.email ?? user?.email ?? '',
+      role: data.user?.role ?? user?.role ?? 'recruiter',
+      githubUrl: data.user?.githubUrl ?? payload.githubUrl ?? user?.githubUrl,
+      linkedinUrl: data.user?.linkedinUrl ?? payload.linkedinUrl ?? user?.linkedinUrl,
+      portfolioUrl: data.user?.portfolioUrl ?? payload.portfolioUrl ?? user?.portfolioUrl,
+      leetcodeUsername: data.user?.leetcodeUsername ?? payload.leetcodeUsername ?? user?.leetcodeUsername
+    };
+    setUser(appUser);
+    localStorage.setItem(USER_KEY, JSON.stringify(appUser));
+    return appUser;
+  };
+
   const refreshToken = async (): Promise<string | null> => {
     if (!firebaseUser) return null;
     const token = await firebaseUser.getIdToken(true);
@@ -166,7 +257,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, login, register, logout, refreshToken }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        firebaseUser,
+        loading,
+        login,
+        register,
+        loginWithGoogle,
+        updateProfile,
+        logout,
+        refreshToken
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

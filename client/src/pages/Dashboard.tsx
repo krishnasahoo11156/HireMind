@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { useJobs } from '../hooks/queries';
+import { useAuth } from '../firebase/AuthContext';
 import type { Candidate, DashboardAnalytics, Job } from '../types';
 import {
   Badge,
@@ -120,6 +121,7 @@ function PriorityCandidateCard({ candidate, rank }: { candidate: Candidate; rank
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 export function Dashboard() {
+  const { user } = useAuth();
   const analytics = useQuery({ queryKey: ['analytics'], queryFn: () => api.analytics() as Promise<DashboardAnalytics> });
   const jobs = useJobs();
   const firstJobId = jobs.data?.jobs[0]?._id;
@@ -172,7 +174,7 @@ export function Dashboard() {
             AI Hiring Intelligence Platform
           </div>
           <DisplayTitle className="mt-1">
-            {getGreeting()}, Maya 👋
+            {getGreeting()}, {user?.name || 'Recruiter'} 👋
           </DisplayTitle>
           <BodyText variant="large" color="secondary" className="mt-2">
             Your hiring pipeline has{' '}

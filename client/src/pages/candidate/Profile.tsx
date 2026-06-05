@@ -1,21 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Link2, Globe, Sparkles, Save, CheckCircle } from 'lucide-react';
 import { Badge, Button, Card, PageTitle, SectionTitle, BodyText } from '../../components/ui';
+import { useAuth } from '../../firebase/AuthContext';
 
 export function CandidateProfileEdit() {
-  const [name, setName] = useState('Sarah Chen');
-  const [email, setEmail] = useState('sarah.chen@example.com');
-  const [githubUrl, setGithubUrl] = useState('https://github.com/sarahchen-dev');
-  const [linkedinUrl, setLinkedinUrl] = useState('https://linkedin.com/in/sarah-chen');
-  const [portfolioUrl, setPortfolioUrl] = useState('https://sarahchen-dev.dev');
-  const [leetcodeUsername, setLeetcodeUsername] = useState('sarahc');
+  const { user, updateProfile } = useAuth();
+  
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [githubUrl, setGithubUrl] = useState(user?.githubUrl || '');
+  const [linkedinUrl, setLinkedinUrl] = useState(user?.linkedinUrl || '');
+  const [portfolioUrl, setPortfolioUrl] = useState(user?.portfolioUrl || '');
+  const [leetcodeUsername, setLeetcodeUsername] = useState(user?.leetcodeUsername || '');
 
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Sync inputs with state on load/updates
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setGithubUrl(user.githubUrl || '');
+      setLinkedinUrl(user.linkedinUrl || '');
+      setPortfolioUrl(user.portfolioUrl || '');
+      setLeetcodeUsername(user.leetcodeUsername || '');
+    }
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setError('');
+    setSaved(false);
+    try {
+      await updateProfile({
+        name,
+        githubUrl,
+        linkedinUrl,
+        portfolioUrl,
+        leetcodeUsername
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to update profile');
+    }
   };
 
   return (
@@ -114,6 +143,12 @@ export function CandidateProfileEdit() {
                 </div>
               )}
 
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-danger dark:border-red-800/40 dark:bg-red-950/30 dark:text-red-400">
+                  {error}
+                </div>
+              )}
+
               <Button type="submit" variant="accent" className="w-full">
                 <Save className="h-4 w-4" />
                 Save Changes
@@ -129,15 +164,21 @@ export function CandidateProfileEdit() {
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-secondary dark:text-darkmuted">GitHub Status</span>
-                <Badge tone="green">Connected</Badge>
+                <Badge tone={githubUrl ? 'green' : 'neutral'}>
+                  {githubUrl ? 'Connected' : 'Not Connected'}
+                </Badge>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-secondary dark:text-darkmuted">LeetCode Status</span>
-                <Badge tone="green">Connected</Badge>
+                <Badge tone={leetcodeUsername ? 'green' : 'neutral'}>
+                  {leetcodeUsername ? 'Connected' : 'Not Connected'}
+                </Badge>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-secondary dark:text-darkmuted">LinkedIn Sync</span>
-                <Badge tone="green">Active</Badge>
+                <Badge tone={linkedinUrl ? 'green' : 'neutral'}>
+                  {linkedinUrl ? 'Active' : 'Inactive'}
+                </Badge>
               </div>
             </div>
           </Card>

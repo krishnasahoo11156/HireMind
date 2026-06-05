@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useJobs, useMyApplications } from '../../hooks/queries';
 import type { Job, Application } from '../../types';
 import { Badge, Button, Card, SectionHeader, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../../components/ui';
+import { useAuth } from '../../firebase/AuthContext';
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -13,16 +14,22 @@ function getGreeting() {
 }
 
 export function CandidateDashboard() {
+  const { user } = useAuth();
   const jobsQuery = useJobs();
   const myAppsQuery = useMyApplications();
 
   const activeJobs = jobsQuery.data?.jobs ?? [];
   const applications = myAppsQuery.data?.applications ?? [];
   
-  // Calculate profile completeness based on Sarah's mock profile or localStorage
-  // Sarah has a resume, github and leetcode seeded. If candidate registers, default to 60%, can update to 100%
-  const hasApplied = applications.length > 0;
-  const profileCompleteness = hasApplied ? 100 : 75;
+  // Calculate profile completeness based on actual user profile data in Firebase
+  let fieldsFilled = 0;
+  const totalFields = 5;
+  if (user?.name) fieldsFilled++;
+  if (user?.githubUrl) fieldsFilled++;
+  if (user?.linkedinUrl) fieldsFilled++;
+  if (user?.leetcodeUsername) fieldsFilled++;
+  if (applications.length > 0) fieldsFilled++;
+  const profileCompleteness = Math.round((fieldsFilled / totalFields) * 100);
 
   if (jobsQuery.isLoading || myAppsQuery.isLoading) {
     return (
@@ -47,7 +54,7 @@ export function CandidateDashboard() {
             Candidate Workspace
           </div>
           <DisplayTitle>
-            {getGreeting()}, Sarah 👋
+            {getGreeting()}, {user?.name || 'Candidate'} 👋
           </DisplayTitle>
           <BodyText variant="large" color="secondary">
             Track your applications in real-time, explore explainable AI-backed matching, and manage your developer credentials.
@@ -57,10 +64,12 @@ export function CandidateDashboard() {
               <CheckCircle className="h-4 w-4" />
               Resume active
             </div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-accent dark:text-darkaccent">
-              <CheckCircle className="h-4 w-4" />
-              GitHub & LeetCode Linked
-            </div>
+            {user?.githubUrl || user?.leetcodeUsername ? (
+              <div className="flex items-center gap-2 text-sm font-semibold text-accent dark:text-darkaccent">
+                <CheckCircle className="h-4 w-4" />
+                {user?.githubUrl ? 'GitHub' : ''}{user?.githubUrl && user?.leetcodeUsername ? ' & ' : ''}{user?.leetcodeUsername ? 'LeetCode' : ''} Linked
+              </div>
+            ) : null}
           </div>
         </div>
 

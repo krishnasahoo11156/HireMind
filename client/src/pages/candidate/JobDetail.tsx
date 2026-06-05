@@ -5,22 +5,34 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useJob, useApplyJob } from '../../hooks/queries';
 import type { Job } from '../../types';
 import { Badge, Button, Card, PageTitle, SectionTitle, BodyText, Caption } from '../../components/ui';
+import { useAuth } from '../../firebase/AuthContext';
 
 export function CandidateJobDetail() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
   const { data, isLoading } = useJob(id);
   const [isApplyDrawerOpen, setIsApplyDrawerOpen] = useState(false);
 
-  // Apply form state
+  // Apply form state pre-populated dynamically
   const [file, setFile] = useState<File | null>(null);
-  const [githubUrl, setGithubUrl] = useState('https://github.com/sarahchen-dev');
-  const [linkedinUrl, setLinkedinUrl] = useState('https://linkedin.com/in/sarah-chen');
-  const [portfolioUrl, setPortfolioUrl] = useState('https://sarahchen-dev.dev');
-  const [leetcodeUsername, setLeetcodeUsername] = useState('sarahc');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [leetcodeUsername, setLeetcodeUsername] = useState('');
   const [error, setError] = useState('');
+
+  // Sync inputs with user details when loaded
+  useEffect(() => {
+    if (user) {
+      setGithubUrl(user.githubUrl || '');
+      setLinkedinUrl(user.linkedinUrl || '');
+      setPortfolioUrl(user.portfolioUrl || '');
+      setLeetcodeUsername(user.leetcodeUsername || '');
+    }
+  }, [user]);
 
   useEffect(() => {
     if (searchParams.get('apply') === 'true') {
