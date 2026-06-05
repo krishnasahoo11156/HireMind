@@ -12,6 +12,8 @@ export interface FirestoreApplication {
   linkedinUrl?: string;
   portfolioUrl?: string;
   leetcodeUsername?: string;
+  candidateName?: string;
+  whyApplying?: string;
   aiScore?: number;
   recommendation?: string;
   appliedAt?: admin.firestore.Timestamp;

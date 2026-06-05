@@ -19,6 +19,7 @@ export interface FirestoreCandidate {
   explanation?: string[];
   recruiterDecision?: string;
   recruiterReason?: string;
+  whyApplying?: string;
   feedbackAt?: admin.firestore.Timestamp;
   createdAt?: admin.firestore.Timestamp;
   updatedAt?: admin.firestore.Timestamp;

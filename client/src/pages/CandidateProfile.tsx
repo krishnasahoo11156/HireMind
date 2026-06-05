@@ -290,11 +290,23 @@ export function CandidateProfile() {
             <div className="mt-4 flex justify-center gap-2">
               <Badge tone="gold">{candidate.matchPercentage}% Match</Badge>
             </div>
-            <Button variant="secondary" size="sm" className="mt-4 w-full">
+             <Button variant="secondary" size="sm" className="mt-4 w-full">
               <Download className="h-3.5 w-3.5" />
               Resume
             </Button>
           </Card>
+
+          {/* Candidate Statement */}
+          {candidate.whyApplying && (
+            <Card className="p-5">
+              <Caption className="mb-2 block font-semibold uppercase tracking-wider text-accent dark:text-darkaccent">
+                Candidate Statement
+              </Caption>
+              <p className="text-xs leading-relaxed text-secondary dark:text-darkmuted whitespace-pre-line italic">
+                "{candidate.whyApplying}"
+              </p>
+            </Card>
+          )}
 
           {/* Skills */}
           <Card className="p-5">

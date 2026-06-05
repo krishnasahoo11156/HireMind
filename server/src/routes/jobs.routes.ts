@@ -6,6 +6,7 @@ import { upload } from '../middleware/upload.js';
 import { extractJobData } from '../services/extraction.js';
 import { analyzeJobDescription } from '../services/ai.service.js';
 import { userService } from '../firebase/services/userService.js';
+import { mapJob } from '../utils/mappers.js';
 
 export const jobsRouter = express.Router();
 
@@ -51,7 +52,7 @@ jobsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res
       extractedData
     });
 
-    res.status(201).json({ job });
+    res.status(201).json({ job: mapJob(job) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -86,7 +87,7 @@ jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), async (req, res) 
 
     await jobService.update(req.params.id, { rawText: newRawText, extractedData });
     const updated = await jobService.findById(req.params.id);
-    res.json({ job: updated, extractedData });
+    res.json({ job: mapJob(updated), extractedData });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -115,7 +116,7 @@ jobsRouter.get('/', auth, async (req: AuthedRequest, res) => {
         return { ...job, candidateCount: applications.length, creatorName };
       })
     );
-    res.json({ jobs: jobsWithCount });
+    res.json({ jobs: jobsWithCount.map(mapJob) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -141,7 +142,7 @@ jobsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
       if (creator) creatorName = creator.name;
     }
 
-    res.json({ job: { ...job, creatorName }, resumes: [], candidates: [] });
+    res.json({ job: mapJob({ ...job, creatorName }), resumes: [], candidates: [] });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -180,7 +181,7 @@ jobsRouter.put('/:id', auth, async (req: AuthedRequest, res) => {
     }
     await jobService.update(req.params.id, req.body);
     const updated = await jobService.findById(req.params.id);
-    res.json({ job: updated });
+    res.json({ job: mapJob(updated) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -199,7 +200,7 @@ jobsRouter.delete('/:id', auth, async (req: AuthedRequest, res) => {
       return;
     }
     await jobService.delete(req.params.id);
-    res.json({ job });
+    res.json({ job: mapJob(job) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

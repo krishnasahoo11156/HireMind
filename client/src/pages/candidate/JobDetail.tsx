@@ -18,6 +18,8 @@ export function CandidateJobDetail() {
 
   // Apply form state pre-populated dynamically
   const [file, setFile] = useState<File | null>(null);
+  const [name, setName] = useState('');
+  const [whyApplying, setWhyApplying] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
@@ -27,6 +29,7 @@ export function CandidateJobDetail() {
   // Sync inputs with user details when loaded
   useEffect(() => {
     if (user) {
+      setName(user.name || '');
       setGithubUrl(user.githubUrl || '');
       setLinkedinUrl(user.linkedinUrl || '');
       setPortfolioUrl(user.portfolioUrl || '');
@@ -70,6 +73,8 @@ export function CandidateJobDetail() {
     const formData = new FormData();
     formData.append('jobId', job._id);
     if (file) formData.append('file', file);
+    formData.append('name', name);
+    formData.append('whyApplying', whyApplying);
     formData.append('githubUrl', githubUrl);
     formData.append('linkedinUrl', linkedinUrl);
     formData.append('portfolioUrl', portfolioUrl);
@@ -215,6 +220,35 @@ export function CandidateJobDetail() {
                       </>
                     )}
                   </div>
+                </div>
+
+                {/* Name */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-primary dark:text-darktext">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary dark:text-darkmuted" />
+                    <input
+                      type="text"
+                      required
+                      className="hm-input w-full pl-9"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your Full Name"
+                    />
+                  </div>
+                </div>
+
+                {/* Statement / Cover Letter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-primary dark:text-darktext">Why are you applying for this job?</label>
+                  <textarea
+                    required
+                    className="hm-textarea w-full"
+                    rows={4}
+                    value={whyApplying}
+                    onChange={(e) => setWhyApplying(e.target.value)}
+                    placeholder="Briefly describe why you are a great fit for this position..."
+                  />
                 </div>
 
                 {/* Social profile fields */}

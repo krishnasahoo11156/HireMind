@@ -8,6 +8,7 @@ import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { getLeetCodeProfile } from '../services/external.js';
 import { getGitHubProfile } from '../services/github.service.js';
 import { scoreCandidate } from '../services/ai.service.js';
+import { mapJob } from '../utils/mappers.js';
 
 export const candidatesRouter = express.Router();
 
@@ -159,7 +160,7 @@ candidatesRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
       return;
     }
 
-    res.json({ candidate, resume, job, feedback: history });
+    res.json({ candidate, resume, job: job ? mapJob(job) : null, feedback: history });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

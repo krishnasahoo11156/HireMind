@@ -38,6 +38,8 @@ export interface Application {
   linkedinUrl?: string;
   portfolioUrl?: string;
   leetcodeUsername?: string;
+  candidateName?: string;
+  whyApplying?: string;
 }
 
 export interface Job {
@@ -53,6 +55,7 @@ export interface Job {
   company?: string;
   creatorName?: string;
   applicationsCount?: number;
+  candidateCount?: number;
   extractedData: {
     skills: string[];
     experience: string;
@@ -149,6 +152,7 @@ export interface Candidate {
   explanation: string[];
   recruiterDecision: RecruiterDecision;
   recruiterReason: string;
+  whyApplying?: string;
   feedbackAt?: string;
   createdAt: string;
   updatedAt: string;

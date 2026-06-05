@@ -49,6 +49,8 @@ export interface Application {
   linkedinUrl?: string;
   portfolioUrl?: string;
   leetcodeUsername?: string;
+  candidateName?: string;
+  whyApplying?: string;
 }
 
 export interface Job {
@@ -145,6 +147,7 @@ export interface Candidate {
   explanation: string[];
   recruiterDecision: RecruiterDecision;
   recruiterReason: string;
+  whyApplying?: string;
   feedbackAt?: string;
   createdAt: string;
   updatedAt: string;

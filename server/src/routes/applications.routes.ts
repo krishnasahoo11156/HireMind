@@ -13,7 +13,7 @@ import { extractText } from '../services/documentParser.js';
 import { getLeetCodeProfile } from '../services/external.js';
 import { getGitHubProfile } from '../services/github.service.js';
 import { getSocketServer } from '../socket.js';
-import { mapCandidate } from '../utils/mappers.js';
+import { mapCandidate, mapJob } from '../utils/mappers.js';
 
 export const applicationsRouter = express.Router();
 
@@ -58,7 +58,7 @@ async function parseResumeBuffer(file: Express.Multer.File, userId?: string): Pr
 
 // POST /api/applications — Apply for a job
 applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res) => {
-  const { jobId, githubUrl, linkedinUrl, portfolioUrl, leetcodeUsername } = req.body;
+  const { jobId, githubUrl, linkedinUrl, portfolioUrl, leetcodeUsername, name, whyApplying } = req.body;
 
   if (!jobId) {
     res.status(400).json({ error: 'Job ID is required' });
@@ -102,7 +102,9 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
       githubUrl: githubUrl || undefined,
       linkedinUrl: linkedinUrl || undefined,
       portfolioUrl: portfolioUrl || undefined,
-      leetcodeUsername: leetcodeUsername || undefined
+      leetcodeUsername: leetcodeUsername || undefined,
+      candidateName: name || user.name,
+      whyApplying: whyApplying || undefined
     });
 
     // Increment applications count on the job
@@ -207,7 +209,7 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         const candidateRecord = await candidateService.create({
           resumeId: parsedResume.id,
           jobId,
-          name: user.name,
+          name: name || user.name,
           email: user.email,
           username: user.leetcodeUsername || (user.githubUrl ? user.githubUrl.split('/').pop() : '') || user.email.split('@')[0],
           blindId: `Candidate-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
@@ -220,7 +222,8 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           skillGap,
           explanation,
           recruiterDecision: 'pending',
-          recruiterReason: ''
+          recruiterReason: '',
+          whyApplying: whyApplying || ''
         });
 
         // ─── STAGE 4: Under Review (Delay 1.5s) ───
@@ -289,7 +292,7 @@ applicationsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
     }
 
     const job = await jobService.findById(app.jobId);
-    res.json({ application: app, job });
+    res.json({ application: app, job: job ? mapJob(job) : null });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
