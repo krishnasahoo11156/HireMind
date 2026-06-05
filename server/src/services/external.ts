@@ -1,11 +1,11 @@
-import { candidates } from '../data.js';
+import * as db from '../data.js';
 
 const githubCache = new Map<string, unknown>();
 const leetcodeCache = new Map<string, unknown>();
 
 export function getGithubProfile(username: string) {
   if (githubCache.has(username)) return githubCache.get(username);
-  const match = candidates.find((candidate) => candidate.githubAnalysis.username === username);
+  const match = db.candidates.find((candidate) => candidate.githubAnalysis.username === username);
   const profile = match?.githubAnalysis ?? {
     username,
     publicRepos: 6,
@@ -25,7 +25,7 @@ export function getGithubProfile(username: string) {
 
 export function getLeetCodeProfile(username: string) {
   if (leetcodeCache.has(username)) return leetcodeCache.get(username);
-  const match = candidates.find((candidate) => candidate.leetcodeAnalysis.username === username);
+  const match = db.candidates.find((candidate) => candidate.leetcodeAnalysis.username === username);
   const profile = match?.leetcodeAnalysis ?? {
     username,
     problemsSolved: 140,
