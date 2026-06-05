@@ -5,7 +5,7 @@ const userSchema = new Schema(
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
     name: { type: String, required: true },
-    role: { type: String, enum: ['recruiter', 'hiring_manager', 'admin'], required: true },
+    role: { type: String, enum: ['recruiter', 'candidate'], required: true },
     avatar: String
   },
   { timestamps: true }
@@ -130,6 +130,38 @@ const analyticsSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const applicationSchema = new Schema(
+  {
+    candidateId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    jobId: { type: Schema.Types.ObjectId, ref: 'Job', required: true },
+    recruiterId: { type: Schema.Types.ObjectId, ref: 'User' },
+    status: {
+      type: String,
+      enum: [
+        'Applied',
+        'Resume Parsed',
+        'AI Analysis',
+        'Under Review',
+        'Shortlisted',
+        'Interview',
+        'Selected',
+        'Rejected'
+      ],
+      default: 'Applied'
+    },
+    appliedAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+    aiScore: Number,
+    recommendation: String,
+    resumeUrl: String,
+    githubUrl: String,
+    linkedinUrl: String,
+    portfolioUrl: String,
+    leetcodeUsername: String
+  },
+  { timestamps: true }
+);
+
 export const UserModel = mongoose.model('User', userSchema);
 export const JobModel = mongoose.model('Job', jobSchema);
 export const ResumeModel = mongoose.model('Resume', resumeSchema);
@@ -137,3 +169,4 @@ export const CandidateModel = mongoose.model('Candidate', candidateSchema);
 export const RankingModel = mongoose.model('Ranking', rankingSchema);
 export const FeedbackModel = mongoose.model('Feedback', feedbackSchema);
 export const AnalyticsModel = mongoose.model('Analytics', analyticsSchema);
+export const ApplicationModel = mongoose.model('Application', applicationSchema);

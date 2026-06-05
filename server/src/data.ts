@@ -1,4 +1,4 @@
-import type { Candidate, Feedback, Job, Ranking, Resume, User } from './types.js';
+import type { Candidate, Feedback, Job, Ranking, Resume, User, Application } from './types.js';
 
 const now = new Date().toISOString();
 // Pre-hashed 'password123' with bcrypt salt rounds 10 - demo only
@@ -12,6 +12,16 @@ export const users: User[] = [
     name: 'Maya Kapoor',
     role: 'recruiter',
     avatar: 'MK',
+    createdAt: now,
+    updatedAt: now
+  },
+  {
+    _id: 'user_candidate_demo',
+    email: 'candidate@hiremind.ai',
+    password,
+    name: 'Sarah Chen',
+    role: 'candidate',
+    avatar: 'SC',
     createdAt: now,
     updatedAt: now
   }
@@ -330,6 +340,24 @@ export const rankings: Ranking[] = [
 
 export const feedback: Feedback[] = [];
 
+export const applications: Application[] = [
+  {
+    _id: 'app_sarah',
+    candidateId: 'user_candidate_demo',
+    jobId: 'job_frontend',
+    status: 'Under Review',
+    appliedAt: now,
+    updatedAt: now,
+    aiScore: 91,
+    recommendation: 'Strong Hire',
+    resumeUrl: '/uploads/sarah-chen-resume.pdf',
+    githubUrl: 'https://github.com/sarahchen-dev',
+    linkedinUrl: 'https://linkedin.com/in/sarah-chen',
+    portfolioUrl: 'https://sarahchen-dev.dev',
+    leetcodeUsername: 'sarahc'
+  }
+];
+
 export function resetDemoData() {
   candidates.forEach((item) => {
     item.recruiterDecision = 'pending';
@@ -337,4 +365,20 @@ export function resetDemoData() {
     item.feedbackAt = undefined;
   });
   feedback.splice(0, feedback.length);
+  applications.splice(0, applications.length);
+  applications.push({
+    _id: 'app_sarah',
+    candidateId: 'user_candidate_demo',
+    jobId: 'job_frontend',
+    status: 'Under Review',
+    appliedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    aiScore: 91,
+    recommendation: 'Strong Hire',
+    resumeUrl: '/uploads/sarah-chen-resume.pdf',
+    githubUrl: 'https://github.com/sarahchen-dev',
+    linkedinUrl: 'https://linkedin.com/in/sarah-chen',
+    portfolioUrl: 'https://sarahchen-dev.dev',
+    leetcodeUsername: 'sarahc'
+  });
 }

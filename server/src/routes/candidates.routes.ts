@@ -82,6 +82,10 @@ candidatesRouter.post('/analyze', auth, async (req, res) => {
   res.status(201).json({ candidate });
 });
 
+candidatesRouter.get('/', auth, (req, res) => {
+  res.json({ candidates });
+});
+
 candidatesRouter.get('/job/:jobId', auth, (req, res) => {
   res.json({ candidates: candidates.filter((candidate) => candidate.jobId === req.params.jobId).sort((a, b) => b.aiScore - a.aiScore) });
 });

@@ -51,8 +51,7 @@ export function Register() {
       <input className="hm-input w-full" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
       <select className="hm-input w-full" value={role} onChange={(e) => setRole(e.target.value)}>
         <option value="recruiter">Recruiter</option>
-        <option value="hiring_manager">Hiring Manager</option>
-        <option value="admin">Admin</option>
+        <option value="candidate">Candidate</option>
       </select>
     </AuthFrame>
   );

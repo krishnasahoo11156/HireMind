@@ -30,6 +30,7 @@ export const api = {
   },
   analyze: (jobId: string, resumeId: string) => request('/api/candidates/analyze', { method: 'POST', body: JSON.stringify({ jobId, resumeId }) }),
   candidates: (jobId: string) => request(`/api/candidates/job/${jobId}`),
+  allCandidates: () => request<{ candidates: import('../types').Candidate[] }>('/api/candidates'),
   candidate: (id: string) => request(`/api/candidates/${id}`),
   ranking: (jobId: string) => request(`/api/rankings/${jobId}`),
   generateRanking: (jobId: string) => request(`/api/rankings/generate/${jobId}`, { method: 'POST' }),
@@ -38,5 +39,13 @@ export const api = {
   githubProfile: (username: string) =>
     request<{ profile: import('../types').GitHubProfile }>(`/api/github/${username}`),
   refreshGithubCache: (username: string) =>
-    request(`/api/github/${username}/cache`, { method: 'DELETE' })
+    request(`/api/github/${username}/cache`, { method: 'DELETE' }),
+  applyJob: (form: FormData) =>
+    request<{ application: import('../types').Application }>('/api/applications', { method: 'POST', body: form }),
+  myApplications: () =>
+    request<{ applications: import('../types').Application[] }>('/api/applications/my'),
+  application: (id: string) =>
+    request<{ application: import('../types').Application; job: import('../types').Job }>(`/api/applications/${id}`),
+  updateApplicationStatus: (id: string, status: string) =>
+    request<{ application: import('../types').Application }>(`/api/applications/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
 };

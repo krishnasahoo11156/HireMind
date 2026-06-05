@@ -8,6 +8,7 @@ import { analyticsRouter } from './analytics.routes.js';
 import { externalRouter } from './external.routes.js';
 import { aiRouter } from './ai.routes.js';
 import { githubRouter } from './github.routes.js';
+import { applicationsRouter } from './applications.routes.js';
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ router.use('/rankings', rankingsRouter);
 router.use('/analytics', analyticsRouter);
 router.use('/ai', aiRouter);
 router.use('/github', githubRouter);
+router.use('/applications', applicationsRouter);
 router.use(externalRouter);
 
 export default router;

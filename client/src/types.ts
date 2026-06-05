@@ -22,8 +22,33 @@ export interface User {
   _id: string;
   email: string;
   name: string;
-  role: 'recruiter' | 'hiring_manager' | 'admin';
+  role: 'recruiter' | 'candidate';
   avatar?: string;
+}
+
+export interface Application {
+  _id: string;
+  candidateId: string;
+  jobId: string;
+  recruiterId?: string;
+  status:
+    | 'Applied'
+    | 'Resume Parsed'
+    | 'AI Analysis'
+    | 'Under Review'
+    | 'Shortlisted'
+    | 'Interview'
+    | 'Selected'
+    | 'Rejected';
+  appliedAt: string;
+  updatedAt: string;
+  aiScore?: number;
+  recommendation?: string;
+  resumeUrl?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  leetcodeUsername?: string;
 }
 
 export interface Job {
