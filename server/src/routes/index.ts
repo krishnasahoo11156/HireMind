@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { authRouter } from './auth.routes.js';
 import { jobsRouter } from './jobs.routes.js';
 import { resumesRouter } from './resumes.routes.js';
@@ -13,7 +14,29 @@ import { applicationsRouter } from './applications.routes.js';
 const router = express.Router();
 
 router.get('/health', (_req, res) => {
-  res.json({ ok: true, mode: 'mongo-ready' });
+  const isConnected = mongoose.connection.readyState === 1;
+  if (isConnected) {
+    res.json({
+      status: "ok",
+      mongodb: "connected"
+    });
+  } else {
+    res.status(503).json({
+      status: "error",
+      mongodb: "disconnected"
+    });
+  }
+});
+
+// Database availability middleware for all other routes
+router.use((_req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    res.status(503).json({
+      error: "Database unavailable"
+    });
+    return;
+  }
+  next();
 });
 
 router.post('/seed/reset', (_req, res) => {

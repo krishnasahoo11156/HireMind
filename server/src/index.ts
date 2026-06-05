@@ -24,17 +24,36 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 });
 
 async function start() {
-  await connectDB();
+  // Verify required environment variables
+  if (!process.env.MONGODB_URI) {
+    throw new Error("Environment variable MONGODB_URI is missing");
+  }
+  if (!process.env.JWT_SECRET) {
+    throw new Error("Environment variable JWT_SECRET is missing");
+  }
+
+  // Connect to database before starting the server
+  try {
+    await connectDB();
+  } catch (error: any) {
+    console.error("Database connection failed:", error?.message || error);
+    process.exit(1);
+  }
 
   const httpServer = createServer(app);
   initSocket(httpServer);
 
   httpServer.listen(port, () => {
+    console.log('=== Startup Logs ===');
+    console.log(`PORT: ${port}`);
+    console.log(`NODE_ENV: ${process.env.NODE_ENV ?? 'development'}`);
+    console.log(`MongoDB Connection Status: ${mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'}`);
+    console.log('====================');
     console.log(`HireMind API listening on http://localhost:${port}`);
   });
 }
 
 start().catch((error) => {
-  console.error(error);
+  console.error("Server startup error:", error?.message || error);
   process.exit(1);
 });

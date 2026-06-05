@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import { UserModel } from '../models/schemas.js';
 import { auth, type AuthedRequest } from '../middleware/auth.js';
@@ -31,6 +32,12 @@ authRouter.post('/register', async (req, res) => {
   }
 
   try {
+    if (mongoose.connection.readyState !== 1) {
+      res.status(503).json({
+        error: "Database unavailable"
+      });
+      return;
+    }
     const existing = await UserModel.findOne({ email: body.data.email });
     if (existing) {
       res.status(409).json({ error: 'Email already registered' });
@@ -64,6 +71,12 @@ authRouter.post('/login', async (req, res) => {
   }
 
   try {
+    if (mongoose.connection.readyState !== 1) {
+      res.status(503).json({
+        error: "Database unavailable"
+      });
+      return;
+    }
     const user = await UserModel.findOne({ email: body.data.email });
     if (!user || !(await bcrypt.compare(body.data.password, user.password))) {
       res.status(401).json({ error: 'Invalid credentials' });
