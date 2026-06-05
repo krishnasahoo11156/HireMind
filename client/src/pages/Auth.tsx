@@ -22,8 +22,27 @@ export function Login() {
     }
   }
 
+  async function directSignIn(selectedEmail: string) {
+    try {
+      const response = await api.login(selectedEmail, 'password');
+      localStorage.setItem(api.tokenKey, response.token);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to sign in');
+    }
+  }
+
   return (
-    <AuthFrame mode="login" onSubmit={submit} error={error} email={email} setEmail={setEmail} password={password} setPassword={setPassword} />
+    <AuthFrame
+      mode="login"
+      onSubmit={submit}
+      error={error}
+      email={email}
+      setEmail={setEmail}
+      password={password}
+      setPassword={setPassword}
+      onDirectSignIn={directSignIn}
+    />
   );
 }
 
@@ -65,6 +84,7 @@ function AuthFrame({
   setEmail,
   password,
   setPassword,
+  onDirectSignIn,
   children
 }: {
   mode: 'login' | 'register';
@@ -74,6 +94,7 @@ function AuthFrame({
   setEmail: (v: string) => void;
   password: string;
   setPassword: (v: string) => void;
+  onDirectSignIn?: (email: string) => void;
   children?: React.ReactNode;
 }) {
   return (
@@ -132,11 +153,36 @@ function AuthFrame({
           </form>
 
           {mode === 'login' && (
-            <div className="mt-4 rounded-xl border border-border bg-background px-4 py-3 dark:border-darkborder dark:bg-darkbg">
-              <p className="text-xs font-semibold text-secondary dark:text-darkmuted mb-1">Demo credentials</p>
-              <p className="text-xs text-secondary dark:text-darkmuted font-mono">
-                recruiter@hiremind.ai / <span className="text-primary dark:text-darktext font-semibold">password</span>
-              </p>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-xl border border-border bg-background px-4 py-3 dark:border-darkborder dark:bg-darkbg">
+                <p className="text-xs font-semibold text-secondary dark:text-darkmuted mb-1">Demo credentials</p>
+                <p className="text-xs text-secondary dark:text-darkmuted font-mono mb-1">
+                  recruiter@hiremind.ai / <span className="text-primary dark:text-darktext font-semibold">password</span>
+                </p>
+                <p className="text-xs text-secondary dark:text-darkmuted font-mono">
+                  candidate@hiremind.ai / <span className="text-primary dark:text-darktext font-semibold">password</span>
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 text-xs"
+                  size="sm"
+                  type="button"
+                  variant="secondary"
+                  onClick={() => onDirectSignIn?.('recruiter@hiremind.ai')}
+                >
+                  Sign in Recruiter
+                </Button>
+                <Button
+                  className="flex-1 text-xs"
+                  size="sm"
+                  type="button"
+                  variant="secondary"
+                  onClick={() => onDirectSignIn?.('candidate@hiremind.ai')}
+                >
+                  Sign in Candidate
+                </Button>
+              </div>
             </div>
           )}
 
