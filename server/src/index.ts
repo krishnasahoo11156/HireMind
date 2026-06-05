@@ -1,9 +1,11 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import { createServer } from 'http';
 import mongoose from 'mongoose';
 import path from 'path';
 import router from './routes/index.js';
+import { initSocket } from './socket.js';
 
 dotenv.config();
 
@@ -28,7 +30,10 @@ async function start() {
     console.log('MongoDB URI not provided; using seeded in-memory demo data');
   }
 
-  app.listen(port, () => {
+  const httpServer = createServer(app);
+  initSocket(httpServer);
+
+  httpServer.listen(port, () => {
     console.log(`HireMind API listening on http://localhost:${port}`);
   });
 }

@@ -8,7 +8,7 @@ import { Button, Card, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption 
 export function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('recruiter@hiremind.ai');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('password');
   const [error, setError] = useState('');
 
   async function submit(event: FormEvent) {
@@ -131,6 +131,15 @@ function AuthFrame({
               {mode === 'login' ? 'Sign in' : 'Create account'}
             </Button>
           </form>
+
+          {mode === 'login' && (
+            <div className="mt-4 rounded-xl border border-border bg-background px-4 py-3 dark:border-darkborder dark:bg-darkbg">
+              <p className="text-xs font-semibold text-secondary dark:text-darkmuted mb-1">Demo credentials</p>
+              <p className="text-xs text-secondary dark:text-darkmuted font-mono">
+                recruiter@hiremind.ai / <span className="text-primary dark:text-darktext font-semibold">password</span>
+              </p>
+            </div>
+          )}
 
           <BodyText variant="default" color="secondary" className="mt-6 text-center">
             {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
