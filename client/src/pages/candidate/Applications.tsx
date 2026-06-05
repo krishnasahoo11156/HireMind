@@ -14,7 +14,7 @@ interface Toast {
   message: string;
 }
 
-const SOCKET_URL = 'http://localhost:5001';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const ALL_STAGES = [
   { key: 'Applied', label: 'Applied', desc: 'Application received and registered.' },
