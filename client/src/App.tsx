@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard';
 import { JobDetail } from './pages/JobDetail';
 import { Jobs } from './pages/Jobs';
 import { Settings } from './pages/Settings';
+import Landing from './pages/Landing';
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const hasToken = Boolean(localStorage.getItem('hiremind_token'));
@@ -19,7 +20,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Landing />} />
       <Route element={<RequireAuth><Layout /></RequireAuth>}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/jobs" element={<Jobs />} />
