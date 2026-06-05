@@ -2,24 +2,45 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, CheckCircle2, FileUp, Loader2, Play, Tag, Users } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { api } from '../lib/api';
 import type { Candidate, Job, Resume } from '../types';
-import { Badge, Button, Card, PageTitle, RecommendationBadge, ScoreBar, TabBar, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  PageTitle,
+  RecommendationBadge,
+  ScoreBar,
+  TabBar,
+  DisplayTitle,
+  SectionTitle,
+  CardTitle,
+  BodyText,
+  Caption
+} from '../components/ui';
+import { useResumeSocket } from '../hooks/useResumeSocket';
+import { ResumeProcessingPanel } from '../components/ResumeProcessingPanel';
 
 export function JobDetail() {
   const { id = 'job_frontend' } = useParams();
   const queryClient = useQueryClient();
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
+
+  // ── Live socket state ────────────────────────────────────────────────────
+  const socketState = useResumeSocket(id);
+
   const job = useQuery({
     queryKey: ['job', id],
     queryFn: () => api.job(id) as Promise<{ job: Job; resumes: Resume[]; candidates: Candidate[] }>
   });
+
   const upload = useMutation({
-    mutationFn: () => api.uploadBatch(),
+    mutationFn: () => api.uploadBatch(undefined, id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['job', id] })
   });
+
   const generate = useMutation({
     mutationFn: () => api.generateRanking(id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['job', id] })
@@ -34,7 +55,23 @@ export function JobDetail() {
   }
 
   const data = job.data;
-  const statusTone = data?.job.status === 'active' ? 'emerald' : data?.job.status === 'draft' ? 'yellow' : 'neutral';
+  const statusTone =
+    data?.job.status === 'active'
+      ? 'emerald'
+      : data?.job.status === 'draft'
+      ? 'yellow'
+      : 'neutral';
+
+  // Merge live candidates with fetched candidates (live takes precedence)
+  const mergedCandidates = (() => {
+    const fetched = data?.candidates ?? [];
+    if (socketState.liveCandidates.length === 0) return fetched;
+    // Build map from fetched, overwrite with live
+    const map = new Map<string, Candidate>();
+    fetched.forEach((c) => map.set(c._id, c));
+    socketState.liveCandidates.forEach((c) => map.set(c._id, c));
+    return Array.from(map.values()).sort((a, b) => b.aiScore - a.aiScore);
+  })();
 
   return (
     <>
@@ -45,19 +82,28 @@ export function JobDetail() {
             <div className="mb-3 flex items-center gap-2">
               <Badge tone={statusTone as any}>{data?.job.status ?? 'draft'}</Badge>
               <span className="text-sm text-secondary dark:text-darkmuted">
-                Created {data?.job.createdAt ? new Date(data.job.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
+                Created{' '}
+                {data?.job.createdAt
+                  ? new Date(data.job.createdAt).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })
+                  : '—'}
               </span>
             </div>
-            <DisplayTitle>
-              {data?.job.title ?? 'Job Detail'}
-            </DisplayTitle>
+            <DisplayTitle>{data?.job.title ?? 'Job Detail'}</DisplayTitle>
             <p className="mt-2 flex items-center gap-2 text-secondary dark:text-darkmuted">
               <Users className="h-4 w-4" />
               {data?.candidates.length ?? 0} candidates analyzed
             </p>
           </div>
           <div className="flex flex-shrink-0 items-center gap-3">
-            <Button variant="secondary" onClick={() => upload.mutate()} disabled={upload.isPending}>
+            <Button
+              variant="secondary"
+              onClick={() => upload.mutate()}
+              disabled={upload.isPending}
+            >
               {upload.isPending ? 'Uploading…' : 'Upload Resumes'}
             </Button>
             <Button variant="accent" onClick={runProcessing} disabled={processing}>
@@ -100,15 +146,27 @@ export function JobDetail() {
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {data?.job.extractedData.skills.map((skill) => (
-                  <Badge key={skill} tone="gold">{skill}</Badge>
+                  <Badge key={skill} tone="gold">
+                    {skill}
+                  </Badge>
                 ))}
               </div>
               <div className="mt-5 grid grid-cols-3 gap-3">
                 <InfoCard label="Experience" value={data?.job.extractedData.experience ?? '3-5 Years'} />
                 <InfoCard label="Education" value={data?.job.extractedData.education ?? 'Equivalent'} />
-                <InfoCard label="Keywords" value={`${data?.job.extractedData.keywords.length ?? 0} extracted`} />
+                <InfoCard
+                  label="Keywords"
+                  value={`${data?.job.extractedData.keywords.length ?? 0} extracted`}
+                />
               </div>
             </Card>
+
+            {/* Live Processing Panel — appears when socket emits */}
+            <AnimatePresence>
+              {(socketState.total > 0 || socketState.items.length > 0) && (
+                <ResumeProcessingPanel state={socketState} />
+              )}
+            </AnimatePresence>
 
             {/* Upload Zone */}
             <Card className="p-6">
@@ -121,16 +179,26 @@ export function JobDetail() {
                   <FileUp className="h-8 w-8 text-accent dark:text-darkaccent" />
                 </div>
                 <p className="text-sm font-semibold text-primary dark:text-darktext">
-                  Drag & drop PDF / DOCX files
+                  Drag &amp; drop PDF / DOCX files
                 </p>
                 <p className="mt-1 text-xs text-secondary dark:text-darkmuted">
                   Supports up to 20 files at once · Demo loads 5 seeded resumes
                 </p>
                 <div className="mt-4 flex gap-3">
-                  <Button variant="secondary" size="sm" onClick={() => upload.mutate()} disabled={upload.isPending}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => upload.mutate()}
+                    disabled={upload.isPending}
+                  >
                     {upload.isPending ? 'Uploading…' : 'Load Demo Resumes'}
                   </Button>
-                  <Button variant="accent" size="sm" onClick={runProcessing} disabled={processing}>
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    onClick={runProcessing}
+                    disabled={processing}
+                  >
                     <Play className="h-3.5 w-3.5" />
                     {processing ? 'Processing…' : 'Analyze All'}
                   </Button>
@@ -142,9 +210,7 @@ export function JobDetail() {
             {(data?.resumes ?? []).length > 0 && (
               <Card className="overflow-hidden">
                 <div className="border-b border-border px-6 py-4 dark:border-darkborder">
-                  <CardTitle>
-                    Upload Queue ({data?.resumes.length ?? 0})
-                  </CardTitle>
+                  <CardTitle>Upload Queue ({data?.resumes.length ?? 0})</CardTitle>
                 </div>
                 <div className="divide-y divide-border dark:divide-darkborder">
                   {(data?.resumes ?? []).map((resume, i) => (
@@ -156,8 +222,12 @@ export function JobDetail() {
                       className="flex items-center justify-between px-6 py-3.5"
                     >
                       <div>
-                        <div className="text-sm font-medium text-primary dark:text-darktext">{resume.fileName}</div>
-                        <div className="text-xs text-secondary dark:text-darkmuted">{resume.parsedData.name}</div>
+                        <div className="text-sm font-medium text-primary dark:text-darktext">
+                          {resume.fileName}
+                        </div>
+                        <div className="text-xs text-secondary dark:text-darkmuted">
+                          {resume.parsedData.name}
+                        </div>
                       </div>
                       {processing && i > 1 ? (
                         <span className="inline-flex items-center gap-2 text-xs font-medium text-warning">
@@ -179,27 +249,44 @@ export function JobDetail() {
 
           {/* Live Ranking Preview */}
           <Card className="p-6">
-            <SectionTitle className="mb-5">Live Ranking Preview</SectionTitle>
-            {(data?.candidates ?? []).length === 0 ? (
+            <div className="mb-5 flex items-center justify-between">
+              <SectionTitle>Live Ranking Preview</SectionTitle>
+              {socketState.liveCandidates.length > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success"
+                >
+                  <motion.span
+                    className="h-1.5 w-1.5 rounded-full bg-success"
+                    animate={{ scale: [1, 1.4, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                  />
+                  Live
+                </motion.span>
+              )}
+            </div>
+
+            {mergedCandidates.length === 0 ? (
               <div className="flex flex-col items-center py-12 text-center">
                 <div className="mb-3 rounded-xl border border-border bg-background p-3 dark:border-darkborder dark:bg-darkbg">
                   <Users className="h-6 w-6 text-secondary dark:text-darkmuted" />
                 </div>
                 <p className="text-sm font-medium text-secondary dark:text-darkmuted">
-                  No candidates yet. Upload & analyze to see rankings.
+                  No candidates yet. Upload &amp; analyze to see rankings.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {(data?.candidates ?? [])
-                  .slice()
-                  .sort((a, b) => b.aiScore - a.aiScore)
-                  .map((candidate, i) => (
+                <AnimatePresence>
+                  {mergedCandidates.map((candidate, i) => (
                     <Link key={candidate._id} to={`/candidates/${candidate._id}`}>
                       <motion.div
-                        initial={{ opacity: 0, y: 6 }}
+                        layout
+                        initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.06 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ delay: i * 0.04, layout: { duration: 0.3 } }}
                         className="flex items-center justify-between rounded-xl border border-border bg-background p-3.5 transition hover:border-accent dark:border-darkborder dark:bg-darkbg dark:hover:border-darkaccent"
                       >
                         <div className="flex items-center gap-3">
@@ -207,7 +294,9 @@ export function JobDetail() {
                             #{i + 1}
                           </span>
                           <div>
-                            <div className="text-sm font-semibold text-primary dark:text-darktext">{candidate.name}</div>
+                            <div className="text-sm font-semibold text-primary dark:text-darktext">
+                              {candidate.name}
+                            </div>
                             <div className="mt-0.5">
                               <RecommendationBadge recommendation={candidate.recommendation} />
                             </div>
@@ -217,6 +306,7 @@ export function JobDetail() {
                       </motion.div>
                     </Link>
                   ))}
+                </AnimatePresence>
               </div>
             )}
           </Card>
@@ -226,7 +316,9 @@ export function JobDetail() {
       {activeTab === 'Candidates' && (
         <Card className="flex items-center justify-center p-16 text-center">
           <div>
-            <p className="text-secondary dark:text-darkmuted">View the full candidate dashboard for this role.</p>
+            <p className="text-secondary dark:text-darkmuted">
+              View the full candidate dashboard for this role.
+            </p>
             <div className="mt-4">
               <Link to={`/jobs/${id}/candidates`}>
                 <Button variant="accent">
@@ -252,7 +344,9 @@ function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-background p-3.5 dark:border-darkborder dark:bg-darkbg">
       <Caption className="block font-semibold uppercase tracking-wider">{label}</Caption>
-      <BodyText variant="default" className="mt-1.5 font-semibold">{value}</BodyText>
+      <BodyText variant="default" className="mt-1.5 font-semibold">
+        {value}
+      </BodyText>
     </div>
   );
 }
