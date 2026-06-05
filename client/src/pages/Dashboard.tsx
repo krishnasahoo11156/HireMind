@@ -35,7 +35,7 @@ function getGreeting() {
 function JobCard({ job }: { job: Job }) {
   const statusTone = job.status === 'active' ? 'emerald' : job.status === 'draft' ? 'yellow' : 'neutral';
   return (
-    <Link to={`/jobs/${job._id}`}>
+    <Link to={`/recruiter/jobs/${job._id}`}>
       <Card hover className="flex flex-col gap-4 p-5 cursor-pointer">
         <div className="flex items-start justify-between gap-3">
           <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-accent/10 dark:bg-darkaccent/10">
@@ -75,7 +75,7 @@ function PriorityCandidateCard({ candidate, rank }: { candidate: Candidate; rank
     'from-amber-600 to-amber-700',
   ];
   return (
-    <Link to={`/candidates/${candidate._id}`}>
+    <Link to={`/recruiter/candidates/${candidate._id}`}>
       <Card hover className="flex min-w-[220px] flex-col gap-4 p-5 cursor-pointer">
         <div className="flex items-center justify-between">
           <div
@@ -152,7 +152,7 @@ export function Dashboard() {
   const recentJobs = jobs.data?.jobs.slice(0, 6) ?? [];
   const priorityCandidates = (candidates.data?.candidates ?? [])
     .slice().sort((a, b) => b.aiScore - a.aiScore).slice(0, 5);
-  const uploadHref = firstJobId ? `/jobs/${firstJobId}` : '/jobs';
+  const uploadHref = firstJobId ? `/recruiter/jobs/${firstJobId}` : '/recruiter/jobs';
 
   if (recentJobs.length === 0) {
     return (
@@ -160,7 +160,7 @@ export function Dashboard() {
         title="Create your first job to get started"
         body="Once a role is created, HireMind parses resumes, analyzes candidates, and explains every ranking with AI."
         icon={<BriefcaseBusiness className="h-8 w-8" />}
-        action={<Link to="/jobs"><Button size="lg" variant="accent"><FilePlus2 className="h-5 w-5" />Create Job</Button></Link>}
+        action={<Link to="/recruiter/jobs"><Button size="lg" variant="accent"><FilePlus2 className="h-5 w-5" />Create Job</Button></Link>}
       />
     );
   }
@@ -239,7 +239,7 @@ export function Dashboard() {
         <div>
           <SectionHeader title="Priority Candidates" action={
             firstJobId ? (
-              <Link to={`/jobs/${firstJobId}/candidates`} className="flex items-center gap-1 text-sm font-medium text-accent dark:text-darkaccent hover:underline">
+              <Link to={`/recruiter/jobs/${firstJobId}/candidates`} className="flex items-center gap-1 text-sm font-medium text-accent dark:text-darkaccent hover:underline">
                 View All <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             ) : null

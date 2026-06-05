@@ -124,7 +124,7 @@ export function JobDetail() {
               <Play className="h-4 w-4" />
               {processing ? 'Processing…' : 'Analyze Candidates'}
             </Button>
-            <Link to={`/jobs/${id}/candidates`}>
+            <Link to={`/recruiter/jobs/${id}/candidates`}>
               <Button>
                 <ArrowRight className="h-4 w-4" />
                 View Rankings
@@ -377,7 +377,7 @@ export function JobDetail() {
               <div className="space-y-3">
                 <AnimatePresence>
                   {mergedCandidates.map((candidate, i) => (
-                    <Link key={candidate._id} to={`/candidates/${candidate._id}`}>
+                    <Link key={candidate._id} to={`/recruiter/candidates/${candidate._id}`}>
                       <motion.div
                         layout
                         initial={{ opacity: 0, y: 8 }}
@@ -414,7 +414,7 @@ export function JobDetail() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <SectionTitle>Applied Candidates ({mergedCandidates.length})</SectionTitle>
-            <Link to={`/jobs/${id}/candidates`}>
+            <Link to={`/recruiter/jobs/${id}/candidates`}>
               <Button size="sm">
                 <ArrowRight className="h-4 w-4" />
                 View Rankings Dashboard

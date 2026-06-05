@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Login, Register } from './pages/Auth';
 import { Analytics } from './pages/Analytics';
@@ -67,6 +67,15 @@ function DashboardRedirect() {
   return <Navigate to={user.role === 'candidate' ? '/candidate/dashboard' : '/recruiter/dashboard'} replace />;
 }
 
+function ParamRedirect({ to }: { to: string }) {
+  const params = useParams();
+  let target = to;
+  for (const [key, val] of Object.entries(params)) {
+    if (val) target = target.replace(`:${key}`, val);
+  }
+  return <Navigate to={target} replace />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -98,9 +107,9 @@ export default function App() {
         {/* Redirect for general authenticated routes */}
         <Route path="/dashboard" element={<DashboardRedirect />} />
         <Route path="/jobs" element={<Navigate to="/recruiter/jobs" replace />} />
-        <Route path="/jobs/:id" element={<Navigate to="/recruiter/jobs/:id" replace />} />
-        <Route path="/jobs/:id/candidates" element={<Navigate to="/recruiter/jobs/:id/candidates" replace />} />
-        <Route path="/candidates/:id" element={<Navigate to="/recruiter/candidates/:id" replace />} />
+        <Route path="/jobs/:id" element={<ParamRedirect to="/recruiter/jobs/:id" />} />
+        <Route path="/jobs/:id/candidates" element={<ParamRedirect to="/recruiter/jobs/:id/candidates" />} />
+        <Route path="/candidates/:id" element={<ParamRedirect to="/recruiter/candidates/:id" />} />
         <Route path="/analytics" element={<Navigate to="/recruiter/analytics" replace />} />
         <Route path="/settings" element={<Navigate to="/recruiter/settings" replace />} />
       </Route>

@@ -76,10 +76,10 @@ function JobCard({ job, onDelete }: { job: Job; onDelete?: () => void }) {
 
       {/* Actions */}
       <div className="flex gap-2 border-t border-border pt-4 dark:border-darkborder">
-        <Link to={`/jobs/${job._id}`} className="flex-1">
+        <Link to={`/recruiter/jobs/${job._id}`} className="flex-1">
           <Button variant="secondary" size="sm" className="w-full">View</Button>
         </Link>
-        <Link to={`/jobs/${job._id}`} className="flex-1">
+        <Link to={`/recruiter/jobs/${job._id}`} className="flex-1">
           <Button variant="accent" size="sm" className="w-full">
             <Zap className="h-3.5 w-3.5" />Analyze
           </Button>

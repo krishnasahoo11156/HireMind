@@ -137,7 +137,7 @@ function CandidateCard({
                 <BrainCircuit className="h-3.5 w-3.5 text-accent dark:text-darkaccent" />
                 Why?
               </Button>
-              <Link to={`/candidates/${candidate._id}`}>
+              <Link to={`/recruiter/candidates/${candidate._id}`}>
                 <Button variant="accent" size="sm">View Profile</Button>
               </Link>
             </div>
