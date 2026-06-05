@@ -1,5 +1,24 @@
 import type { Candidate, Job } from '../types.js';
 
+function toIsoString(val: any): string {
+  if (!val) return new Date().toISOString();
+  if (typeof val.toDate === 'function') {
+    return val.toDate().toISOString();
+  }
+  if (val && typeof val === 'object' && typeof val._seconds === 'number') {
+    return new Date(val._seconds * 1000).toISOString();
+  }
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) {
+      return new Date().toISOString();
+    }
+    return d.toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
 export function mapCandidate(doc: any): Candidate {
   if (!doc) {
     throw new Error('Cannot map null or undefined candidate document');
@@ -26,9 +45,9 @@ export function mapCandidate(doc: any): Candidate {
     recruiterDecision: obj.recruiterDecision ?? 'pending',
     recruiterReason: obj.recruiterReason ?? '',
     whyApplying: obj.whyApplying ?? '',
-    feedbackAt: obj.feedbackAt ? new Date(obj.feedbackAt).toISOString() : undefined,
-    createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : new Date().toISOString(),
-    updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : new Date().toISOString()
+    feedbackAt: obj.feedbackAt ? toIsoString(obj.feedbackAt) : undefined,
+    createdAt: toIsoString(obj.createdAt),
+    updatedAt: toIsoString(obj.updatedAt)
   };
 }
 
@@ -59,7 +78,7 @@ export function mapJob(doc: any): Job {
       certifications: [],
       keywords: []
     },
-    createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : new Date().toISOString(),
-    updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : new Date().toISOString()
+    createdAt: toIsoString(obj.createdAt),
+    updatedAt: toIsoString(obj.updatedAt)
   };
 }
