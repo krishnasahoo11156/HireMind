@@ -6,7 +6,8 @@ import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { extractResumeData, minimalFallback, scoreCandidate } from '../services/ai.service.js';
 import { extractText } from '../services/documentParser.js';
-import { getGithubProfile, getLeetCodeProfile } from '../services/external.js';
+import { getLeetCodeProfile } from '../services/external.js';
+import { getGitHubProfile } from '../services/github.service.js';
 import { getSocketServer } from '../socket.js';
 import type { Application, Resume, Candidate } from '../types.js';
 
@@ -177,8 +178,16 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
       });
 
       // Fetch profiles
-      const ghUsername = leetcodeUsername || user.name.toLowerCase().replace(/\s/g, '');
-      const githubAnalysis = getGithubProfile(ghUsername) as Candidate['githubAnalysis'];
+      let ghUsername = '';
+      if (githubUrl) {
+        const clean = githubUrl.trim().replace(/\/$/, '');
+        const parts = clean.split('/');
+        ghUsername = parts[parts.length - 1];
+      }
+      if (!ghUsername) {
+        ghUsername = leetcodeUsername || user.name.toLowerCase().replace(/\s/g, '');
+      }
+      const githubAnalysis = await getGitHubProfile(ghUsername);
       const leetcodeAnalysis = getLeetCodeProfile(ghUsername) as Candidate['leetcodeAnalysis'];
 
       // Perform AI scoring
