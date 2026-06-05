@@ -2,11 +2,12 @@ import { FormEvent, useState } from 'react';
 import { Sparkles, LogIn, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { api } from '../lib/api';
+import { useAuth } from '../firebase/AuthContext';
 import { Button, Card, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 
 export function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('recruiter@hiremind.ai');
   const [password, setPassword] = useState('password');
   const [error, setError] = useState('');
@@ -14,10 +15,8 @@ export function Login() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     try {
-      const response = await api.login(email, password);
-      localStorage.setItem(api.tokenKey, response.token);
-      const userRole = (response.user as any)?.role;
-      if (userRole === 'candidate') {
+      const user = await login(email, password);
+      if (user.role === 'candidate') {
         navigate('/candidate/dashboard');
       } else {
         navigate('/dashboard');
@@ -29,9 +28,12 @@ export function Login() {
 
   async function directSignIn(selectedEmail: string) {
     try {
-      const response = await api.login(selectedEmail, 'password');
-      localStorage.setItem(api.tokenKey, response.token);
-      navigate('/dashboard');
+      const user = await login(selectedEmail, 'password');
+      if (user.role === 'candidate') {
+        navigate('/candidate/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in');
     }
@@ -53,6 +55,7 @@ export function Login() {
 
 export function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,9 +65,8 @@ export function Register() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     try {
-      const response = await api.register({ name, email, password, role });
-      localStorage.setItem(api.tokenKey, response.token);
-      if (role === 'candidate') {
+      const user = await register({ name, email, password, role });
+      if (user.role === 'candidate') {
         navigate('/candidate/dashboard');
       } else {
         navigate('/dashboard');

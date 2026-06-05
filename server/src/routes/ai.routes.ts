@@ -1,6 +1,8 @@
 import express from 'express';
 import { auth } from '../middleware/auth.js';
-import { CandidateModel, JobModel, ResumeModel } from '../models/schemas.js';
+import { candidateService } from '../firebase/services/candidateService.js';
+import { jobService } from '../firebase/services/jobService.js';
+import { resumeService } from '../firebase/services/resumeService.js';
 import { generateExplanationStream } from '../services/ai.service.js';
 
 export const aiRouter = express.Router();
@@ -13,14 +15,14 @@ aiRouter.post('/explain', auth, async (req, res) => {
   }
 
   try {
-    const candidate = await CandidateModel.findById(candidateId);
+    const candidate = await candidateService.findById(candidateId);
     if (!candidate) {
       res.status(404).json({ error: 'Candidate not found' });
       return;
     }
 
-    const job = await JobModel.findById(candidate.jobId);
-    const resume = await ResumeModel.findById(candidate.resumeId);
+    const job = await jobService.findById(candidate.jobId);
+    const resume = await resumeService.findById(candidate.resumeId);
 
     if (!job || !resume) {
       res.status(404).json({ error: 'Job or Resume not found' });

@@ -19,7 +19,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { api } from '../lib/api';
-import { getDecodedToken } from '../lib/auth';
+import { useAuth } from '../firebase/AuthContext';
 
 const recruiterNav = [
   { to: '/recruiter/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,12 +45,12 @@ export function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const decoded = getDecodedToken();
-  const role = decoded?.role ?? 'recruiter';
+  const { user, logout } = useAuth();
+  const role = user?.role ?? 'recruiter';
   
-  const name = role === 'candidate' ? 'Sarah Chen' : 'Maya Kapoor';
+  const name = user?.name ?? (role === 'candidate' ? 'Sarah Chen' : 'Maya Kapoor');
   const title = role === 'candidate' ? 'Software Engineer' : 'Senior Recruiter';
-  const initials = role === 'candidate' ? 'SC' : 'MK';
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || (role === 'candidate' ? 'SC' : 'MK');
   const nav = role === 'candidate' ? candidateNav : recruiterNav;
 
   return (
@@ -188,8 +188,8 @@ export function Layout() {
                 </div>
                 <button
                   aria-label="Log out"
-                  onClick={() => {
-                    localStorage.removeItem(api.tokenKey);
+                  onClick={async () => {
+                    await logout();
                     navigate('/');
                   }}
                   className="flex-none rounded-lg p-1.5 text-secondary transition-colors hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder dark:hover:text-darktext"

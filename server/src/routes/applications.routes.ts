@@ -1,10 +1,13 @@
 import express from 'express';
-import path from 'path';
-import mongoose from 'mongoose';
 import { z } from 'zod';
-import { ApplicationModel, UserModel, ResumeModel, CandidateModel, JobModel } from '../models/schemas.js';
+import { applicationService } from '../firebase/services/applicationService.js';
+import { userService } from '../firebase/services/userService.js';
+import { resumeService } from '../firebase/services/resumeService.js';
+import { candidateService } from '../firebase/services/candidateService.js';
+import { jobService } from '../firebase/services/jobService.js';
 import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
+import { uploadResumeToStorage } from '../firebase/storageService.js';
 import { extractResumeData, minimalFallback, scoreCandidate } from '../services/ai.service.js';
 import { extractText } from '../services/documentParser.js';
 import { getLeetCodeProfile } from '../services/external.js';
@@ -14,12 +17,18 @@ import { mapCandidate } from '../utils/mappers.js';
 
 export const applicationsRouter = express.Router();
 
-// Helper to parse file and get Resume record
-async function parseResumeFile(file: Express.Multer.File): Promise<any> {
+// Helper: parse uploaded file buffer and produce a resume record object
+async function parseResumeBuffer(file: Express.Multer.File, userId?: string): Promise<any> {
   const fileName = file.originalname;
-  const publicBase = process.env.PUBLIC_FILE_BASE_URL ?? 'http://localhost:5001/uploads';
-  const fileUrl = `${publicBase}/${path.basename(file.filename ?? fileName)}`;
   const fileType: 'pdf' | 'docx' = fileName.toLowerCase().endsWith('.docx') ? 'docx' : 'pdf';
+
+  // Upload to Firebase Storage
+  let fileUrl = '';
+  try {
+    fileUrl = await uploadResumeToStorage(file.buffer, fileName, file.mimetype, userId);
+  } catch (err) {
+    console.warn('[applications] Firebase Storage upload failed:', err);
+  }
 
   let rawText = '';
   try {
@@ -31,14 +40,7 @@ async function parseResumeFile(file: Express.Multer.File): Promise<any> {
   if (rawText) {
     try {
       const parsedData = await extractResumeData(rawText);
-      return {
-        fileName,
-        fileUrl,
-        fileType,
-        parsedData,
-        parseStatus: 'parsed',
-        rawText
-      };
+      return { fileName, fileUrl, fileType, parsedData, parseStatus: 'parsed', rawText };
     } catch (err) {
       console.warn(`[applications] AI extraction failed for "${fileName}":`, err);
     }
@@ -54,30 +56,30 @@ async function parseResumeFile(file: Express.Multer.File): Promise<any> {
   };
 }
 
-// POST /api/applications - Apply for a job
+// POST /api/applications — Apply for a job
 applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res) => {
   const { jobId, githubUrl, linkedinUrl, portfolioUrl, leetcodeUsername } = req.body;
-  
+
   if (!jobId) {
     res.status(400).json({ error: 'Job ID is required' });
     return;
   }
 
   try {
-    const job = await JobModel.findById(jobId);
+    const job = await jobService.findById(jobId);
     if (!job) {
       res.status(404).json({ error: 'Job not found' });
       return;
     }
 
-    const user = await UserModel.findById(req.userId);
+    const user = await userService.findById(req.userId!);
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
     // Prevent duplicate applications
-    const existingApp = await ApplicationModel.findOne({ candidateId: user._id, jobId });
+    const existingApp = await applicationService.findOne({ candidateId: user.id, jobId });
     if (existingApp) {
       res.status(400).json({ error: 'You have already applied to this job' });
       return;
@@ -85,13 +87,15 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
 
     let resumeUrl = '';
     if (req.file) {
-      const publicBase = process.env.PUBLIC_FILE_BASE_URL ?? 'http://localhost:5001/uploads';
-      resumeUrl = `${publicBase}/${path.basename(req.file.filename ?? req.file.originalname)}`;
+      try {
+        resumeUrl = await uploadResumeToStorage(req.file.buffer, req.file.originalname, req.file.mimetype, user.id);
+      } catch (err) {
+        console.warn('[applications] Resume upload to Firebase Storage failed:', err);
+      }
     }
 
-    // Create the application in DB
-    const application = await ApplicationModel.create({
-      candidateId: user._id,
+    const application = await applicationService.create({
+      candidateId: user.id,
       jobId,
       status: 'Applied',
       resumeUrl,
@@ -102,18 +106,17 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
     });
 
     // Increment applications count on the job
-    await JobModel.findByIdAndUpdate(jobId, { $inc: { applicationsCount: 1 } });
+    await jobService.incrementApplicationsCount(jobId);
 
     res.status(201).json({ application });
 
-    // Run the asynchronous evaluation pipeline in background
+    // Run the asynchronous evaluation pipeline in the background
     void (async () => {
       try {
         const socket = getSocketServer();
-        const candidateRoom = `candidate:${user._id}`;
-        const appId = application._id.toString();
+        const candidateRoom = `candidate:${user.id}`;
+        const appId = application.id;
 
-        // Notify recruiters that a new application has arrived
         socket.emit('application:new', { application, candidateName: user.name });
         socket.emit('notification:new', {
           message: `New candidate ${user.name} applied for "${job.title}".`,
@@ -130,14 +133,13 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
 
         // ─── STAGE 2: Resume Parsed (Delay 1.5s) ───
         await new Promise((r) => setTimeout(r, 1500));
-        
+
         let parsedResume;
         if (req.file) {
-          const parsedObj = await parseResumeFile(req.file);
-          parsedResume = await ResumeModel.create(parsedObj);
+          const parsedObj = await parseResumeBuffer(req.file, user.id);
+          parsedResume = await resumeService.create(parsedObj);
         } else {
-          // Fallback demo resume
-          parsedResume = await ResumeModel.create({
+          parsedResume = await resumeService.create({
             fileName: 'uploaded_resume.pdf',
             fileUrl: '',
             fileType: 'pdf',
@@ -154,26 +156,22 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           });
         }
 
-        application.status = 'Resume Parsed';
-        application.updatedAt = new Date();
-        await application.save();
+        await applicationService.update(appId, { status: 'Resume Parsed' });
 
         socket.to(candidateRoom).emit('tracker:update', {
           applicationId: appId,
           status: 'Resume Parsed',
-          updatedAt: application.updatedAt.toISOString()
+          updatedAt: new Date().toISOString()
         });
 
         // ─── STAGE 3: AI Analysis (Delay 2s) ───
         await new Promise((r) => setTimeout(r, 2000));
-        application.status = 'AI Analysis';
-        application.updatedAt = new Date();
-        await application.save();
+        await applicationService.update(appId, { status: 'AI Analysis' });
 
         socket.to(candidateRoom).emit('tracker:update', {
           applicationId: appId,
           status: 'AI Analysis',
-          updatedAt: application.updatedAt.toISOString()
+          updatedAt: new Date().toISOString()
         });
 
         // Fetch profiles
@@ -189,7 +187,6 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         const githubAnalysis = await getGitHubProfile(ghUsername);
         const leetcodeAnalysis = getLeetCodeProfile(ghUsername);
 
-        // Perform AI scoring
         let aiScore = 70;
         let matchPercentage = 70;
         let recommendation: 'Strong Hire' | 'Hire' | 'Maybe' | 'Reject' = 'Maybe';
@@ -207,9 +204,8 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           console.error('[applications] Async scoring failed:', err);
         }
 
-        // Create a recruiter-visible Candidate profile
-        const candidateRecord = await CandidateModel.create({
-          resumeId: parsedResume._id,
+        const candidateRecord = await candidateService.create({
+          resumeId: parsedResume.id,
           jobId,
           name: user.name,
           email: user.email,
@@ -228,22 +224,26 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
 
         // ─── STAGE 4: Under Review (Delay 1.5s) ───
         await new Promise((r) => setTimeout(r, 1500));
-        
-        application.status = 'Under Review';
-        application.aiScore = aiScore;
-        application.recommendation = recommendation;
-        application.updatedAt = new Date();
-        await application.save();
+
+        await applicationService.update(appId, {
+          status: 'Under Review',
+          aiScore,
+          recommendation
+        });
 
         socket.to(candidateRoom).emit('tracker:update', {
           applicationId: appId,
           status: 'Under Review',
           aiScore,
           recommendation,
-          updatedAt: application.updatedAt.toISOString()
+          updatedAt: new Date().toISOString()
         });
 
-        socket.emit('application:status', { applicationId: appId, status: 'Under Review', candidate: mapCandidate(candidateRecord) });
+        socket.emit('application:status', {
+          applicationId: appId,
+          status: 'Under Review',
+          candidate: mapCandidate(candidateRecord)
+        });
 
       } catch (pipelineErr) {
         console.error('[applications] Error in async pipeline:', pipelineErr);
@@ -255,35 +255,35 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
   }
 });
 
-// GET /api/applications/my - Retrieve candidate's applications
+// GET /api/applications/my — Candidate's own applications
 applicationsRouter.get('/my', auth, async (req: AuthedRequest, res) => {
   try {
-    const list = await ApplicationModel.find({ candidateId: req.userId });
+    const list = await applicationService.findAll({ candidateId: req.userId });
     res.json({ applications: list });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// GET /api/applications/:id - Retrieve specific application detail
+// GET /api/applications/:id — Single application detail
 applicationsRouter.get('/:id', auth, async (req, res) => {
   try {
-    const app = await ApplicationModel.findById(req.params.id);
+    const app = await applicationService.findById(req.params.id);
     if (!app) {
       res.status(404).json({ error: 'Application not found' });
       return;
     }
-    const job = await JobModel.findById(app.jobId);
+    const job = await jobService.findById(app.jobId);
     res.json({ application: app, job });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// PATCH /api/applications/:id/status - Update stage (Recruiter Action)
+// PATCH /api/applications/:id/status — Update stage (Recruiter Action)
 applicationsRouter.patch('/:id/status', auth, async (req: AuthedRequest, res) => {
   try {
-    const app = await ApplicationModel.findById(req.params.id);
+    const app = await applicationService.findById(req.params.id);
     if (!app) {
       res.status(404).json({ error: 'Application not found' });
       return;
@@ -291,14 +291,8 @@ applicationsRouter.patch('/:id/status', auth, async (req: AuthedRequest, res) =>
 
     const body = z.object({
       status: z.enum([
-        'Applied',
-        'Resume Parsed',
-        'AI Analysis',
-        'Under Review',
-        'Shortlisted',
-        'Interview',
-        'Selected',
-        'Rejected'
+        'Applied', 'Resume Parsed', 'AI Analysis', 'Under Review',
+        'Shortlisted', 'Interview', 'Selected', 'Rejected'
       ])
     }).safeParse(req.body);
 
@@ -308,47 +302,46 @@ applicationsRouter.patch('/:id/status', auth, async (req: AuthedRequest, res) =>
     }
 
     const newStatus = body.data.status;
-    app.status = newStatus;
-    app.updatedAt = new Date();
-    await app.save();
+    await applicationService.update(app.id, { status: newStatus });
 
-    // Find corresponding candidate profile and update recruiterDecision if shortlisted/selected/rejected
-    const candidateUser = await UserModel.findById(app.candidateId);
+    // Find corresponding candidate profile and update recruiterDecision
+    const candidateUser = await userService.findById(app.candidateId);
     if (candidateUser) {
-      const candidate = await CandidateModel.findOne({ email: candidateUser.email, jobId: app.jobId });
+      const candidate = await candidateService.findOne({ email: candidateUser.email, jobId: app.jobId });
       if (candidate) {
+        let recruiterDecision = candidate.recruiterDecision;
+        let recruiterReason = candidate.recruiterReason;
         if (newStatus === 'Shortlisted') {
-          candidate.recruiterDecision = 'override_select';
-          candidate.recruiterReason = 'Shortlisted via application pipeline';
+          recruiterDecision = 'override_select';
+          recruiterReason = 'Shortlisted via application pipeline';
         } else if (newStatus === 'Selected') {
-          candidate.recruiterDecision = 'agree';
-          candidate.recruiterReason = 'Final selection approved';
+          recruiterDecision = 'agree';
+          recruiterReason = 'Final selection approved';
         } else if (newStatus === 'Rejected') {
-          candidate.recruiterDecision = 'override_reject';
-          candidate.recruiterReason = 'Rejected in screening';
+          recruiterDecision = 'override_reject';
+          recruiterReason = 'Rejected in screening';
         }
-        await candidate.save();
+        await candidateService.update(candidate.id, { recruiterDecision, recruiterReason });
       }
     }
 
     // Trigger sockets
     const socket = getSocketServer();
     socket.to(`candidate:${app.candidateId}`).emit('tracker:update', {
-      applicationId: app._id.toString(),
+      applicationId: app.id,
       status: newStatus,
-      updatedAt: app.updatedAt.toISOString()
+      updatedAt: new Date().toISOString()
     });
+    socket.emit('application:status', { applicationId: app.id, status: newStatus });
 
-    socket.emit('application:status', { applicationId: app._id.toString(), status: newStatus });
-
-    // Notify the candidate
-    const job = await JobModel.findById(app.jobId);
+    const job = await jobService.findById(app.jobId);
     socket.to(`candidate:${app.candidateId}`).emit('notification:new', {
       message: `Your application to "${job?.title || 'Job'}" has been updated to "${newStatus}".`,
       type: 'candidate'
     });
 
-    res.json({ application: app });
+    const updatedApp = await applicationService.findById(app.id);
+    res.json({ application: updatedApp });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

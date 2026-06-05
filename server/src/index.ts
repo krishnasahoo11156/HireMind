@@ -1,105 +1,107 @@
+import 'dotenv/config';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import express from 'express';
 import { createServer } from 'http';
-import mongoose from 'mongoose';
-import path from 'path';
-import bcrypt from 'bcryptjs';
 import router from './routes/index.js';
 import { initSocket } from './socket.js';
-import { connectDB } from './config/db.js';
-import { UserModel } from './models/schemas.js';
 
-dotenv.config();
+// Validate required Firebase env vars at startup
+const requiredEnvVars = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
+for (const key of requiredEnvVars) {
+  if (!process.env[key]) {
+    console.error(`[Startup] Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+
+// Importing this module initializes Firebase Admin SDK
+import('./firebase/admin.js').catch((err) => {
+  console.error('[Startup] Failed to initialize Firebase Admin SDK:', err);
+  process.exit(1);
+});
 
 const app = express();
 const port = Number(process.env.PORT ?? 5001);
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
-app.use('/uploads', express.static(path.resolve('server/uploads')));
 app.use('/api', router);
 
+// Global error handler
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   const message = err instanceof Error ? err.message : 'Unexpected server error';
   res.status(500).json({ error: message });
 });
 
 async function seedDefaultUsers() {
-  console.log('[Startup Auto-Seed] Checking for default users...');
-  const recruiterEmail = 'recruiter@hiremind.ai';
-  const candidateEmail = 'candidate@hiremind.ai';
+  const { adminAuth, db } = await import('./firebase/admin.js');
+  const { userService } = await import('./firebase/services/userService.js');
 
-  try {
-    const recruiterExists = await UserModel.findOne({ email: recruiterEmail });
-    if (!recruiterExists) {
-      console.log(`[Startup Auto-Seed] Recruiter '${recruiterEmail}' is missing. Seeding...`);
-      const hashedPassword = await bcrypt.hash('password', 10);
-      await UserModel.create({
-        email: recruiterEmail,
-        password: hashedPassword,
-        name: 'Default Recruiter',
-        role: 'recruiter',
-        avatar: 'DR'
-      });
-      console.log(`[Startup Auto-Seed] Successfully seeded '${recruiterEmail}'`);
-    } else {
-      console.log(`[Startup Auto-Seed] Recruiter '${recruiterEmail}' already exists.`);
-    }
+  const defaultUsers = [
+    { email: 'recruiter@hiremind.ai', name: 'Default Recruiter', role: 'recruiter', password: 'password123' },
+    { email: 'candidate@hiremind.ai', name: 'Default Candidate', role: 'candidate', password: 'password123' }
+  ];
 
-    const candidateExists = await UserModel.findOne({ email: candidateEmail });
-    if (!candidateExists) {
-      console.log(`[Startup Auto-Seed] Candidate '${candidateEmail}' is missing. Seeding...`);
-      const hashedPassword = await bcrypt.hash('password', 10);
-      await UserModel.create({
-        email: candidateEmail,
-        password: hashedPassword,
-        name: 'Default Candidate',
-        role: 'candidate',
-        avatar: 'DC'
+  for (const userData of defaultUsers) {
+    try {
+      // Check if user already exists in Firestore
+      const existing = await userService.findOne({ email: userData.email });
+      if (existing) {
+        console.log(`[Startup] User '${userData.email}' already exists in Firestore.`);
+        continue;
+      }
+
+      // Create in Firebase Auth
+      let userRecord;
+      try {
+        userRecord = await adminAuth.getUserByEmail(userData.email);
+        console.log(`[Startup] Firebase Auth user '${userData.email}' already exists.`);
+      } catch {
+        userRecord = await adminAuth.createUser({
+          email: userData.email,
+          password: userData.password,
+          displayName: userData.name
+        });
+        console.log(`[Startup] Created Firebase Auth user '${userData.email}'.`);
+      }
+
+      // Set custom claims
+      await adminAuth.setCustomUserClaims(userRecord.uid, { role: userData.role });
+
+      // Create Firestore profile
+      await userService.create(userRecord.uid, {
+        uid: userRecord.uid,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role
       });
-      console.log(`[Startup Auto-Seed] Successfully seeded '${candidateEmail}'`);
-    } else {
-      console.log(`[Startup Auto-Seed] Candidate '${candidateEmail}' already exists.`);
+      console.log(`[Startup] Seeded user '${userData.email}' (${userData.role}).`);
+    } catch (err: any) {
+      console.error(`[Startup] Failed to seed user '${userData.email}':`, err.message);
     }
-  } catch (error: any) {
-    console.error('[Startup Auto-Seed] Error checking or seeding default users:', error?.message || error);
   }
 }
 
 async function start() {
-  // Verify required environment variables
-  if (!process.env.MONGODB_URI) {
-    throw new Error("Environment variable MONGODB_URI is missing");
-  }
-  if (!process.env.JWT_SECRET) {
-    throw new Error("Environment variable JWT_SECRET is missing");
-  }
-
-  // Connect to database before starting the server
-  try {
-    await connectDB();
-    // Auto-seed default users if they don't exist
-    await seedDefaultUsers();
-  } catch (error: any) {
-    console.error("Database connection failed on startup. Server will start, but database-dependent routes will return 503.", error?.message || error);
-    // Do not call process.exit(1) to let the server start and dynamically reconnect
-  }
-
   const httpServer = createServer(app);
   initSocket(httpServer);
 
-  httpServer.listen(port, () => {
-    console.log('=== Startup Logs ===');
-    console.log(`PORT: ${port}`);
-    console.log(`NODE_ENV: ${process.env.NODE_ENV ?? 'development'}`);
-    console.log(`MongoDB Connection Status: ${mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'}`);
-    console.log('====================');
+  httpServer.listen(port, async () => {
+    console.log('=== HireMind Server Startup ===');
+    console.log(`PORT:     ${port}`);
+    console.log(`ENV:      ${process.env.NODE_ENV ?? 'development'}`);
+    console.log(`Firebase: ${process.env.FIREBASE_PROJECT_ID}`);
+    console.log('================================');
     console.log(`HireMind API listening on http://localhost:${port}`);
+
+    // Seed default users after server is up (non-blocking)
+    await seedDefaultUsers().catch((err) => {
+      console.warn('[Startup] Seed warning:', err.message);
+    });
   });
 }
 
 start().catch((error) => {
-  console.error("Server startup error:", error?.message || error);
+  console.error('Server startup error:', error?.message || error);
   process.exit(1);
 });

@@ -22,28 +22,49 @@ import { CandidateSettings } from './pages/candidate/Settings';
 // Recruiter new pages
 import { CandidatesDirectory } from './pages/recruiter/Candidates';
 
-import { getDecodedToken } from './lib/auth';
+import { useAuth } from './firebase/AuthContext';
 
 function RequireAuth({ children }: { children: JSX.Element }) {
-  const hasToken = Boolean(localStorage.getItem('hiremind_token'));
-  return hasToken ? children : <Navigate to="/login" replace />;
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background dark:bg-darkbg text-primary dark:text-darktext">
+        <div className="animate-pulse font-heading text-lg font-bold">Loading HireMind...</div>
+      </div>
+    );
+  }
+  return user ? children : <Navigate to="/login" replace />;
 }
 
 function RequireRole({ children, role }: { children: JSX.Element; role: 'candidate' | 'recruiter' }) {
-  const decoded = getDecodedToken();
-  if (!decoded) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background dark:bg-darkbg text-primary dark:text-darktext">
+        <div className="animate-pulse font-heading text-lg font-bold">Loading...</div>
+      </div>
+    );
+  }
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
-  if (decoded.role !== role) {
-    return <Navigate to={decoded.role === 'candidate' ? '/candidate/dashboard' : '/recruiter/dashboard'} replace />;
+  if (user.role !== role) {
+    return <Navigate to={user.role === 'candidate' ? '/candidate/dashboard' : '/recruiter/dashboard'} replace />;
   }
   return children;
 }
 
 function DashboardRedirect() {
-  const decoded = getDecodedToken();
-  if (!decoded) return <Navigate to="/login" replace />;
-  return <Navigate to={decoded.role === 'candidate' ? '/candidate/dashboard' : '/recruiter/dashboard'} replace />;
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background dark:bg-darkbg text-primary dark:text-darktext">
+        <div className="animate-pulse font-heading text-lg font-bold">Loading...</div>
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={user.role === 'candidate' ? '/candidate/dashboard' : '/recruiter/dashboard'} replace />;
 }
 
 export default function App() {

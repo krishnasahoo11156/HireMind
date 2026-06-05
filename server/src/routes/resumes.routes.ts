@@ -1,22 +1,28 @@
 import express from 'express';
-import path from 'path';
-import { ResumeModel } from '../models/schemas.js';
+import { resumeService } from '../firebase/services/resumeService.js';
 import { auth } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
+import { uploadResumeToStorage } from '../firebase/storageService.js';
 import { extractResumeData, minimalFallback } from '../services/ai.service.js';
 import { extractText } from '../services/documentParser.js';
 import { getSocketServer } from '../socket.js';
+import type { AuthedRequest } from '../middleware/auth.js';
 
 export const resumesRouter = express.Router();
 
-// Helper: parse one uploaded file and return a Resume record object (uncommitted)
-async function buildResume(file: Express.Multer.File): Promise<any> {
+// Helper: build a resume record from an in-memory file buffer
+async function buildResume(file: Express.Multer.File, userId?: string): Promise<any> {
   const fileName = file.originalname;
-  const publicBase = process.env.PUBLIC_FILE_BASE_URL ?? 'http://localhost:5001/uploads';
-  const fileUrl = `${publicBase}/${path.basename(file.filename ?? fileName)}`;
   const fileType: 'pdf' | 'docx' = fileName.toLowerCase().endsWith('.docx') ? 'docx' : 'pdf';
 
-  // 1. Extract raw text from the uploaded file
+  // Upload to Firebase Storage and get public URL
+  let fileUrl = '';
+  try {
+    fileUrl = await uploadResumeToStorage(file.buffer, fileName, file.mimetype, userId);
+  } catch (storageErr) {
+    console.warn(`[resumes] Firebase Storage upload failed for "${fileName}":`, storageErr);
+  }
+
   let rawText = '';
   try {
     rawText = await extractText(file);
@@ -24,24 +30,15 @@ async function buildResume(file: Express.Multer.File): Promise<any> {
     console.warn(`[resumes] Text extraction failed for "${fileName}":`, parseErr);
   }
 
-  // 2. Send text to AI for structured extraction
   if (rawText) {
     try {
       const parsedData = await extractResumeData(rawText);
-      return {
-        fileName,
-        fileUrl,
-        fileType,
-        parsedData,
-        parseStatus: 'parsed',
-        rawText
-      };
+      return { fileName, fileUrl, fileType, parsedData, parseStatus: 'parsed', rawText };
     } catch (aiErr) {
       console.warn(`[resumes] AI extraction failed for "${fileName}":`, aiErr);
     }
   }
 
-  // 3. Fallback — store raw text and mark for manual review
   return {
     fileName,
     fileUrl,
@@ -53,22 +50,21 @@ async function buildResume(file: Express.Multer.File): Promise<any> {
 }
 
 // POST /upload — single resume
-resumesRouter.post('/upload', auth, upload.single('file'), async (req, res) => {
+resumesRouter.post('/upload', auth, upload.single('file'), async (req: AuthedRequest, res) => {
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded' });
     return;
   }
 
   try {
-    // Skip duplicates already in the DB
-    const existing = await ResumeModel.findOne({ fileName: req.file.originalname });
+    const existing = await resumeService.findOne({ fileName: req.file.originalname });
     if (existing) {
       res.status(200).json({ resume: existing, status: existing.parseStatus ?? 'parsed' });
       return;
     }
 
-    const resumeObj = await buildResume(req.file);
-    const resume = await ResumeModel.create(resumeObj);
+    const resumeObj = await buildResume(req.file, req.userId);
+    const resume = await resumeService.create(resumeObj);
     res.status(201).json({ resume, status: resume.parseStatus });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -76,11 +72,10 @@ resumesRouter.post('/upload', auth, upload.single('file'), async (req, res) => {
 });
 
 // POST /batch-upload — up to 20 resumes
-resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req, res) => {
+resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req: AuthedRequest, res) => {
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
   const jobId = (req.query.jobId as string | undefined) ?? req.body?.jobId ?? 'unknown';
 
-  // Typed emit helpers — gracefully no-op when socket server isn't ready
   function emitUploadStarted(payload: { jobId: string; total: number }) {
     try { getSocketServer().to(`job:${jobId}`).emit('resume_upload_started', payload); } catch { /* no-op */ }
   }
@@ -89,7 +84,7 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req,
   }
 
   try {
-    // If no files were sent, fall back to demo seed names (original behaviour)
+    // No files — fall back to demo seed names
     if (files.length === 0) {
       const demoNames = [
         'sarah-chen-resume.pdf',
@@ -104,14 +99,11 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req,
       const created: any[] = [];
       for (let i = 0; i < demoNames.length; i++) {
         const name = demoNames[i];
-        const hit = await ResumeModel.findOne({ fileName: name });
-        let r;
-        if (hit) {
-          r = hit;
-        } else {
-          r = await ResumeModel.create({
+        let r = await resumeService.findOne({ fileName: name });
+        if (!r) {
+          r = await resumeService.create({
             fileName: name,
-            fileUrl: `/uploads/${name}`,
+            fileUrl: '',
             fileType: 'pdf',
             parsedData: minimalFallback(name),
             parseStatus: 'manual_review'
@@ -119,11 +111,10 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req,
         }
         created.push(r);
 
-        // Stagger demo emit slightly so UI shows progressive updates
         await new Promise((resolve) => setTimeout(resolve, 250));
         emitResumeParsed({
           jobId,
-          resumeId: r._id.toString(),
+          resumeId: r.id,
           fileName: r.fileName,
           candidateName: r.parsedData?.name ?? 'Unknown',
           status: r.parseStatus ?? 'manual_review',
@@ -134,25 +125,22 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req,
 
       res.status(201).json({
         resumes: created,
-        progress: created.map((r) => ({ resumeId: r._id.toString(), status: r.parseStatus, progress: 100 }))
+        progress: created.map((r) => ({ resumeId: r.id, status: r.parseStatus, progress: 100 }))
       });
       return;
     }
 
-    // Real files: emit start, then parse sequentially to emit per-file events
+    // Real files: parse + upload sequentially
     emitUploadStarted({ jobId, total: files.length });
 
     const created: any[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const existing = await ResumeModel.findOne({ fileName: file.originalname });
-      let resume;
-      if (existing) {
-        resume = existing;
-      } else {
+      let resume = await resumeService.findOne({ fileName: file.originalname });
+      if (!resume) {
         try {
-          const resumeObj = await buildResume(file);
-          resume = await ResumeModel.create(resumeObj);
+          const resumeObj = await buildResume(file, req.userId);
+          resume = await resumeService.create(resumeObj);
         } catch {
           continue;
         }
@@ -161,7 +149,7 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req,
 
       emitResumeParsed({
         jobId,
-        resumeId: resume._id.toString(),
+        resumeId: resume.id,
         fileName: resume.fileName,
         candidateName: resume.parsedData?.name ?? 'Unknown',
         status: resume.parseStatus ?? 'parsed',
@@ -172,7 +160,7 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req,
 
     res.status(201).json({
       resumes: created,
-      progress: created.map((r) => ({ resumeId: r._id.toString(), status: r.parseStatus, progress: 100 }))
+      progress: created.map((r) => ({ resumeId: r.id, status: r.parseStatus, progress: 100 }))
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -182,7 +170,7 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req,
 // GET /:id
 resumesRouter.get('/:id', auth, async (req, res) => {
   try {
-    const resume = await ResumeModel.findById(req.params.id);
+    const resume = await resumeService.findById(req.params.id);
     if (!resume) {
       res.status(404).json({ error: 'Resume not found' });
       return;
@@ -196,12 +184,12 @@ resumesRouter.get('/:id', auth, async (req, res) => {
 // DELETE /:id
 resumesRouter.delete('/:id', auth, async (req, res) => {
   try {
-    const resume = await ResumeModel.findById(req.params.id);
+    const resume = await resumeService.findById(req.params.id);
     if (!resume) {
       res.status(404).json({ error: 'Resume not found' });
       return;
     }
-    await ResumeModel.findByIdAndDelete(req.params.id);
+    await resumeService.delete(req.params.id);
     res.json({ resume });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

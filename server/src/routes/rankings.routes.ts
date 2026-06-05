@@ -1,5 +1,6 @@
 import express from 'express';
-import { CandidateModel, RankingModel } from '../models/schemas.js';
+import { candidateService } from '../firebase/services/candidateService.js';
+import { rankingService } from '../firebase/services/rankingService.js';
 import { auth } from '../middleware/auth.js';
 import { getSocketServer } from '../socket.js';
 import { mapCandidate } from '../utils/mappers.js';
@@ -9,20 +10,19 @@ export const rankingsRouter = express.Router();
 rankingsRouter.post('/generate/:jobId', auth, async (req, res) => {
   const jobId = req.params.jobId;
   try {
-    const ranked = await CandidateModel.find({ jobId }).sort({ aiScore: -1 });
+    const ranked = await candidateService.findAll({ jobId }); // already sorted by aiScore desc
 
-    const ranking = await RankingModel.create({
+    const ranking = await rankingService.create({
       jobId,
       candidates: ranked.map((candidate, index) => ({
-        candidateId: candidate._id,
+        candidateId: candidate.id,
         rank: index + 1,
-        score: candidate.aiScore,
-        matchPercentage: candidate.matchPercentage,
-        recommendation: candidate.recommendation
+        score: candidate.aiScore ?? 0,
+        matchPercentage: candidate.matchPercentage ?? 0,
+        recommendation: candidate.recommendation ?? 'Maybe'
       }))
     });
 
-    // Emit per-candidate scored events
     try {
       const io = getSocketServer();
       for (const candidate of ranked) {
@@ -41,8 +41,10 @@ rankingsRouter.post('/generate/:jobId', auth, async (req, res) => {
 
 rankingsRouter.get('/:jobId', auth, async (req, res) => {
   try {
-    const ranking = await RankingModel.findOne({ jobId: req.params.jobId }).sort({ generatedAt: -1 });
-    const candidates = await CandidateModel.find({ jobId: req.params.jobId }).sort({ aiScore: -1 });
+    const [ranking, candidates] = await Promise.all([
+      rankingService.findByJobId(req.params.jobId),
+      candidateService.findAll({ jobId: req.params.jobId })
+    ]);
     res.json({ ranking, candidates: candidates.map(mapCandidate) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

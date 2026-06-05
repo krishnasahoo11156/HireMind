@@ -1,167 +1,156 @@
-import bcrypt from 'bcryptjs';
 import express from 'express';
-import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
-import { z } from 'zod';
-import { UserModel } from '../models/schemas.js';
-import { auth, type AuthedRequest } from '../middleware/auth.js';
+import { adminAuth, db } from '../firebase/admin.js';
+import { userService } from '../firebase/services/userService.js';
+import type { AuthedRequest } from '../middleware/auth.js';
 
 export const authRouter = express.Router();
 
-const publicUser = (user: any) => {
-  const userObj = user.toObject ? user.toObject() : { ...user };
-  delete userObj.password;
-  return userObj;
-};
-
-function tokenFor(userId: string, role: string) {
-  return jwt.sign({ sub: userId, role }, process.env.JWT_SECRET ?? 'hiremind-demo-secret', { expiresIn: '7d' });
-}
-
+// ─── POST /api/auth/register ───────────────────────────────────────────────
+// Creates a user in Firebase Auth + Firestore and sets custom role claim.
 authRouter.post('/register', async (req, res) => {
-  const body = z.object({
-    name: z.string().min(2),
-    email: z.string().email(),
-    password: z.string().min(8),
-    role: z.enum(['recruiter', 'hiring_manager', 'admin', 'candidate'])
-  }).safeParse(req.body);
+  const { name, email, password, role } = req.body;
 
-  if (!body.success) {
-    res.status(400).json({ error: 'Invalid registration payload', details: body.error.flatten() });
+  if (!name || !email || !password) {
+    res.status(400).json({ error: 'Name, email and password are required' });
     return;
   }
 
+  const validRole = role === 'candidate' ? 'candidate' : 'recruiter';
+
   try {
-    if (mongoose.connection.readyState !== 1) {
-      res.status(503).json({
-        error: "Database unavailable"
-      });
-      return;
-    }
-    const existing = await UserModel.findOne({ email: body.data.email });
-    if (existing) {
+    // 1. Create Firebase Auth user
+    const userRecord = await adminAuth.createUser({
+      email,
+      password,
+      displayName: name
+    });
+
+    // 2. Set custom role claim so tokens carry the role
+    await adminAuth.setCustomUserClaims(userRecord.uid, { role: validRole });
+
+    // 3. Persist profile in Firestore
+    await userService.create(userRecord.uid, {
+      uid: userRecord.uid,
+      name,
+      email,
+      role: validRole
+    });
+
+    // 4. Create a custom token so the client can sign in immediately
+    const customToken = await adminAuth.createCustomToken(userRecord.uid, { role: validRole });
+
+    res.status(201).json({
+      success: true,
+      customToken,
+      user: { id: userRecord.uid, name, email, role: validRole }
+    });
+  } catch (error: any) {
+    console.error('[auth] register error:', error);
+    if (error.code === 'auth/email-already-exists') {
       res.status(409).json({ error: 'Email already registered' });
       return;
     }
-
-    const hashedPassword = await bcrypt.hash(body.data.password, 10);
-    const user = await UserModel.create({
-      name: body.data.name,
-      email: body.data.email,
-      password: hashedPassword,
-      role: body.data.role,
-      avatar: body.data.name.slice(0, 2).toUpperCase()
-    });
-
-    res.status(201).json({ user: publicUser(user), token: tokenFor(user._id.toString(), user.role) });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-authRouter.post('/login', async (req, res) => {
-  console.log('[Login Debug] Received login request');
-  
-  try {
-    const body = z.object({
-      email: z.string().email(),
-      password: z.string().min(1)
-    }).safeParse(req.body);
-
-    if (!body.success) {
-      console.warn('[Login Debug] Invalid payload format:', body.error.flatten());
-      res.status(400).json({ error: 'Invalid login payload' });
-      return;
-    }
-
-    const { email, password } = body.data;
-    console.log(`[Login Debug] Incoming email: ${email}`);
-
-    if (mongoose.connection.readyState !== 1) {
-      console.error('[Login Debug] Database connection is not ready. Status state:', mongoose.connection.readyState);
-      res.status(503).json({
-        error: "Database unavailable"
-      });
-      return;
-    }
-
-    console.log('[Login Debug] Verification: Executing UserModel.findOne...');
-    let user;
-    try {
-      user = await UserModel.findOne({ email });
-      console.log(`[Login Debug] UserModel.findOne success. User found: ${!!user}`);
-    } catch (dbErr: any) {
-      console.error('[Login Debug] Failure Point: UserModel.findOne threw an error:', dbErr);
-      throw new Error(`Database findOne failed: ${dbErr.message}`);
-    }
-
-    if (!user) {
-      console.warn(`[Login Debug] User not found for email: ${email}`);
-      res.status(401).json({ error: 'Invalid credentials' });
-      return;
-    }
-
-    console.log('[Login Debug] Verification: Executing bcrypt.compare...');
-    let isMatch = false;
-    try {
-      isMatch = await bcrypt.compare(password, user.password);
-      console.log(`[Login Debug] bcrypt.compare success. Result: ${isMatch}`);
-    } catch (bcryptErr: any) {
-      console.error('[Login Debug] Failure Point: bcrypt.compare threw an error:', bcryptErr);
-      throw new Error(`Password comparison failed: ${bcryptErr.message}`);
-    }
-
-    if (!isMatch) {
-      console.warn(`[Login Debug] Password mismatch for user: ${email}`);
-      res.status(401).json({ error: 'Invalid credentials' });
-      return;
-    }
-
-    console.log('[Login Debug] Verification: Checking JWT_SECRET presence...');
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      console.error('[Login Debug] Failure Point: JWT_SECRET environment variable is missing');
-      throw new Error('JWT_SECRET is missing in environment variables');
-    }
-    console.log('[Login Debug] JWT_SECRET is present.');
-
-    console.log('[Login Debug] Verification: Executing jwt.sign...');
-    let token;
-    try {
-      token = tokenFor(user._id.toString(), user.role);
-      console.log('[Login Debug] jwt.sign success. JWT generated.');
-    } catch (jwtErr: any) {
-      console.error('[Login Debug] Failure Point: jwt.sign threw an error:', jwtErr);
-      throw new Error(`JWT generation failed: ${jwtErr.message}`);
-    }
-
-    const responsePayload = { user: publicUser(user), token };
-    console.log('[Login Debug] Final response: success. Sending token.');
-    res.json(responsePayload);
-
-  } catch (error: any) {
-    console.error('[Login Debug] Login controller caught exception:', error);
     res.status(500).json({
-      success: false,
-      error: error.message,
+      error: error.message ?? 'Registration failed',
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
 
-authRouter.get('/me', auth, async (req: AuthedRequest, res) => {
+// ─── POST /api/auth/login ─────────────────────────────────────────────────
+// Accepts a Firebase ID token (obtained by client-side signInWithEmailAndPassword),
+// verifies it, and returns the enriched user profile.
+authRouter.post('/login', async (req, res) => {
+  const { idToken } = req.body;
+
+  if (!idToken) {
+    res.status(400).json({ error: 'Firebase ID token is required. Login via client-side Firebase Auth then pass the idToken.' });
+    return;
+  }
+
   try {
-    if (!req.userId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
+    const decoded = await adminAuth.verifyIdToken(idToken);
+    const uid = decoded.uid;
+
+    // Load profile from Firestore
+    let user = await userService.findById(uid);
+
+    // If Firestore profile missing (e.g., manually created in Auth console), create one
+    if (!user) {
+      const firebaseUser = await adminAuth.getUser(uid);
+      const role = (decoded as any).role ?? 'recruiter';
+      await userService.create(uid, {
+        uid,
+        name: firebaseUser.displayName ?? firebaseUser.email ?? 'User',
+        email: firebaseUser.email ?? '',
+        role
+      });
+      user = await userService.findById(uid);
     }
-    const user = await UserModel.findById(req.userId);
+
+    res.json({
+      success: true,
+      user: { id: uid, name: user?.name, email: user?.email, role: user?.role }
+    });
+  } catch (error: any) {
+    console.error('[auth] login error:', error);
+    res.status(401).json({
+      success: false,
+      error: 'Invalid or expired Firebase token',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// ─── GET /api/auth/me ─────────────────────────────────────────────────────
+authRouter.get('/me', async (req: AuthedRequest, res) => {
+  const header = req.headers.authorization;
+  const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+
+  if (!token) {
+    res.status(401).json({ error: 'No token provided' });
+    return;
+  }
+
+  try {
+    const decoded = await adminAuth.verifyIdToken(token);
+    const uid = decoded.uid;
+
+    let user = await userService.findById(uid);
+    if (!user) {
+      // Firestore profile missing — create it from Firebase Auth record
+      const firebaseUser = await adminAuth.getUser(uid);
+      const role = (decoded as any).role ?? 'recruiter';
+      await userService.create(uid, {
+        uid,
+        name: firebaseUser.displayName ?? firebaseUser.email ?? 'User',
+        email: firebaseUser.email ?? '',
+        role
+      });
+      user = await userService.findById(uid);
+    }
+
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
-    res.json({ user: publicUser(user) });
+
+    res.json({
+      user: { id: uid, name: user.name, email: user.email, role: user.role }
+    });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[auth] /me error:', error);
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// ─── GET /api/health ──────────────────────────────────────────────────────
+// Returns Firestore connectivity status
+authRouter.get('/health', async (_req, res) => {
+  try {
+    await db.collection('_health_ping').limit(1).get();
+    res.json({ status: 'ok', firebase: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'error', firebase: 'disconnected' });
   }
 });

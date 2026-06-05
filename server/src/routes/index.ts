@@ -1,5 +1,5 @@
 import express from 'express';
-import mongoose from 'mongoose';
+import { db } from '../firebase/admin.js';
 import { authRouter } from './auth.routes.js';
 import { jobsRouter } from './jobs.routes.js';
 import { resumesRouter } from './resumes.routes.js';
@@ -14,34 +14,17 @@ import { debugRouter } from './debug.routes.js';
 
 const router = express.Router();
 
-router.get('/health', (_req, res) => {
-  const isConnected = mongoose.connection.readyState === 1;
-  if (isConnected) {
-    res.json({
-      status: "ok",
-      mongodb: "connected"
-    });
-  } else {
-    res.status(503).json({
-      status: "error",
-      mongodb: "disconnected"
-    });
+// Health endpoint — checks Firebase Firestore connectivity
+router.get('/health', async (_req, res) => {
+  try {
+    await db.collection('_health_ping').limit(1).get();
+    res.json({ status: 'ok', firebase: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'error', firebase: 'disconnected' });
   }
-});
-
-// Database availability middleware for all other routes
-router.use((_req, res, next) => {
-  if (mongoose.connection.readyState !== 1) {
-    res.status(503).json({
-      error: "Database unavailable"
-    });
-    return;
-  }
-  next();
 });
 
 router.post('/seed/reset', (_req, res) => {
-  // import resetDemoData from '../data.js' if you need this in production
   res.json({ ok: true });
 });
 

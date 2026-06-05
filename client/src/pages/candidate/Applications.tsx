@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { io as connectSocket, Socket } from 'socket.io-client';
 import { BriefcaseBusiness, CheckCircle, Clock, Sparkles, BrainCircuit, Bell, Shield, ArrowRight, Star } from 'lucide-react';
 import { useJobs, useMyApplications } from '../../hooks/queries';
-import { getDecodedToken } from '../../lib/auth';
+import { useAuth } from '../../firebase/AuthContext';
 import type { Application, Job } from '../../types';
 import { Badge, Card, PageTitle, SectionTitle, BodyText, Caption } from '../../components/ui';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,8 +23,8 @@ const ALL_STAGES = [
 ];
 
 export function CandidateApplications() {
-  const decoded = getDecodedToken();
-  const userId = decoded?.sub ?? 'user_demo';
+  const { user } = useAuth();
+  const userId = user?.id ?? 'user_demo';
 
   const { data: myApps, refetch: refetchApps } = useMyApplications();
   const { data: allJobs } = useJobs();
