@@ -38,8 +38,8 @@ async function seedDefaultUsers() {
   const { userService } = await import('./firebase/services/userService.js');
 
   const defaultUsers = [
-    { email: 'recruiter@hiremind.ai', name: 'Default Recruiter', role: 'recruiter', password: 'password123' },
-    { email: 'candidate@hiremind.ai', name: 'Default Candidate', role: 'candidate', password: 'password123' }
+    { email: 'recruiter@hiremind.ai', name: 'Default Recruiter', role: 'recruiter', password: 'password' },
+    { email: 'candidate@hiremind.ai', name: 'Default Candidate', role: 'candidate', password: 'password' }
   ];
 
   for (const userData of defaultUsers) {

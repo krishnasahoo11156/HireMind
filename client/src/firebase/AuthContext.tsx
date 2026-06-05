@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // Load user profile from backend if not cached
           if (!user || user.id !== fbUser.uid) {
-            const resp = await fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:5001'}/api/auth/me`, {
+            const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
+            const resp = await fetch(`${apiBase}/api/auth/me`, {
               headers: { Authorization: `Bearer ${idToken}` }
             });
             if (resp.ok) {
@@ -98,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const idToken = await cred.user.getIdToken(true); // force refresh to get latest custom claims
     localStorage.setItem(TOKEN_KEY, idToken);
 
-    const apiBase = import.meta.env.VITE_API_URL ?? 'http://localhost:5001';
+    const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
     const resp = await fetch(`${apiBase}/api/auth/me`, {
       headers: { Authorization: `Bearer ${idToken}` }
     });
@@ -117,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (payload: { name: string; email: string; password: string; role: string }): Promise<AppUser> => {
-    const apiBase = import.meta.env.VITE_API_URL ?? 'http://localhost:5001';
+    const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
 
     // Backend creates the Firebase Auth user and returns a customToken
     const resp = await fetch(`${apiBase}/api/auth/register`, {
