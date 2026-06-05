@@ -2,7 +2,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrainCircuit, BriefcaseBusiness, Calendar, Plus, Search, Trash2, Users, X, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import type { Job } from '../types';
 import { Badge, Button, Card, EmptyState, PageTitle, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
@@ -108,10 +108,18 @@ export function Jobs() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'draft'>('all');
+  
+  // Wizard states
+  const [step, setStep] = useState(1);
   const [title, setTitle] = useState('Frontend Developer');
+  const [department, setDepartment] = useState('Engineering');
   const [description, setDescription] = useState(
     'We are looking for a Frontend Developer with strong React ecosystem experience, TypeScript fluency, Redux state management, Next.js delivery experience, and production TailwindCSS practice.'
   );
+  const [githubWeight, setGithubWeight] = useState(50);
+  const [leetcodeWeight, setLeetcodeWeight] = useState(30);
+  const [educationWeight, setEducationWeight] = useState(20);
+
   const extracted = useMemo(() => ({
     skills: ['React', 'TypeScript', 'Redux', 'Next.js', 'TailwindCSS'].filter((skill) =>
       description.toLowerCase().includes(skill.toLowerCase())
@@ -123,8 +131,21 @@ export function Jobs() {
 
   const jobs = useQuery({ queryKey: ['jobs'], queryFn: () => api.jobs() as Promise<{ jobs: Job[] }> });
   const create = useMutation({
-    mutationFn: () => api.createJob({ title, description }),
-    onSuccess: () => { setOpen(false); void queryClient.invalidateQueries({ queryKey: ['jobs'] }); }
+    mutationFn: () => api.createJob({
+      title,
+      description,
+      department,
+      weights: {
+        github: githubWeight,
+        leetcode: leetcodeWeight,
+        education: educationWeight
+      }
+    }),
+    onSuccess: () => {
+      setOpen(false);
+      setStep(1);
+      void queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    }
   });
 
   const filtered = useMemo(() => {
@@ -144,7 +165,7 @@ export function Jobs() {
         title="Jobs"
         subtitle="Create roles, upload descriptions, and let AI analyze every candidate."
         action={
-          <Button onClick={() => setOpen(true)} size="lg" variant="accent">
+          <Button onClick={() => { setOpen(true); setStep(1); }} size="lg" variant="accent">
             <Plus className="h-4 w-4" />New Job
           </Button>
         }
@@ -180,7 +201,7 @@ export function Jobs() {
           title="No jobs yet"
           body="Create a job to begin analyzing candidates with AI."
           icon={<BriefcaseBusiness className="h-8 w-8" />}
-          action={<Button onClick={() => setOpen(true)} variant="accent"><Plus className="h-4 w-4" />Create Job</Button>}
+          action={<Button onClick={() => { setOpen(true); setStep(1); }} variant="accent"><Plus className="h-4 w-4" />Create Job</Button>}
         />
       ) : (
         <div className="grid grid-cols-3 gap-5">
@@ -197,7 +218,7 @@ export function Jobs() {
         </div>
       )}
 
-      {/* Create Job Modal */}
+      {/* Create Job Wizard Modal */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm">
           <motion.div
@@ -206,12 +227,23 @@ export function Jobs() {
             className="w-full max-w-3xl"
           >
             <Card className="p-6">
+              {/* Modal Header */}
               <div className="mb-6 flex items-start justify-between">
                 <div>
-                  <SectionTitle>Create Job</SectionTitle>
-                  <p className="mt-1 text-sm text-secondary dark:text-darkmuted">
-                    Paste the JD or write it directly. AI extracts requirements automatically.
-                  </p>
+                  <SectionTitle>Create Job Wizard</SectionTitle>
+                  <div className="mt-2 flex items-center gap-2">
+                    {[1, 2, 3].map((s) => (
+                      <div key={s} className="flex items-center gap-1.5">
+                        <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold ${step >= s ? 'bg-accent text-white dark:bg-darkaccent' : 'bg-gray-100 text-secondary dark:bg-darkborder'}`}>
+                          {s}
+                        </span>
+                        <span className={`text-xs font-semibold ${step === s ? 'text-primary dark:text-darktext' : 'text-secondary dark:text-darkmuted'}`}>
+                          {s === 1 ? 'Details' : s === 2 ? 'Requirements' : 'Weights'}
+                        </span>
+                        {s < 3 && <span className="h-px w-8 bg-border dark:bg-darkborder" />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <button
                   onClick={() => setOpen(false)}
@@ -221,41 +253,176 @@ export function Jobs() {
                 </button>
               </div>
 
-              <form className="grid grid-cols-[1fr_280px] gap-5" onSubmit={submit}>
-                <div className="space-y-4">
-                  <input
-                    className="hm-input w-full"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Job title"
-                  />
-                  <textarea
-                    className="hm-textarea min-h-52 w-full"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Paste job description…"
-                  />
-                  <div className="flex min-h-24 items-center justify-center rounded-2xl border-2 border-dashed border-border text-sm font-medium text-secondary transition hover:border-accent dark:border-darkborder dark:text-darkmuted dark:hover:border-darkaccent">
-                    Drop PDF / DOCX
-                  </div>
-                </div>
+              {/* Wizard Content Form */}
+              <form onSubmit={submit}>
+                <AnimatePresence mode="wait">
+                  {step === 1 && (
+                    <motion.div
+                      key="step1"
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 16 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-4 min-h-[300px]"
+                    >
+                      <h4 className="text-sm font-bold text-primary dark:text-darktext">Step 1: Role Details</h4>
+                      <div>
+                        <Caption as="label" className="mb-1.5 block font-semibold">Job Title</Caption>
+                        <input
+                          className="hm-input w-full"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="e.g. Senior Frontend Developer"
+                        />
+                      </div>
+                      <div>
+                        <Caption as="label" className="mb-1.5 block font-semibold">Department</Caption>
+                        <select
+                          className="hm-input w-full"
+                          value={department}
+                          onChange={(e) => setDepartment(e.target.value)}
+                        >
+                          {['Engineering', 'Product', 'Design', 'Sales', 'Marketing', 'HR'].map((dept) => (
+                            <option key={dept} value={dept}>{dept}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </motion.div>
+                  )}
 
-                <div className="rounded-2xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg">
-                  <div className="mb-4 flex items-center gap-2">
-                    <BrainCircuit className="h-4 w-4 text-accent dark:text-darkaccent" />
-                    <CardTitle>AI Extraction Preview</CardTitle>
-                  </div>
-                  <Preview label="Skills" items={extracted.skills.length ? extracted.skills : ['React', 'TypeScript']} />
-                  <Preview label="Experience" items={[extracted.experience]} />
-                  <Preview label="Education" items={[extracted.education]} />
-                  <Preview label="Keywords" items={extracted.keywords} />
-                </div>
+                  {step === 2 && (
+                    <motion.div
+                      key="step2"
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 16 }}
+                      transition={{ duration: 0.2 }}
+                      className="grid grid-cols-[1fr_280px] gap-5 min-h-[300px]"
+                    >
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-primary dark:text-darktext">Step 2: Job Description</h4>
+                        <div>
+                          <Caption as="label" className="mb-1.5 block font-semibold">Paste Job Description</Caption>
+                          <textarea
+                            className="hm-textarea min-h-52 w-full"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Describe the role requirements, technology stack, and qualifications..."
+                          />
+                        </div>
+                      </div>
 
-                <div className="col-span-2 flex justify-end gap-3 border-t border-border pt-4 dark:border-darkborder">
-                  <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
-                  <Button type="submit" variant="accent" disabled={create.isPending}>
-                    {create.isPending ? 'Saving…' : 'Save Job'}
+                      <div className="rounded-2xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg">
+                        <div className="mb-4 flex items-center gap-2">
+                          <BrainCircuit className="h-4 w-4 text-accent dark:text-darkaccent" />
+                          <CardTitle>AI Extraction Preview</CardTitle>
+                        </div>
+                        <Preview label="Skills" items={extracted.skills.length ? extracted.skills : ['React', 'TypeScript']} />
+                        <Preview label="Experience" items={[extracted.experience]} />
+                        <Preview label="Education" items={[extracted.education]} />
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {step === 3 && (
+                    <motion.div
+                      key="step3"
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 16 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-6 min-h-[300px]"
+                    >
+                      <h4 className="text-sm font-bold text-primary dark:text-darktext">Step 3: AI Scoring Weights</h4>
+                      <p className="text-xs text-secondary dark:text-darkmuted">
+                        Configure the relative importance of GitHub contribution activity, LeetCode problem solving metrics, and academic/education credentials in the overall AI score calculation.
+                      </p>
+
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-xs font-semibold mb-1">
+                            <span className="text-primary dark:text-darktext">GitHub Activity & Contribution Quality</span>
+                            <span className="text-accent dark:text-darkaccent">{githubWeight}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={githubWeight}
+                            onChange={(e) => setGithubWeight(Number(e.target.value))}
+                            className="w-full accent-accent"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-xs font-semibold mb-1">
+                            <span className="text-primary dark:text-darktext">LeetCode Algorithmic Solving Signal</span>
+                            <span className="text-accent dark:text-darkaccent">{leetcodeWeight}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={leetcodeWeight}
+                            onChange={(e) => setLeetcodeWeight(Number(e.target.value))}
+                            className="w-full accent-accent"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-xs font-semibold mb-1">
+                            <span className="text-primary dark:text-darktext">Education & Certification Value</span>
+                            <span className="text-accent dark:text-darkaccent">{educationWeight}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={educationWeight}
+                            onChange={(e) => setEducationWeight(Number(e.target.value))}
+                            className="w-full accent-accent"
+                          />
+                        </div>
+
+                        <div className="rounded-xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg text-xs font-semibold text-secondary dark:text-darkmuted flex justify-between">
+                          <span>Sum total weight:</span>
+                          <span className={`${githubWeight + leetcodeWeight + educationWeight === 100 ? 'text-success' : 'text-danger'}`}>
+                            {githubWeight + leetcodeWeight + educationWeight}% (Recommended: 100%)
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Footer Navigation */}
+                <div className="mt-6 flex justify-between border-t border-border pt-4 dark:border-darkborder">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      if (step > 1) setStep(step - 1);
+                      else setOpen(false);
+                    }}
+                  >
+                    {step === 1 ? 'Cancel' : 'Back'}
                   </Button>
+                  <div className="flex gap-2">
+                    {step < 3 ? (
+                      <Button
+                        type="button"
+                        variant="accent"
+                        onClick={() => setStep(step + 1)}
+                        disabled={step === 1 && !title.trim()}
+                      >
+                        Next
+                      </Button>
+                    ) : (
+                      <Button type="submit" variant="accent" disabled={create.isPending}>
+                        {create.isPending ? 'Analyzing & Saving…' : 'Submit Job'}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </form>
             </Card>

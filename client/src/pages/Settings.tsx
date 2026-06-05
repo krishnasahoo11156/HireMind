@@ -174,18 +174,20 @@ export function Settings() {
 
       <div className="space-y-5">
         {sections.map((section, i) => (
-          <Card key={section.title} className="overflow-hidden">
-            <div className="flex items-start gap-4 border-b border-border bg-background/50 px-6 py-4 dark:border-darkborder dark:bg-darkbg/50">
-              <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
-                {section.icon}
+          <div key={section.title}>
+            <Card className="overflow-hidden">
+              <div className="flex items-start gap-4 border-b border-border bg-background/50 px-6 py-4 dark:border-darkborder dark:bg-darkbg/50">
+                <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
+                  {section.icon}
+                </div>
+                <div>
+                  <CardTitle>{section.title}</CardTitle>
+                  <Caption className="block mt-0.5">{section.description}</Caption>
+                </div>
               </div>
-              <div>
-                <CardTitle>{section.title}</CardTitle>
-                <Caption className="block mt-0.5">{section.description}</Caption>
-              </div>
-            </div>
-            <div className="p-6">{section.content}</div>
-          </Card>
+              <div className="p-6">{section.content}</div>
+            </Card>
+          </div>
         ))}
       </div>
     </>

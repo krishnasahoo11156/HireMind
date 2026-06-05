@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, CheckCircle2, FileUp, Loader2, Play, Tag, Users } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FileUp, Loader2, Play, Tag, Users, BrainCircuit } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useDropzone } from 'react-dropzone';
 import { api } from '../lib/api';
 import type { Candidate, Job, Resume } from '../types';
 import {
@@ -37,7 +38,7 @@ export function JobDetail() {
   });
 
   const upload = useMutation({
-    mutationFn: () => api.uploadBatch(undefined, id),
+    mutationFn: (files?: File[]) => api.uploadBatch(files, id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['job', id] })
   });
 
@@ -46,9 +47,22 @@ export function JobDetail() {
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['job', id] })
   });
 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+    },
+    maxFiles: 20,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        upload.mutate(acceptedFiles);
+      }
+    }
+  });
+
   async function runProcessing() {
     setProcessing(true);
-    await upload.mutateAsync();
+    await upload.mutateAsync(undefined);
     await new Promise((r) => setTimeout(r, 900));
     await generate.mutateAsync();
     setProcessing(false);
@@ -101,7 +115,7 @@ export function JobDetail() {
           <div className="flex flex-shrink-0 items-center gap-3">
             <Button
               variant="secondary"
-              onClick={() => upload.mutate()}
+              onClick={() => upload.mutate(undefined)}
               disabled={upload.isPending}
             >
               {upload.isPending ? 'Uploading…' : 'Upload Resumes'}
@@ -161,6 +175,78 @@ export function JobDetail() {
               </div>
             </Card>
 
+            {/* JD Quality Card */}
+            {data?.job.extractedData.clarity_score !== undefined && (
+              <Card className="p-6 border-accent/10 bg-gradient-to-br from-accent/[0.02] to-surface dark:from-darkaccent/[0.02]">
+                <div className="mb-5 flex items-center justify-between border-b border-border pb-3 dark:border-darkborder">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-xl bg-accent/10 p-2 text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
+                      <BrainCircuit className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <SectionTitle>JD Quality Analysis</SectionTitle>
+                      <Caption>AI-powered feedback on JD clarity & detail</Caption>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-secondary dark:text-darkmuted">Clarity Score</span>
+                    <span className={`rounded-xl px-2.5 py-1 text-sm font-bold ${
+                      data.job.extractedData.clarity_score >= 80 ? 'bg-success/15 text-success' :
+                      data.job.extractedData.clarity_score >= 50 ? 'bg-warning/15 text-warning' :
+                      'bg-danger/15 text-danger'
+                    }`}>
+                      {data.job.extractedData.clarity_score}/100
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Nice to haves & Red Flags */}
+                  <div className="space-y-4">
+                    <div>
+                      <Caption className="mb-2 block font-bold uppercase tracking-wider text-success">Nice-To-Have Skills</Caption>
+                      {data.job.extractedData.nice_to_have && data.job.extractedData.nice_to_have.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {data.job.extractedData.nice_to_have.map((s) => (
+                            <Badge key={s} tone="emerald">{s}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-secondary dark:text-darkmuted">None extracted</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Caption className="mb-2 block font-bold uppercase tracking-wider text-danger">Red Flags</Caption>
+                      {data.job.extractedData.red_flags && data.job.extractedData.red_flags.length > 0 ? (
+                        <ul className="list-disc ml-4 space-y-1">
+                          {data.job.extractedData.red_flags.map((r, idx) => (
+                            <li key={idx} className="text-xs text-danger leading-relaxed">{r}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-secondary dark:text-darkmuted">No red flags identified</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Ambiguous Areas */}
+                  <div>
+                    <Caption className="mb-2 block font-bold uppercase tracking-wider text-warning">Ambiguous Areas & Suggested Improvements</Caption>
+                    {data.job.extractedData.ambiguous_areas && data.job.extractedData.ambiguous_areas.length > 0 ? (
+                      <ul className="list-disc ml-4 space-y-1.5">
+                        {data.job.extractedData.ambiguous_areas.map((a, idx) => (
+                          <li key={idx} className="text-xs text-secondary dark:text-darkmuted leading-relaxed">{a}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-secondary dark:text-darkmuted">The job description is highly clear and specific.</p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Live Processing Panel — appears when socket emits */}
             <AnimatePresence>
               {(socketState.total > 0 || socketState.items.length > 0) && (
@@ -171,15 +257,20 @@ export function JobDetail() {
             {/* Upload Zone */}
             <Card className="p-6">
               <SectionTitle className="mb-4">Upload Resumes</SectionTitle>
-              <motion.div
-                whileHover={{ scale: 1.005 }}
-                className="flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border text-center transition-colors hover:border-accent hover:bg-accent/[0.02] dark:border-darkborder dark:hover:border-darkaccent"
+              <div
+                {...getRootProps()}
+                className={`flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed text-center transition-colors ${
+                  isDragActive
+                    ? 'border-accent bg-accent/[0.04] dark:border-darkaccent'
+                    : 'border-border hover:border-accent hover:bg-accent/[0.02] dark:border-darkborder dark:hover:border-darkaccent'
+                }`}
               >
+                <input {...getInputProps()} />
                 <div className="mb-4 rounded-2xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg">
                   <FileUp className="h-8 w-8 text-accent dark:text-darkaccent" />
                 </div>
                 <p className="text-sm font-semibold text-primary dark:text-darktext">
-                  Drag &amp; drop PDF / DOCX files
+                  {isDragActive ? 'Drop the files here…' : 'Drag & drop PDF / DOCX files, or click to select'}
                 </p>
                 <p className="mt-1 text-xs text-secondary dark:text-darkmuted">
                   Supports up to 20 files at once · Demo loads 5 seeded resumes
@@ -188,7 +279,10 @@ export function JobDetail() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => upload.mutate()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      upload.mutate(undefined);
+                    }}
                     disabled={upload.isPending}
                   >
                     {upload.isPending ? 'Uploading…' : 'Load Demo Resumes'}
@@ -196,14 +290,17 @@ export function JobDetail() {
                   <Button
                     variant="accent"
                     size="sm"
-                    onClick={runProcessing}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      runProcessing();
+                    }}
                     disabled={processing}
                   >
                     <Play className="h-3.5 w-3.5" />
                     {processing ? 'Processing…' : 'Analyze All'}
                   </Button>
                 </div>
-              </motion.div>
+              </div>
             </Card>
 
             {/* Resume Queue */}

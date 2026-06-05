@@ -3,14 +3,34 @@ import { candidates, jobs, resumes } from '../data.js';
 import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { extractJobData } from '../services/extraction.js';
+import { analyzeJobDescription } from '../services/ai.service.js';
 import type { Job } from '../types.js';
 
 export const jobsRouter = express.Router();
 
-jobsRouter.post('/', auth, upload.single('file'), (req: AuthedRequest, res) => {
+jobsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res) => {
   const title = String(req.body.title ?? 'Frontend Developer');
   const description = String(req.body.description ?? req.body.rawText ?? 'We are looking for a Frontend Developer with strong React ecosystem experience.');
+  const department = req.body.department ? String(req.body.department) : 'Engineering';
+  const weights = req.body.weights ? (typeof req.body.weights === 'string' ? JSON.parse(req.body.weights) : req.body.weights) : { github: 50, leetcode: 30, education: 20 };
   const now = new Date().toISOString();
+  
+  let extractedData;
+  try {
+    extractedData = await analyzeJobDescription(description);
+  } catch (error) {
+    console.error('[jobs] AI JD analysis failed, falling back to basic extraction:', error);
+    extractedData = {
+      ...extractJobData(description),
+      nice_to_have: [],
+      red_flags: [],
+      clarity_score: 70,
+      ambiguous_areas: []
+    };
+  }
+
+  extractedData.weights = weights;
+
   const job: Job = {
     _id: `job_${Date.now()}`,
     title,
@@ -18,7 +38,8 @@ jobsRouter.post('/', auth, upload.single('file'), (req: AuthedRequest, res) => {
     rawText: req.file?.originalname ? `${description}\nUploaded JD: ${req.file.originalname}` : description,
     status: 'active',
     createdBy: req.userId ?? 'user_demo',
-    extractedData: extractJobData(description),
+    department,
+    extractedData,
     createdAt: now,
     updatedAt: now
   };
@@ -26,7 +47,7 @@ jobsRouter.post('/', auth, upload.single('file'), (req: AuthedRequest, res) => {
   res.status(201).json({ job });
 });
 
-jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), (req, res) => {
+jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), async (req, res) => {
   const job = jobs.find((item) => item._id === req.params.id);
   if (!job) {
     res.status(404).json({ error: 'Job not found' });
@@ -34,7 +55,20 @@ jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), (req, res) => {
   }
   const rawText = String(req.body.description ?? job.description);
   job.rawText = `${rawText}\nUploaded JD: ${req.file?.originalname ?? 'pasted-description'}`;
-  job.extractedData = extractJobData(rawText);
+  
+  try {
+    job.extractedData = await analyzeJobDescription(rawText);
+  } catch (error) {
+    console.error('[jobs] AI JD analysis failed on update, falling back to basic:', error);
+    job.extractedData = {
+      ...extractJobData(rawText),
+      nice_to_have: [],
+      red_flags: [],
+      clarity_score: 70,
+      ambiguous_areas: []
+    };
+  }
+  
   job.updatedAt = new Date().toISOString();
   res.json({ job, extractedData: job.extractedData });
 });

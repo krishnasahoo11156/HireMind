@@ -17,12 +17,22 @@ export interface Job {
   rawText: string;
   status: 'draft' | 'active' | 'closed' | 'archived';
   createdBy: string;
+  department?: string;
   extractedData: {
     skills: string[];
     experience: string;
     education: string;
     certifications: string[];
     keywords: string[];
+    nice_to_have?: string[];
+    red_flags?: string[];
+    clarity_score?: number;
+    ambiguous_areas?: string[];
+    weights?: {
+      github: number;
+      leetcode: number;
+      education: number;
+    };
   };
   createdAt: string;
   updatedAt: string;

@@ -6,6 +6,7 @@ import { candidatesRouter } from './candidates.routes.js';
 import { rankingsRouter } from './rankings.routes.js';
 import { analyticsRouter } from './analytics.routes.js';
 import { externalRouter } from './external.routes.js';
+import { aiRouter } from './ai.routes.js';
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.use('/resumes', resumesRouter);
 router.use('/candidates', candidatesRouter);
 router.use('/rankings', rankingsRouter);
 router.use('/analytics', analyticsRouter);
+router.use('/ai', aiRouter);
 router.use(externalRouter);
 
 export default router;

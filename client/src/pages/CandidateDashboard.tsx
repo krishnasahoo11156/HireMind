@@ -8,16 +8,19 @@ import { useAppStore } from '../store/appStore';
 import type { Candidate, Recommendation } from '../types';
 import { Badge, Button, Card, EmptyState, PageTitle, RankBadge, RecommendationBadge } from '../components/ui';
 import { BlindToggle } from '../components/BlindToggle';
+import { ExplanationPanel } from '../components/ExplanationPanel';
 
 // ─── Candidate Card ─────────────────────────────────────────────────────────
 function CandidateCard({
   candidate,
   rank,
-  blindMode
+  blindMode,
+  onExplain
 }: {
   candidate: Candidate;
   rank: number;
   blindMode: boolean;
+  onExplain: (id: string, name: string) => void;
 }) {
   const isTop3 = rank <= 3;
   const cardBg = rank === 1
@@ -87,7 +90,7 @@ function CandidateCard({
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-darkborder">
                   <motion.div
-                    className={`h-2 rounded-full ${candidate.aiScore >= 75 ? 'bg-success' : candidate.aiScore >= 50 ? 'bg-warning' : 'bg-danger'}`}
+                     className={`h-2 rounded-full ${candidate.aiScore >= 75 ? 'bg-success' : candidate.aiScore >= 50 ? 'bg-warning' : 'bg-danger'}`}
                     initial={{ width: 0 }}
                     animate={{ width: `${candidate.aiScore}%` }}
                     transition={{ duration: 0.8, ease: 'easeOut', delay: rank * 0.05 }}
@@ -121,6 +124,14 @@ function CandidateCard({
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 border-t border-border pt-3 dark:border-darkborder">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onExplain(candidate._id, blindMode ? candidate.blindId : candidate.name)}
+              >
+                <BrainCircuit className="h-3.5 w-3.5 text-accent dark:text-darkaccent" />
+                Why?
+              </Button>
               <Link to={`/candidates/${candidate._id}`}>
                 <Button variant="accent" size="sm">View Profile</Button>
               </Link>
@@ -139,6 +150,7 @@ export function CandidateDashboard() {
   const [query, setQuery] = useState('');
   const [recommendation, setRecommendation] = useState<'All' | Recommendation>('All');
   const [minScore, setMinScore] = useState(0);
+  const [selectedExplain, setSelectedExplain] = useState<{ id: string; name: string } | null>(null);
 
   const candidates = useQuery({
     queryKey: ['candidates', id],
@@ -228,10 +240,18 @@ export function CandidateDashboard() {
               candidate={candidate}
               rank={i + 1}
               blindMode={blindMode}
+              onExplain={(id, name) => setSelectedExplain({ id, name })}
             />
           ))}
         </div>
       )}
+
+      <ExplanationPanel
+        isOpen={Boolean(selectedExplain)}
+        onClose={() => setSelectedExplain(null)}
+        candidateId={selectedExplain?.id ?? ''}
+        candidateName={selectedExplain?.name ?? ''}
+      />
     </>
   );
 }

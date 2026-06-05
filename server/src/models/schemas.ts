@@ -18,12 +18,22 @@ const jobSchema = new Schema(
     rawText: String,
     status: { type: String, enum: ['draft', 'active', 'closed', 'archived'], default: 'draft' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    department: String,
     extractedData: {
       skills: [String],
       experience: String,
       education: String,
       certifications: [String],
-      keywords: [String]
+      keywords: [String],
+      nice_to_have: [String],
+      red_flags: [String],
+      clarity_score: Number,
+      ambiguous_areas: [String],
+      weights: {
+        github: { type: Number, default: 50 },
+        leetcode: { type: Number, default: 30 },
+        education: { type: Number, default: 20 }
+      }
     }
   },
   { timestamps: true }
