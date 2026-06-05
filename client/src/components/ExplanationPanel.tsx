@@ -25,7 +25,7 @@ export function ExplanationPanel({ isOpen, onClose, candidateId, candidateName }
     const token = localStorage.getItem('hiremind_token');
     const controller = new AbortController();
 
-    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+    const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/api$/, '');
     fetch(`${API_BASE_URL}/api/ai/explain`, {
       method: 'POST',
       headers: {

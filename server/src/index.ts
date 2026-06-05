@@ -82,8 +82,8 @@ async function start() {
     // Auto-seed default users if they don't exist
     await seedDefaultUsers();
   } catch (error: any) {
-    console.error("Database connection failed:", error?.message || error);
-    process.exit(1);
+    console.error("Database connection failed on startup. Server will start, but database-dependent routes will return 503.", error?.message || error);
+    // Do not call process.exit(1) to let the server start and dynamically reconnect
   }
 
   const httpServer = createServer(app);
