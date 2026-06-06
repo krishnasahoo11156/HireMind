@@ -2,14 +2,14 @@ import React, { createContext, useContext, useEffect, useState, type ReactNode }
 import {
   signInWithEmailAndPassword,
   signInWithCustomToken,
-  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
   type User as FirebaseUser
 } from 'firebase/auth';
-import { auth } from './config';
+import { auth, db } from './config';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const TOKEN_KEY = 'hiremind_token';
 const USER_KEY = 'hiremind_user';
@@ -18,26 +18,52 @@ export interface AppUser {
   id: string;
   name: string;
   email: string;
-  role: 'candidate' | 'recruiter';
+  role: 'candidate' | 'recruiter' | 'admin';
   githubUrl?: string;
   linkedinUrl?: string;
   portfolioUrl?: string;
   leetcodeUsername?: string;
 }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: AppUser | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<AppUser>;
   register: (payload: { name: string; email: string; password: string; role: string }) => Promise<AppUser>;
-  loginWithGoogle: (role?: 'candidate' | 'recruiter', name?: string, password?: string) => Promise<AppUser>;
+  loginWithGoogle: (role?: 'candidate' | 'recruiter' | 'admin', name?: string, password?: string) => Promise<AppUser>;
   updateProfile: (payload: { name?: string; githubUrl?: string; linkedinUrl?: string; portfolioUrl?: string; leetcodeUsername?: string }) => Promise<AppUser>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<string | null>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
+export const RecruiterAuthContext = createContext<AuthContextValue | null>(null);
+export const CandidateAuthContext = createContext<AuthContextValue | null>(null);
+export const AdminAuthContext = createContext<AuthContextValue | null>(null);
+
+async function fetchAppUser(uid: string): Promise<AppUser | null> {
+  if (!db) return null;
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        id: uid,
+        name: data.name ?? 'User',
+        email: data.email ?? '',
+        role: data.role ?? 'recruiter',
+        githubUrl: data.githubUrl,
+        linkedinUrl: data.linkedinUrl,
+        portfolioUrl: data.portfolioUrl,
+        leetcodeUsername: data.leetcodeUsername
+      };
+    }
+  } catch (err) {
+    console.error('[AuthContext] Failed to fetch user profile from Firestore:', err);
+  }
+  return null;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -55,34 +81,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setFirebaseUser(fbUser);
       if (fbUser) {
         try {
-          // Always refresh the ID token and store it
           const idToken = await fbUser.getIdToken(false);
           localStorage.setItem(TOKEN_KEY, idToken);
 
-          // Load user profile from backend if not cached
-          if (!user || user.id !== fbUser.uid) {
-            const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
-            const resp = await fetch(`${apiBase}/api/auth/me`, {
-              headers: { Authorization: `Bearer ${idToken}` }
-            });
-            if (resp.ok) {
-              const data = await resp.json();
-              const appUser: AppUser = {
-                id: fbUser.uid,
-                name: data.user?.name ?? fbUser.displayName ?? 'User',
-                email: fbUser.email ?? '',
-                role: data.user?.role ?? 'recruiter',
-                githubUrl: data.user?.githubUrl,
-                linkedinUrl: data.user?.linkedinUrl,
-                portfolioUrl: data.user?.portfolioUrl,
-                leetcodeUsername: data.user?.leetcodeUsername
-              };
-              setUser(appUser);
-              localStorage.setItem(USER_KEY, JSON.stringify(appUser));
-            }
+          // Read profile from Firestore directly
+          const appUser = await fetchAppUser(fbUser.uid);
+          if (appUser) {
+            setUser(appUser);
+            localStorage.setItem(USER_KEY, JSON.stringify(appUser));
+          } else {
+            // Document doesn't exist yet (e.g. registration in progress or new Google user needing setup)
+            setUser(null);
+            localStorage.removeItem(USER_KEY);
           }
         } catch (err) {
-          console.warn('[AuthContext] Token refresh failed:', err);
+          console.warn('[AuthContext] Auth state listener failed:', err);
         }
       } else {
         setUser(null);
@@ -108,26 +121,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<AppUser> => {
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    const idToken = await cred.user.getIdToken(true); // force refresh to get latest custom claims
+    const idToken = await cred.user.getIdToken(true);
     localStorage.setItem(TOKEN_KEY, idToken);
 
-    const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
-    const resp = await fetch(`${apiBase}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${idToken}` }
-    });
-    if (!resp.ok) throw new Error('Failed to load user profile');
+    // Read directly from Firestore
+    const appUser = await fetchAppUser(cred.user.uid);
+    if (!appUser) {
+      throw new Error('User profile not found in Firestore');
+    }
 
-    const data = await resp.json();
-    const appUser: AppUser = {
-      id: cred.user.uid,
-      name: data.user?.name ?? cred.user.displayName ?? 'User',
-      email: cred.user.email ?? '',
-      role: data.user?.role ?? 'recruiter',
-      githubUrl: data.user?.githubUrl,
-      linkedinUrl: data.user?.linkedinUrl,
-      portfolioUrl: data.user?.portfolioUrl,
-      leetcodeUsername: data.user?.leetcodeUsername
-    };
     setUser(appUser);
     localStorage.setItem(USER_KEY, JSON.stringify(appUser));
     return appUser;
@@ -155,16 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const idToken = await cred.user.getIdToken(true);
     localStorage.setItem(TOKEN_KEY, idToken);
 
-    const appUser: AppUser = {
-      id: cred.user.uid,
-      name: data.user?.name ?? payload.name,
-      email: cred.user.email ?? payload.email,
-      role: data.user?.role ?? payload.role ?? 'recruiter',
-      githubUrl: data.user?.githubUrl,
-      linkedinUrl: data.user?.linkedinUrl,
-      portfolioUrl: data.user?.portfolioUrl,
-      leetcodeUsername: data.user?.leetcodeUsername
-    };
+    // Read directly from Firestore
+    const appUser = await fetchAppUser(cred.user.uid);
+    if (!appUser) {
+      throw new Error('User profile was not initialized in Firestore by the backend.');
+    }
+
     setUser(appUser);
     localStorage.setItem(USER_KEY, JSON.stringify(appUser));
     return appUser;
@@ -178,10 +176,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(USER_KEY);
   };
 
-  const loginWithGoogle = async (role?: 'candidate' | 'recruiter', name?: string, password?: string): Promise<AppUser> => {
-    const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    let idToken = await cred.user.getIdToken(true);
+  const loginWithGoogle = async (role?: 'candidate' | 'recruiter' | 'admin', name?: string, password?: string): Promise<AppUser> => {
+    let idToken = '';
+    let uid = '';
+
+    if (auth.currentUser) {
+      idToken = await auth.currentUser.getIdToken(true);
+      uid = auth.currentUser.uid;
+    } else {
+      const provider = new GoogleAuthProvider();
+      const cred = await signInWithPopup(auth, provider);
+      idToken = await cred.user.getIdToken(true);
+      uid = cred.user.uid;
+    }
+
+    localStorage.setItem(TOKEN_KEY, idToken);
 
     const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
     const resp = await fetch(`${apiBase}/api/auth/login`, {
@@ -195,27 +204,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const data = await resp.json();
 
-    if (role) {
-      idToken = await cred.user.getIdToken(true);
+    if (data.requiresProfileSetup) {
+      // Return a partial user to let the auth setup complete
+      return {
+        id: uid,
+        name: name || auth.currentUser?.displayName || 'User',
+        email: auth.currentUser?.email || '',
+        role: role || 'recruiter'
+      };
     }
-    localStorage.setItem(TOKEN_KEY, idToken);
 
-    const appUser: AppUser = {
-      id: cred.user.uid,
-      name: data.user?.name ?? cred.user.displayName ?? name ?? 'User',
-      email: cred.user.email ?? '',
-      role: data.user?.role ?? role ?? 'recruiter',
-      githubUrl: data.user?.githubUrl,
-      linkedinUrl: data.user?.linkedinUrl,
-      portfolioUrl: data.user?.portfolioUrl,
-      leetcodeUsername: data.user?.leetcodeUsername
-    };
+    // Force refresh token to pickup backend set custom claims if setup occurred
+    if (role) {
+      if (auth.currentUser) {
+        idToken = await auth.currentUser.getIdToken(true);
+        localStorage.setItem(TOKEN_KEY, idToken);
+      }
+    }
+
+    // Read directly from Firestore
+    const appUser = await fetchAppUser(uid);
+    if (!appUser) {
+      throw new Error('User profile not found in Firestore');
+    }
+
     setUser(appUser);
     localStorage.setItem(USER_KEY, JSON.stringify(appUser));
     return appUser;
   };
 
   const updateProfile = async (payload: { name?: string; githubUrl?: string; linkedinUrl?: string; portfolioUrl?: string; leetcodeUsername?: string }): Promise<AppUser> => {
+    if (!firebaseUser) throw new Error('No authenticated user found');
+
     const idToken = localStorage.getItem(TOKEN_KEY);
     if (!idToken) throw new Error('No authentication token found');
 
@@ -232,18 +252,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const err = await resp.json().catch(() => ({ error: 'Profile update failed' }));
       throw new Error(err.error ?? 'Profile update failed');
     }
-    const data = await resp.json();
 
-    const appUser: AppUser = {
-      id: user?.id ?? '',
-      name: data.user?.name ?? payload.name ?? user?.name ?? 'User',
-      email: data.user?.email ?? user?.email ?? '',
-      role: data.user?.role ?? user?.role ?? 'recruiter',
-      githubUrl: data.user?.githubUrl ?? payload.githubUrl ?? user?.githubUrl,
-      linkedinUrl: data.user?.linkedinUrl ?? payload.linkedinUrl ?? user?.linkedinUrl,
-      portfolioUrl: data.user?.portfolioUrl ?? payload.portfolioUrl ?? user?.portfolioUrl,
-      leetcodeUsername: data.user?.leetcodeUsername ?? payload.leetcodeUsername ?? user?.leetcodeUsername
-    };
+    // Update directly in Firestore local document as well
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    await updateDoc(userDocRef, payload);
+
+    // Read directly from Firestore
+    const appUser = await fetchAppUser(firebaseUser.uid);
+    if (!appUser) {
+      throw new Error('User profile not found in Firestore');
+    }
+
     setUser(appUser);
     localStorage.setItem(USER_KEY, JSON.stringify(appUser));
     return appUser;
@@ -256,21 +275,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return token;
   };
 
+  const baseValue: AuthContextValue = {
+    user,
+    firebaseUser,
+    loading,
+    login,
+    register,
+    loginWithGoogle,
+    updateProfile,
+    logout,
+    refreshToken
+  };
+
+  const recruiterValue: AuthContextValue = {
+    ...baseValue,
+    user: user && user.role === 'recruiter' ? user : null
+  };
+
+  const candidateValue: AuthContextValue = {
+    ...baseValue,
+    user: user && user.role === 'candidate' ? user : null
+  };
+
+  const adminValue: AuthContextValue = {
+    ...baseValue,
+    user: user && user.role === 'admin' ? user : null
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        firebaseUser,
-        loading,
-        login,
-        register,
-        loginWithGoogle,
-        updateProfile,
-        logout,
-        refreshToken
-      }}
-    >
-      {children}
+    <AuthContext.Provider value={baseValue}>
+      <RecruiterAuthContext.Provider value={recruiterValue}>
+        <CandidateAuthContext.Provider value={candidateValue}>
+          <AdminAuthContext.Provider value={adminValue}>
+            {children}
+          </AdminAuthContext.Provider>
+        </CandidateAuthContext.Provider>
+      </RecruiterAuthContext.Provider>
     </AuthContext.Provider>
   );
 }
@@ -278,5 +318,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
+  return ctx;
+}
+
+export function useRecruiterAuth(): AuthContextValue {
+  const ctx = useContext(RecruiterAuthContext);
+  if (!ctx) throw new Error('useRecruiterAuth must be used inside <AuthProvider>');
+  return ctx;
+}
+
+export function useCandidateAuth(): AuthContextValue {
+  const ctx = useContext(CandidateAuthContext);
+  if (!ctx) throw new Error('useCandidateAuth must be used inside <AuthProvider>');
+  return ctx;
+}
+
+export function useAdminAuth(): AuthContextValue {
+  const ctx = useContext(AdminAuthContext);
+  if (!ctx) throw new Error('useAdminAuth must be used inside <AuthProvider>');
   return ctx;
 }

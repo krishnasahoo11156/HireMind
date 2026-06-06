@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -27,5 +27,10 @@ const app = isFirebaseConfigValid
   : null;
 
 export const auth = app ? getAuth(app) : (null as any);
+if (auth) {
+  setPersistence(auth, browserSessionPersistence).catch((err) => {
+    console.error('[Firebase Config] Failed to set session persistence:', err);
+  });
+}
 export const db = app ? getFirestore(app) : (null as any);
 export const storage = app ? getStorage(app) : (null as any);

@@ -326,6 +326,185 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
   }
 });
 
+// POST /api/applications/analyze — Trigger resume text extraction & AI scoring for a pre-created application ID
+applicationsRouter.post('/analyze', auth, upload.single('file'), async (req: AuthedRequest, res: Response) => {
+  const { applicationId, jobId, name, whyApplying } = req.body;
+  const file = req.file;
+
+  if (!applicationId || !jobId) {
+    res.status(400).json({ error: 'Application ID and Job ID are required' });
+    return;
+  }
+
+  try {
+    const job = await jobService.findById(jobId);
+    if (!job) {
+      res.status(404).json({ error: 'Job not found' });
+      return;
+    }
+
+    const user = await userService.findById(req.userId!);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    let resumeUrl = '';
+    let parsedResume = null;
+    let rawText = '';
+
+    if (file) {
+      try {
+        resumeUrl = await uploadResumeToStorage(file.buffer, file.originalname, file.mimetype, user.id);
+      } catch (err) {
+        console.warn('[applications] Resume upload to Firebase Storage failed:', err);
+      }
+
+      try {
+        rawText = await extractText(file);
+      } catch (err) {
+        console.warn(`[applications] Text extraction failed for "${file.originalname}":`, err);
+      }
+
+      let parsedData = minimalFallback(file.originalname);
+      let parseStatus: 'parsed' | 'manual_review' = 'manual_review';
+      if (rawText) {
+        try {
+          parsedData = await extractResumeData(rawText);
+          parseStatus = 'parsed';
+        } catch (err) {
+          console.warn(`[applications] AI extraction failed for "${file.originalname}":`, err);
+        }
+      }
+
+      parsedResume = await resumeService.create({
+        fileName: file.originalname,
+        fileUrl: resumeUrl,
+        fileType: file.originalname.toLowerCase().endsWith('.docx') ? 'docx' : 'pdf',
+        parsedData,
+        parseStatus,
+        rawText: rawText || undefined,
+        userId: user.id
+      });
+    }
+
+    res.status(200).json({ success: true, message: 'AI Analysis started' });
+
+    // Run the background evaluation pipeline asynchronously
+    void (async () => {
+      try {
+        const socket = getSocketServer();
+        const candidateRoom = `candidate:${user.id}`;
+
+        // ─── STAGE 1: Applied (Delay 1.5s) ───
+        await new Promise((r) => setTimeout(r, 1500));
+        await applicationService.update(applicationId, { status: 'Applied' });
+        socket.to(candidateRoom).emit('tracker:update', {
+          applicationId,
+          status: 'Applied',
+          updatedAt: new Date().toISOString()
+        });
+
+        // ─── STAGE 2: Resume Parsed (Delay 1.5s) ───
+        await new Promise((r) => setTimeout(r, 1500));
+        await applicationService.update(applicationId, { status: 'Resume Parsed' });
+        socket.to(candidateRoom).emit('tracker:update', {
+          applicationId,
+          status: 'Resume Parsed',
+          updatedAt: new Date().toISOString()
+        });
+
+        // ─── STAGE 3: AI Analysis (Delay 1.5s) ───
+        await new Promise((r) => setTimeout(r, 1500));
+        await applicationService.update(applicationId, { status: 'AI Analysis' });
+        socket.to(candidateRoom).emit('tracker:update', {
+          applicationId,
+          status: 'AI Analysis',
+          updatedAt: new Date().toISOString()
+        });
+
+        // Score Candidate
+        let aiScore = 0;
+        let matchPercentage = 0;
+        let recommendation = 'Standard Review';
+        let githubAnalysis = null;
+        let leetcodeAnalysis = null;
+        let skillGap: any[] = [];
+        let explanation: string[] = [];
+
+        if (parsedResume) {
+          try {
+            const githubProfile = user.githubUrl ? await getGitHubProfile(user.githubUrl.split('/').pop() || '') : null;
+            const leetcodeProfile = user.leetcodeUsername ? await getLeetCodeProfile(user.leetcodeUsername) : null;
+            const scored = await scoreCandidate(job, parsedResume, githubProfile || undefined, leetcodeProfile || undefined);
+            
+            aiScore = scored.aiScore;
+            matchPercentage = scored.matchPercentage;
+            recommendation = scored.recommendation;
+            githubAnalysis = scored.githubAnalysis;
+            leetcodeAnalysis = scored.leetcodeAnalysis;
+            skillGap = scored.skillGap;
+            explanation = scored.explanation ?? [];
+          } catch (err) {
+            console.error('[applications] Async scoring failed:', err);
+          }
+
+          const candidateRecord = await candidateService.create({
+            resumeId: parsedResume.id,
+            jobId,
+            applicationId,
+            name: name || user.name,
+            email: user.email,
+            username: user.leetcodeUsername || (user.githubUrl ? user.githubUrl.split('/').pop() : '') || user.email.split('@')[0],
+            blindId: `Candidate-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+            isBlindMode: false,
+            aiScore,
+            matchPercentage,
+            recommendation,
+            githubAnalysis,
+            leetcodeAnalysis,
+            skillGap,
+            explanation,
+            recruiterDecision: 'pending',
+            recruiterReason: '',
+            whyApplying: whyApplying || ''
+          });
+
+          await resumeService.update(parsedResume.id, { userId: candidateRecord.id });
+        }
+
+        // ─── STAGE 4: Under Review (Delay 1.5s) ───
+        await new Promise((r) => setTimeout(r, 1500));
+        await applicationService.update(applicationId, {
+          status: 'Under Review',
+          aiScore,
+          recommendation,
+          aiAnalyzed: true
+        });
+
+        const appReview = await applicationService.findById(applicationId);
+        if (appReview) {
+          socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(appReview));
+        }
+
+        socket.to(candidateRoom).emit('tracker:update', {
+          applicationId,
+          status: 'Under Review',
+          aiScore,
+          recommendation,
+          updatedAt: new Date().toISOString()
+        });
+
+      } catch (pipelineErr) {
+        console.error('[applications] Error in async pipeline:', pipelineErr);
+      }
+    })();
+
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/applications/my — Candidate's own applications
 applicationsRouter.get('/my', auth, async (req: AuthedRequest, res: Response) => {
   try {

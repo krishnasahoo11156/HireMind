@@ -79,6 +79,11 @@ export const api = {
       method: 'POST',
       body: form
     }),
+  analyzeApplication: (form: FormData) =>
+    request<{ success: boolean }>('/api/applications/analyze', {
+      method: 'POST',
+      body: form
+    }),
   myApplications: () =>
     request<{ applications: import('../types').Application[] }>('/api/applications/my'),
   application: (id: string) =>

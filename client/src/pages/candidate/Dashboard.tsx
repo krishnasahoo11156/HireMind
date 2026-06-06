@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useJobs, useMyApplications } from '../../hooks/queries';
 import type { Job, Application } from '../../types';
 import { Badge, Button, Card, SectionHeader, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../../components/ui';
-import { useAuth } from '../../firebase/AuthContext';
+import { useCandidateAuth } from '../../firebase/AuthContext';
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -14,7 +14,7 @@ function getGreeting() {
 }
 
 export function CandidateDashboard() {
-  const { user } = useAuth();
+  const { user } = useCandidateAuth();
   const jobsQuery = useJobs();
   const myAppsQuery = useMyApplications();
 

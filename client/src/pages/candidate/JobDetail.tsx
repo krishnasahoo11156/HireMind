@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useJob, useApplyJob } from '../../hooks/queries';
 import type { Job } from '../../types';
 import { Badge, Button, Card, PageTitle, SectionTitle, BodyText, Caption } from '../../components/ui';
-import { useAuth } from '../../firebase/AuthContext';
+import { useCandidateAuth } from '../../firebase/AuthContext';
 
 export function CandidateJobDetail() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user } = useCandidateAuth();
 
   const { data, isLoading } = useJob(id);
   const [isApplyDrawerOpen, setIsApplyDrawerOpen] = useState(false);

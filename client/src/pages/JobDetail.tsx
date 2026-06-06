@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, CheckCircle2, FileUp, Loader2, Play, Tag, Users, BrainCircuit } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FileUp, Loader2, Play, Tag, Users, BrainCircuit, FileText } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
@@ -22,12 +22,17 @@ import {
 } from '../components/ui';
 import { useResumeSocket } from '../hooks/useResumeSocket';
 import { ResumeProcessingPanel } from '../components/ResumeProcessingPanel';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 export function JobDetail() {
   const { id = 'job_frontend' } = useParams();
   const queryClient = useQueryClient();
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
+
+  const [realtimeApps, setRealtimeApps] = useState<any[]>([]);
+  const [loadingApps, setLoadingApps] = useState(true);
 
   // ── Live socket state ────────────────────────────────────────────────────
   const socketState = useResumeSocket(id);
@@ -37,10 +42,24 @@ export function JobDetail() {
     queryFn: () => api.job(id) as Promise<{ job: Job; resumes: Resume[]; candidates: Candidate[] }>
   });
 
-  const applicationsQuery = useQuery({
-    queryKey: ['job-applications', id],
-    queryFn: () => api.recruiterJobApplications(id)
-  });
+  // Real-time Firestore query for this job's applications
+  useEffect(() => {
+    const q = query(
+      collection(db, 'applications'),
+      where('jobId', '==', id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setRealtimeApps(list);
+      setLoadingApps(false);
+    });
+
+    return unsubscribe;
+  }, [id]);
 
   const upload = useMutation({
     mutationFn: (files?: File[]) => api.uploadBatch(files, id),
@@ -115,7 +134,7 @@ export function JobDetail() {
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-secondary dark:text-darkmuted">
               <span className="flex items-center gap-1.5">
                 <Users className="h-4 w-4 text-accent dark:text-darkaccent" />
-                <span className="font-semibold text-primary dark:text-darktext">{applicationsQuery.data?.length ?? 0}</span> Applications Received
+                <span className="font-semibold text-primary dark:text-darktext">{realtimeApps.length}</span> Applications Received
               </span>
               <span className="text-border dark:text-darkborder">|</span>
               <span className="flex items-center gap-1.5">
@@ -425,7 +444,7 @@ export function JobDetail() {
       {activeTab === 'Candidates' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <SectionTitle>Applied Candidates ({(applicationsQuery.data ?? []).length})</SectionTitle>
+            <SectionTitle>Applied Candidates ({realtimeApps.length})</SectionTitle>
             <Link to={`/recruiter/jobs/${id}/candidates`}>
               <Button size="sm">
                 <ArrowRight className="h-4 w-4" />
@@ -434,13 +453,13 @@ export function JobDetail() {
             </Link>
           </div>
 
-          {applicationsQuery.isLoading ? (
+          {loadingApps ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, idx) => (
                 <div key={idx} className="h-24 hm-skeleton rounded-2xl animate-pulse" />
               ))}
             </div>
-          ) : !(applicationsQuery.data && applicationsQuery.data.length > 0) ? (
+          ) : !(realtimeApps && realtimeApps.length > 0) ? (
             <Card className="p-16 text-center flex flex-col items-center justify-center">
               <Users className="h-10 w-10 text-secondary dark:text-darkmuted mb-3" />
               <p className="text-secondary dark:text-darkmuted">
@@ -450,10 +469,22 @@ export function JobDetail() {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {(() => {
-                const list = [...(applicationsQuery.data ?? [])];
-                list.sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
+                const formatAppliedDate = (appliedAt: any) => {
+                  if (!appliedAt) return 'Pending';
+                  if (typeof appliedAt.toDate === 'function') {
+                    return appliedAt.toDate().toLocaleDateString();
+                  }
+                  return new Date(appliedAt).toLocaleDateString();
+                };
+
+                const list = [...realtimeApps];
+                list.sort((a, b) => {
+                  const timeA = a.appliedAt?.toDate ? a.appliedAt.toDate().getTime() : new Date(a.appliedAt).getTime();
+                  const timeB = b.appliedAt?.toDate ? b.appliedAt.toDate().getTime() : new Date(b.appliedAt).getTime();
+                  return timeB - timeA;
+                });
                 return list.map((app, i) => {
-                  const candidate = mergedCandidates.find((c) => c.email.toLowerCase() === app.email.toLowerCase());
+                  const candidate = mergedCandidates.find((c) => c.email.toLowerCase() === app.candidateEmail.toLowerCase());
                   const statusTone = 
                     app.status === 'Under Review' || app.status === 'AI Analysis' ? 'yellow' :
                     app.status === 'Shortlisted' || app.status === 'Selected' ? 'emerald' :
@@ -482,9 +513,9 @@ export function JobDetail() {
                               <Badge tone={statusTone as any}>{app.status}</Badge>
                             </div>
                             <p className="text-xs text-secondary dark:text-darkmuted mt-1 flex flex-col gap-0.5">
-                              <span>{app.email}</span>
+                              <span>{app.candidateEmail}</span>
                               <span className="text-[10px] text-secondary/70 dark:text-darkmuted/70">
-                                Applied: {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'Not Available'}
+                                Applied: {formatAppliedDate(app.appliedAt)}
                               </span>
                             </p>
                           </div>
@@ -505,13 +536,24 @@ export function JobDetail() {
                             <div className="text-[9px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">AI Score</div>
                           </div>
 
-                          <div className="text-right">
+                          <div className="text-right flex flex-col items-end gap-1">
                             {candidate ? (
                               <RecommendationBadge recommendation={candidate.recommendation} />
                             ) : (
                               <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning animate-pulse">
                                 Processing
                               </span>
+                            )}
+                            {app.resumeUrl && (
+                              <a
+                                href={app.resumeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline dark:text-darkaccent mt-1"
+                              >
+                                <FileText className="h-3 w-3" />
+                                View Resume
+                              </a>
                             )}
                           </div>
 

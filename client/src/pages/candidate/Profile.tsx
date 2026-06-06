@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { User, Link2, Globe, Sparkles, Save, CheckCircle } from 'lucide-react';
 import { Badge, Button, Card, PageTitle, SectionTitle, BodyText } from '../../components/ui';
-import { useAuth } from '../../firebase/AuthContext';
+import { useCandidateAuth } from '../../firebase/AuthContext';
 
 export function CandidateProfileEdit() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile } = useCandidateAuth();
   
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');

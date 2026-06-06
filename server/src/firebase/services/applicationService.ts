@@ -18,6 +18,7 @@ export interface FirestoreApplication {
   recommendation?: string;
   appliedAt?: admin.firestore.Timestamp;
   updatedAt?: admin.firestore.Timestamp;
+  aiAnalyzed?: boolean;
 }
 
 export const applicationService = {

@@ -6,8 +6,10 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { useJobs } from '../hooks/queries';
-import { useAuth } from '../firebase/AuthContext';
+import { useRecruiterAuth } from '../firebase/AuthContext';
 import type { Candidate, DashboardAnalytics, Job } from '../types';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import {
   Badge,
   Button,
@@ -41,7 +43,7 @@ function getGreeting() {
 }
 
 // ─── Job Card ──────────────────────────────────────────────────────────────
-function JobCard({ job }: { job: Job }) {
+function JobCard({ job, applicationsCount }: { job: Job; applicationsCount: number }) {
   const statusTone = job.status === 'active' ? 'emerald' : job.status === 'draft' ? 'yellow' : 'neutral';
   return (
     <Link to={`/recruiter/jobs/${job._id}`}>
@@ -56,7 +58,7 @@ function JobCard({ job }: { job: Job }) {
           <CardTitle>{job.title}</CardTitle>
           <div className="mt-1 flex flex-col gap-0.5">
             <BodyText variant="small" color="secondary">
-              {job.applicationsCount ?? 0} application{(job.applicationsCount ?? 0) !== 1 ? 's' : ''} received
+              {applicationsCount} application{applicationsCount !== 1 ? 's' : ''} received
             </BodyText>
             <BodyText variant="small" color="secondary" className="flex items-center gap-1 text-[11px]">
               <Sparkles className="h-3 w-3 text-accent dark:text-darkaccent" />
@@ -141,10 +143,13 @@ function PriorityCandidateCard({ candidate, rank }: { candidate: Candidate; rank
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 export function Dashboard() {
-  const { user } = useAuth();
+  const { user } = useRecruiterAuth();
   const queryClient = useQueryClient();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const socketRef = useRef<Socket | null>(null);
+
+  const [realtimeApplicationsCount, setRealtimeApplicationsCount] = useState(0);
+  const [realtimeApplications, setRealtimeApplications] = useState<any[]>([]);
 
   const analytics = useQuery({ queryKey: ['analytics'], queryFn: () => api.analytics() as Promise<DashboardAnalytics> });
   const jobs = useJobs();
@@ -154,6 +159,50 @@ export function Dashboard() {
     queryFn: () => api.candidates(firstJobId!) as Promise<{ candidates: Candidate[] }>,
     enabled: Boolean(firstJobId)
   });
+
+  // Real-time Firestore query for recruiter applications
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const q = query(
+      collection(db, 'applications'),
+      where('recruiterId', '==', user.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setRealtimeApplicationsCount(snapshot.size);
+      const list: any[] = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+
+      // Show toast notifications for newly added docs
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const newApp = change.doc.data();
+          const appliedTime = newApp.appliedAt?.toDate ? newApp.appliedAt.toDate().getTime() : new Date(newApp.appliedAt).getTime();
+          const now = Date.now();
+          if (now - appliedTime < 10000) {
+            const toastId = Math.random().toString();
+            setToasts((prev) => [
+              ...prev,
+              {
+                id: toastId,
+                message: `New application from ${newApp.candidateName || 'Candidate'}!`
+              }
+            ]);
+            setTimeout(() => {
+              setToasts((prev) => prev.filter((t) => t.id !== toastId));
+            }, 5000);
+          }
+        }
+      });
+
+      setRealtimeApplications(list);
+    });
+
+    return unsubscribe;
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -179,21 +228,6 @@ export function Dashboard() {
       if (firstJobId) {
         void queryClient.invalidateQueries({ queryKey: ['candidates', firstJobId] });
       }
-
-      // Trigger toast message
-      const toastId = Math.random().toString();
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: toastId,
-          message: `New application from ${payload.candidateName} for ${payload.jobTitle}!`
-        }
-      ]);
-      
-      // Auto close toast
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== toastId));
-      }, 5000);
     });
 
     return () => {
@@ -304,7 +338,7 @@ export function Dashboard() {
           </Link>
         } />
         <div className="grid grid-cols-4 gap-4">
-          <StatCard label="Applications Received" value={funnel.applied} icon={<Users className="h-4 w-4" />} trend="up" trendLabel="vs last week" />
+          <StatCard label="Applications Received" value={realtimeApplicationsCount} icon={<Users className="h-4 w-4" />} trend="up" trendLabel="vs last week" />
           <StatCard label="Selected" value={metrics?.candidatesSelected ?? 0} icon={<BriefcaseBusiness className="h-4 w-4" />} trend="up" trendLabel="this month" />
           <StatCard label="Time Saved" value={`${metrics?.timeSaved ?? 0}h`} icon={<Clock className="h-4 w-4" />} trend="up" trendLabel="vs manual review" />
           <StatCard label="AI Accuracy" value={`${metrics?.decisionAccuracy ?? 100}%`} icon={<Gauge className="h-4 w-4" />} trend="neutral" trendLabel="decision accuracy" />
@@ -356,16 +390,19 @@ export function Dashboard() {
           </Link>
         } />
         <div className="grid grid-cols-3 gap-4">
-          {recentJobs.map((job, i) => (
-            <motion.div
-              key={job._id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-            >
-              <JobCard job={job} />
-            </motion.div>
-          ))}
+          {recentJobs.map((job, i) => {
+            const count = realtimeApplications.filter((app) => app.jobId === job._id).length;
+            return (
+              <motion.div
+                key={job._id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+              >
+                <JobCard job={job} applicationsCount={count} />
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </div>

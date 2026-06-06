@@ -1,13 +1,15 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState, useEffect } from 'react';
 import { BrainCircuit, BriefcaseBusiness, Calendar, Plus, Search, Trash2, Users, X, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useJobs, useCreateJob } from '../hooks/queries';
 import type { Job } from '../types';
 import { Badge, Button, Card, EmptyState, PageTitle, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
+import { collection, query, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 // ─── Job Card ──────────────────────────────────────────────────────────────
-function JobCard({ job, onDelete }: { job: Job; onDelete?: () => void }) {
+function JobCard({ job, onDelete, applicationsCount }: { job: Job; onDelete?: () => void; applicationsCount: number }) {
   const statusTone = job.status === 'active' ? 'emerald' : job.status === 'draft' ? 'yellow' : 'neutral';
   const readiness = job.candidateCount ? Math.min(100, (job.candidateCount ?? 0) * 20) : 0;
 
@@ -57,7 +59,7 @@ function JobCard({ job, onDelete }: { job: Job; onDelete?: () => void }) {
       <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background px-3 py-2.5 text-sm dark:border-darkborder dark:bg-darkbg">
         <div className="flex items-center gap-2 text-secondary dark:text-darkmuted">
           <Users className="h-3.5 w-3.5" />
-          <span className="font-medium text-primary dark:text-darktext">{job.candidateCount ?? 0}</span> candidates
+          <span className="font-medium text-primary dark:text-darktext">{applicationsCount}</span> applications
         </div>
         <div className="flex items-center gap-2 text-secondary dark:text-darkmuted">
           <Calendar className="h-3.5 w-3.5" />
@@ -120,6 +122,19 @@ export function Jobs() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'draft'>('all');
+  const [realtimeApplications, setRealtimeApplications] = useState<any[]>([]);
+
+  useEffect(() => {
+    const q = collection(db, 'applications');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list: any[] = [];
+      snapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setRealtimeApplications(list);
+    });
+    return unsubscribe;
+  }, []);
   
   // Wizard states
   const [step, setStep] = useState(1);
@@ -216,16 +231,19 @@ export function Jobs() {
         />
       ) : (
         <div className="grid grid-cols-3 gap-5">
-          {filtered.map((job, i) => (
-            <motion.div
-              key={job._id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <JobCard job={job} />
-            </motion.div>
-          ))}
+          {filtered.map((job, i) => {
+            const count = realtimeApplications.filter((app) => app.jobId === job._id).length;
+            return (
+              <motion.div
+                key={job._id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+              >
+                <JobCard job={job} applicationsCount={count} />
+              </motion.div>
+            );
+          })}
         </div>
       )}
 

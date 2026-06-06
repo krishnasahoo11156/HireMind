@@ -1,7 +1,7 @@
 import { Bell, Building2, Globe, Lock, Monitor, Moon, Shield, Sun, UserCircle, CheckCircle } from 'lucide-react';
 import { Button, Card, PageTitle, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 import { useAppStore } from '../store/appStore';
-import { useAuth } from '../firebase/AuthContext';
+import { useRecruiterAuth } from '../firebase/AuthContext';
 import { useState, useEffect } from 'react';
 
 type Section = {
@@ -14,7 +14,7 @@ type Section = {
 export function Settings() {
   const theme = useAppStore((state) => state.theme);
   const setTheme = useAppStore((state) => state.setTheme);
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile } = useRecruiterAuth();
 
   const [name, setName] = useState(user?.name || '');
   const [role, setRole] = useState('Senior Recruiter');
