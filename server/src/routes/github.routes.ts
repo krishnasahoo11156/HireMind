@@ -1,5 +1,5 @@
-import express from 'express';
-import { auth } from '../middleware/auth.js';
+import express, { type Response } from 'express';
+import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { getGitHubProfile, invalidateGitHubCache } from '../services/github.service.js';
 
 export const githubRouter = express.Router();
@@ -9,7 +9,7 @@ export const githubRouter = express.Router();
  * Returns a structured GitHub profile (live or mock fallback).
  * Results are cached for 10 minutes.
  */
-githubRouter.get('/:username', auth, async (req, res) => {
+githubRouter.get('/:username', auth, async (req: AuthedRequest, res: Response) => {
   const { username } = req.params;
   if (!username || username.length < 1) {
     res.status(400).json({ error: 'GitHub username is required' });
@@ -29,7 +29,7 @@ githubRouter.get('/:username', auth, async (req, res) => {
  * DELETE /api/github/:username/cache
  * Invalidates the cached profile so the next GET fetches fresh data.
  */
-githubRouter.delete('/:username/cache', auth, (req, res) => {
+githubRouter.delete('/:username/cache', auth, (req: AuthedRequest, res: Response) => {
   invalidateGitHubCache(req.params.username);
   res.json({ ok: true, message: `Cache invalidated for ${req.params.username}` });
 });

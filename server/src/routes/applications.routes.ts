@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Response } from 'express';
 import { z } from 'zod';
 import { applicationService } from '../firebase/services/applicationService.js';
 import { userService } from '../firebase/services/userService.js';
@@ -57,7 +57,7 @@ async function parseResumeBuffer(file: Express.Multer.File, userId?: string): Pr
 }
 
 // POST /api/applications — Apply for a job
-applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res) => {
+applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res: Response) => {
   const { jobId, githubUrl, linkedinUrl, portfolioUrl, leetcodeUsername, name, whyApplying } = req.body;
 
   if (!jobId) {
@@ -260,7 +260,7 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
 });
 
 // GET /api/applications/my — Candidate's own applications
-applicationsRouter.get('/my', auth, async (req: AuthedRequest, res) => {
+applicationsRouter.get('/my', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const list = await applicationService.findAll({ candidateId: req.userId });
     res.json({ applications: list });
@@ -270,7 +270,7 @@ applicationsRouter.get('/my', auth, async (req: AuthedRequest, res) => {
 });
 
 // GET /api/applications/:id — Single application detail
-applicationsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
+applicationsRouter.get('/:id', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const app = await applicationService.findById(req.params.id);
     if (!app) {
@@ -299,7 +299,7 @@ applicationsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
 });
 
 // PATCH /api/applications/:id/status — Update stage (Recruiter Action)
-applicationsRouter.patch('/:id/status', auth, async (req: AuthedRequest, res) => {
+applicationsRouter.patch('/:id/status', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const app = await applicationService.findById(req.params.id);
     if (!app) {

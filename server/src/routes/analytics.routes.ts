@@ -1,12 +1,12 @@
-import express from 'express';
+import express, { type Response } from 'express';
 import { candidateService } from '../firebase/services/candidateService.js';
 import { feedbackService } from '../firebase/services/feedbackService.js';
 import { resumeService } from '../firebase/services/resumeService.js';
-import { auth } from '../middleware/auth.js';
+import { auth, type AuthedRequest } from '../middleware/auth.js';
 
 export const analyticsRouter = express.Router();
 
-analyticsRouter.get('/dashboard', auth, async (_req, res) => {
+analyticsRouter.get('/dashboard', auth, async (_req: AuthedRequest, res: Response) => {
   try {
     const [total, resumesReviewed, overrides, feedbackList] = await Promise.all([
       candidateService.countTotal(),
@@ -50,7 +50,7 @@ analyticsRouter.get('/dashboard', auth, async (_req, res) => {
   }
 });
 
-analyticsRouter.get('/funnel', auth, async (_req, res) => {
+analyticsRouter.get('/funnel', auth, async (_req: AuthedRequest, res: Response) => {
   try {
     const [applied, screened] = await Promise.all([
       resumeService.count(),
@@ -62,7 +62,7 @@ analyticsRouter.get('/funnel', auth, async (_req, res) => {
   }
 });
 
-analyticsRouter.get('/accuracy', auth, async (_req, res) => {
+analyticsRouter.get('/accuracy', auth, async (_req: AuthedRequest, res: Response) => {
   try {
     const [total, overrides] = await Promise.all([
       candidateService.countTotal(),

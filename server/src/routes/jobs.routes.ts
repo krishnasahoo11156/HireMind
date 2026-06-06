@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Response } from 'express';
 import { jobService } from '../firebase/services/jobService.js';
 import { applicationService } from '../firebase/services/applicationService.js';
 import { candidateService } from '../firebase/services/candidateService.js';
@@ -13,7 +13,7 @@ import { mapJob, mapCandidate } from '../utils/mappers.js';
 export const jobsRouter = express.Router();
 
 // POST / — Create a new job
-jobsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res) => {
+jobsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res: Response) => {
   try {
     const title = String(req.body.title ?? 'Frontend Developer');
     const description = String(req.body.description ?? req.body.rawText ?? 'We are looking for a Frontend Developer with strong React ecosystem experience.');
@@ -61,7 +61,7 @@ jobsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res
 });
 
 // POST /:id/upload-jd — Re-analyze JD for an existing job
-jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), async (req, res) => {
+jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), async (req: AuthedRequest, res: Response) => {
   try {
     const job = await jobService.findById(req.params.id);
     if (!job) {
@@ -96,7 +96,7 @@ jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), async (req, res) 
 });
 
 // GET / — List all jobs with applicant counts
-jobsRouter.get('/', auth, async (req: AuthedRequest, res) => {
+jobsRouter.get('/', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const list = await jobService.findAll();
     
@@ -125,7 +125,7 @@ jobsRouter.get('/', auth, async (req: AuthedRequest, res) => {
 });
 
 // GET /:id — Get a single job
-jobsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
+jobsRouter.get('/:id', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const job = await jobService.findById(req.params.id);
     if (!job) {
@@ -169,7 +169,7 @@ jobsRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
 });
 
 // GET /:id/applicants — Get applicants for a job (recruiter only)
-jobsRouter.get('/:id/applicants', auth, async (req: AuthedRequest, res) => {
+jobsRouter.get('/:id/applicants', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const job = await jobService.findById(req.params.id);
     if (!job) {
@@ -188,7 +188,7 @@ jobsRouter.get('/:id/applicants', auth, async (req: AuthedRequest, res) => {
 });
 
 // PUT /:id — Update a job
-jobsRouter.put('/:id', auth, async (req: AuthedRequest, res) => {
+jobsRouter.put('/:id', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const job = await jobService.findById(req.params.id);
     if (!job) {
@@ -208,7 +208,7 @@ jobsRouter.put('/:id', auth, async (req: AuthedRequest, res) => {
 });
 
 // DELETE /:id — Delete a job
-jobsRouter.delete('/:id', auth, async (req: AuthedRequest, res) => {
+jobsRouter.delete('/:id', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const job = await jobService.findById(req.params.id);
     if (!job) {

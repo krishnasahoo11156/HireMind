@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Response } from 'express';
 import { z } from 'zod';
 import { candidateService } from '../firebase/services/candidateService.js';
 import { resumeService } from '../firebase/services/resumeService.js';
@@ -12,7 +12,7 @@ import { mapCandidate, mapJob } from '../utils/mappers.js';
 
 export const candidatesRouter = express.Router();
 
-candidatesRouter.post('/analyze', auth, async (req, res) => {
+candidatesRouter.post('/analyze', auth, async (req: AuthedRequest, res: Response) => {
   const body = z.object({
     jobId: z.string(),
     resumeId: z.string(),
@@ -107,7 +107,7 @@ candidatesRouter.post('/analyze', auth, async (req, res) => {
   }
 });
 
-candidatesRouter.get('/', auth, async (req: AuthedRequest, res) => {
+candidatesRouter.get('/', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const list = await candidateService.findAll();
     let filteredList = list;
@@ -124,7 +124,7 @@ candidatesRouter.get('/', auth, async (req: AuthedRequest, res) => {
   }
 });
 
-candidatesRouter.get('/job/:jobId', auth, async (req: AuthedRequest, res) => {
+candidatesRouter.get('/job/:jobId', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const job = await jobService.findById(req.params.jobId);
     if (!job) {
@@ -142,7 +142,7 @@ candidatesRouter.get('/job/:jobId', auth, async (req: AuthedRequest, res) => {
   }
 });
 
-candidatesRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
+candidatesRouter.get('/:id', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const candidate = await candidateService.findById(req.params.id);
     if (!candidate) {
@@ -174,7 +174,7 @@ candidatesRouter.get('/:id', auth, async (req: AuthedRequest, res) => {
   }
 });
 
-candidatesRouter.post('/:id/feedback', auth, async (req: AuthedRequest, res) => {
+candidatesRouter.post('/:id/feedback', auth, async (req: AuthedRequest, res: Response) => {
   const body = z.object({
     decision: z.enum(['override_select', 'override_reject', 'agree']),
     reason: z.string().min(10)

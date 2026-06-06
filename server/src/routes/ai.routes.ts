@@ -1,5 +1,5 @@
-import express from 'express';
-import { auth } from '../middleware/auth.js';
+import express, { type Response } from 'express';
+import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { candidateService } from '../firebase/services/candidateService.js';
 import { jobService } from '../firebase/services/jobService.js';
 import { resumeService } from '../firebase/services/resumeService.js';
@@ -7,7 +7,7 @@ import { generateExplanationStream } from '../services/ai.service.js';
 
 export const aiRouter = express.Router();
 
-aiRouter.post('/explain', auth, async (req, res) => {
+aiRouter.post('/explain', auth, async (req: AuthedRequest, res: Response) => {
   const { candidateId } = req.body;
   if (!candidateId) {
     res.status(400).json({ error: 'candidateId is required' });

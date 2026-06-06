@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import { db } from '../firebase/admin.js';
 import { authRouter } from './auth.routes.js';
 import { jobsRouter } from './jobs.routes.js';
@@ -15,7 +15,7 @@ import { debugRouter } from './debug.routes.js';
 const router = express.Router();
 
 // Health endpoint — checks Firebase Firestore connectivity
-router.get('/health', async (_req, res) => {
+router.get('/health', async (_req: Request, res: Response) => {
   try {
     await db.collection('_health_ping').limit(1).get();
     res.json({ status: 'ok', firebase: 'connected' });
@@ -24,7 +24,7 @@ router.get('/health', async (_req, res) => {
   }
 });
 
-router.post('/seed/reset', (_req, res) => {
+router.post('/seed/reset', (_req: Request, res: Response) => {
   res.json({ ok: true });
 });
 

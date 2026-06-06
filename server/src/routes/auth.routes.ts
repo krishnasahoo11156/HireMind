@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import { adminAuth, db } from '../firebase/admin.js';
 import { userService } from '../firebase/services/userService.js';
 import type { AuthedRequest } from '../middleware/auth.js';
@@ -7,7 +7,7 @@ export const authRouter = express.Router();
 
 // ─── POST /api/auth/register ───────────────────────────────────────────────
 // Creates a user in Firebase Auth + Firestore and sets custom role claim.
-authRouter.post('/register', async (req, res) => {
+authRouter.post('/register', async (req: Request, res: Response) => {
   const { name, email, password, role } = req.body;
 
   if (!name || !email || !password) {
@@ -60,7 +60,7 @@ authRouter.post('/register', async (req, res) => {
 // ─── POST /api/auth/login ─────────────────────────────────────────────────
 // Accepts a Firebase ID token (obtained by client-side signInWithEmailAndPassword),
 // verifies it, and returns the enriched user profile.
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', async (req: Request, res: Response) => {
   const { idToken, role, name, password } = req.body;
 
   if (!idToken) {
@@ -149,7 +149,7 @@ authRouter.post('/login', async (req, res) => {
 });
 
 // ─── GET /api/auth/me ─────────────────────────────────────────────────────
-authRouter.get('/me', async (req: AuthedRequest, res) => {
+authRouter.get('/me', async (req: AuthedRequest, res: Response) => {
   const header = req.headers.authorization;
   const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
 
@@ -200,7 +200,7 @@ authRouter.get('/me', async (req: AuthedRequest, res) => {
 });
 
 // ─── PATCH /api/auth/me ───────────────────────────────────────────────────
-authRouter.patch('/me', async (req: AuthedRequest, res) => {
+authRouter.patch('/me', async (req: AuthedRequest, res: Response) => {
   const header = req.headers.authorization;
   const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
 
@@ -246,7 +246,7 @@ authRouter.patch('/me', async (req: AuthedRequest, res) => {
 
 // ─── GET /api/health ──────────────────────────────────────────────────────
 // Returns Firestore connectivity status
-authRouter.get('/health', async (_req, res) => {
+authRouter.get('/health', async (_req: Request, res: Response) => {
   try {
     await db.collection('_health_ping').limit(1).get();
     res.json({ status: 'ok', firebase: 'connected' });

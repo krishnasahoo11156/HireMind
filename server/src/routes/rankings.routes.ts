@@ -1,13 +1,13 @@
-import express from 'express';
+import express, { type Response } from 'express';
 import { candidateService } from '../firebase/services/candidateService.js';
 import { rankingService } from '../firebase/services/rankingService.js';
-import { auth } from '../middleware/auth.js';
+import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { getSocketServer } from '../socket.js';
 import { mapCandidate } from '../utils/mappers.js';
 
 export const rankingsRouter = express.Router();
 
-rankingsRouter.post('/generate/:jobId', auth, async (req, res) => {
+rankingsRouter.post('/generate/:jobId', auth, async (req: AuthedRequest, res: Response) => {
   const jobId = req.params.jobId;
   try {
     const ranked = await candidateService.findAll({ jobId }); // already sorted by aiScore desc
@@ -39,7 +39,7 @@ rankingsRouter.post('/generate/:jobId', auth, async (req, res) => {
   }
 });
 
-rankingsRouter.get('/:jobId', auth, async (req, res) => {
+rankingsRouter.get('/:jobId', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const [ranking, candidates] = await Promise.all([
       rankingService.findByJobId(req.params.jobId),

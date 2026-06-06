@@ -1,9 +1,9 @@
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import { userService } from '../firebase/services/userService.js';
 
 export const debugRouter = express.Router();
 
-debugRouter.get('/users', async (_req, res) => {
+debugRouter.get('/users', async (_req: Request, res: Response) => {
   try {
     const users = await userService.findAll();
     res.json({
@@ -15,7 +15,7 @@ debugRouter.get('/users', async (_req, res) => {
   }
 });
 
-debugRouter.get('/user/:email', async (req, res) => {
+debugRouter.get('/user/:email', async (req: Request, res: Response) => {
   try {
     const user = await userService.findOne({ email: req.params.email });
     if (!user) {

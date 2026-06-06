@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Response } from 'express';
 import { resumeService } from '../firebase/services/resumeService.js';
 import { auth } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
@@ -50,7 +50,7 @@ async function buildResume(file: Express.Multer.File, userId?: string): Promise<
 }
 
 // POST /upload — single resume
-resumesRouter.post('/upload', auth, upload.single('file'), async (req: AuthedRequest, res) => {
+resumesRouter.post('/upload', auth, upload.single('file'), async (req: AuthedRequest, res: Response) => {
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded' });
     return;
@@ -72,7 +72,7 @@ resumesRouter.post('/upload', auth, upload.single('file'), async (req: AuthedReq
 });
 
 // POST /batch-upload — up to 20 resumes
-resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req: AuthedRequest, res) => {
+resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req: AuthedRequest, res: Response) => {
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
   const jobId = (req.query.jobId as string | undefined) ?? req.body?.jobId ?? 'unknown';
 
@@ -168,7 +168,7 @@ resumesRouter.post('/batch-upload', auth, upload.array('files', 20), async (req:
 });
 
 // GET /:id
-resumesRouter.get('/:id', auth, async (req, res) => {
+resumesRouter.get('/:id', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const resume = await resumeService.findById(req.params.id);
     if (!resume) {
@@ -182,7 +182,7 @@ resumesRouter.get('/:id', auth, async (req, res) => {
 });
 
 // DELETE /:id
-resumesRouter.delete('/:id', auth, async (req, res) => {
+resumesRouter.delete('/:id', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const resume = await resumeService.findById(req.params.id);
     if (!resume) {

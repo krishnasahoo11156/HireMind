@@ -5,6 +5,8 @@ import { userService } from '../firebase/services/userService.js';
 export interface AuthedRequest extends Request {
   userId?: string;
   userRole?: string;
+  file?: Express.Multer.File;
+  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
 }
 
 /**
