@@ -51,6 +51,9 @@ export interface Application {
   leetcodeUsername?: string;
   candidateName?: string;
   whyApplying?: string;
+  analysisStatus?: 'pending' | 'parsing' | 'analyzing' | 'completed' | 'failed';
+  progress?: number;
+  errorMessage?: string | null;
 }
 
 export interface Job {

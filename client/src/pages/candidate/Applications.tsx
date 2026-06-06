@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { io as connectSocket, Socket } from 'socket.io-client';
-import { BriefcaseBusiness, CheckCircle, Clock, Sparkles, BrainCircuit, Bell, Shield, ArrowRight, Star } from 'lucide-react';
+import { BriefcaseBusiness, CheckCircle, Clock, Sparkles, BrainCircuit, Bell, Shield, ArrowRight, Star, X } from 'lucide-react';
 import { useJobs, useMyApplications } from '../../hooks/queries';
 import { useCandidateAuth } from '../../firebase/AuthContext';
 import type { Application, Job } from '../../types';
@@ -252,6 +252,54 @@ export function CandidateApplications() {
                       </div>
                     </motion.div>
                   )}
+                  
+                  {/* Analysis Failed Banner */}
+                  {selectedApp.analysisStatus === 'failed' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-2xl border border-red-500/25 bg-red-500/5 dark:border-red-950/40 p-4 space-y-1"
+                    >
+                      <div className="text-sm font-semibold text-danger">
+                        AI Analysis Pipeline Failed
+                      </div>
+                      <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed">
+                        An error occurred while running the AI matching models for your profile. The hiring manager has been notified and can trigger a retry.
+                      </p>
+                      {selectedApp.errorMessage && (
+                        <p className="text-[11px] font-mono text-red-600 dark:text-red-400 mt-1">
+                          Reason: {selectedApp.errorMessage}
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Analysis Processing Banner */}
+                  {(selectedApp.analysisStatus === 'parsing' || selectedApp.analysisStatus === 'analyzing' || selectedApp.analysisStatus === 'pending') && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-2xl border border-amber-500/25 bg-amber-500/5 dark:border-amber-950/40 p-4 space-y-2.5"
+                    >
+                      <div className="flex justify-between items-center text-sm font-semibold text-amber-600 dark:text-amber-400">
+                        <span>Running AI Evaluation pipeline...</span>
+                        <span className="tabular-nums">{selectedApp.progress ?? 10}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-gray-100 dark:bg-darkborder rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-1.5 bg-amber-500 rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${selectedApp.progress ?? 10}%` }}
+                          transition={{ duration: 0.5 }}
+                        />
+                      </div>
+                      <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed">
+                        {selectedApp.analysisStatus === 'pending' && 'Application registered, preparing files...'}
+                        {selectedApp.analysisStatus === 'parsing' && 'Extracting resume structure and text parsing...'}
+                        {selectedApp.analysisStatus === 'analyzing' && 'Comparing skills match and social metrics against job details...'}
+                      </p>
+                    </motion.div>
+                  )}
 
                   {/* Tracker Timeline */}
                   <div className="pt-4 space-y-6">
@@ -268,10 +316,16 @@ export function CandidateApplications() {
                                   <CheckCircle className="h-3.5 w-3.5" />
                                 </div>
                               ) : state === 'active' ? (
-                                <div className="relative flex h-5 w-5 items-center justify-center">
-                                  <div className="absolute h-full w-full rounded-full bg-amber-500 opacity-75 animate-ping" />
-                                  <div className="relative h-3.5 w-3.5 rounded-full bg-amber-500 border border-white dark:border-darkbg shadow" />
-                                </div>
+                                selectedApp.analysisStatus === 'failed' ? (
+                                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow">
+                                    <X className="h-3.5 w-3.5" />
+                                  </div>
+                                ) : (
+                                  <div className="relative flex h-5 w-5 items-center justify-center">
+                                    <div className="absolute h-full w-full rounded-full bg-amber-500 opacity-75 animate-ping" />
+                                    <div className="relative h-3.5 w-3.5 rounded-full bg-amber-500 border border-white dark:border-darkbg shadow" />
+                                  </div>
+                                )
                               ) : (
                                 <div className="h-4 w-4 rounded-full bg-gray-100 border-2 border-gray-300 dark:bg-darkbg dark:border-darkborder" />
                               )}
@@ -282,7 +336,9 @@ export function CandidateApplications() {
                                 state === 'completed'
                                   ? 'text-primary dark:text-darktext'
                                   : state === 'active'
-                                  ? 'text-amber-600 dark:text-amber-400'
+                                    ? selectedApp.analysisStatus === 'failed'
+                                      ? 'text-red-600 dark:text-red-400'
+                                      : 'text-amber-600 dark:text-amber-400'
                                   : 'text-secondary dark:text-darkmuted'
                               }`}>
                                 {s.label}

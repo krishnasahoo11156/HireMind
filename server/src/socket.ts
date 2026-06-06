@@ -27,6 +27,9 @@ export interface ServerToClientEvents {
     status: string;
     aiScore?: number;
     recommendation?: string;
+    analysisStatus?: 'pending' | 'parsing' | 'analyzing' | 'completed' | 'failed';
+    progress?: number;
+    errorMessage?: string | null;
     updatedAt: string;
   }) => void;
   new_application: (payload: {

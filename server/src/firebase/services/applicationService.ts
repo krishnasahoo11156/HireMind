@@ -19,6 +19,9 @@ export interface FirestoreApplication {
   appliedAt?: admin.firestore.Timestamp;
   updatedAt?: admin.firestore.Timestamp;
   aiAnalyzed?: boolean;
+  analysisStatus?: 'pending' | 'parsing' | 'analyzing' | 'completed' | 'failed';
+  progress?: number;
+  errorMessage?: string | null;
 }
 
 export const applicationService = {

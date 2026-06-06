@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { api } from '../lib/api';
+import { useRetryAnalysis } from '../hooks/queries';
 import type { Candidate, Job, Resume } from '../types';
 import {
   Badge,
@@ -70,6 +71,21 @@ export function JobDetail() {
     mutationFn: () => api.generateRanking(id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['job', id] })
   });
+
+  const retryMutation = useRetryAnalysis({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', id] });
+    }
+  });
+
+  const handleRetry = (app: any) => {
+    const formData = new FormData();
+    formData.append('applicationId', app._id ?? app.id);
+    formData.append('jobId', id);
+    formData.append('name', app.candidateName || '');
+    formData.append('whyApplying', app.whyApplying || '');
+    retryMutation.mutate(formData);
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -485,13 +501,17 @@ export function JobDetail() {
                 });
                 return list.map((app, i) => {
                   const candidate = mergedCandidates.find((c) => c.email.toLowerCase() === app.candidateEmail.toLowerCase());
+                  const isFailed = app.analysisStatus === 'failed';
+                  const isAnalyzing = app.analysisStatus === 'analyzing' || app.analysisStatus === 'parsing' || app.analysisStatus === 'pending';
+                  
                   const statusTone = 
-                    app.status === 'Under Review' || app.status === 'AI Analysis' ? 'yellow' :
+                    isFailed ? 'red' :
+                    isAnalyzing ? 'yellow' :
                     app.status === 'Shortlisted' || app.status === 'Selected' ? 'emerald' :
                     app.status === 'Rejected' ? 'danger' : 'neutral';
                   
                   return (
-                    <Card key={app.applicationId} className="p-5 flex flex-col justify-between hover:border-accent/30 dark:hover:border-darkaccent/30 transition-all border border-border dark:border-darkborder">
+                    <Card key={app.applicationId || app._id} className="p-5 flex flex-col justify-between hover:border-accent/30 dark:hover:border-darkaccent/30 transition-all border border-border dark:border-darkborder">
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex items-center gap-4">
                           <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-accent/10 dark:bg-darkaccent/10 text-accent dark:text-darkaccent text-sm font-bold">
@@ -510,7 +530,9 @@ export function JobDetail() {
                                   {app.candidateName}
                                 </h3>
                               )}
-                              <Badge tone={statusTone as any}>{app.status}</Badge>
+                              <Badge tone={statusTone as any}>
+                                {isFailed ? 'Analysis Failed' : isAnalyzing ? `Analyzing (${app.progress ?? 10}%)` : app.status}
+                              </Badge>
                             </div>
                             <p className="text-xs text-secondary dark:text-darkmuted mt-1 flex flex-col gap-0.5">
                               <span>{app.candidateEmail}</span>
@@ -539,6 +561,10 @@ export function JobDetail() {
                           <div className="text-right flex flex-col items-end gap-1">
                             {candidate ? (
                               <RecommendationBadge recommendation={candidate.recommendation} />
+                            ) : isFailed ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 dark:bg-red-950/30 px-2.5 py-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                                Failed
+                              </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning animate-pulse">
                                 Processing
@@ -563,6 +589,15 @@ export function JobDetail() {
                                 View Details
                               </Button>
                             </Link>
+                          ) : isFailed ? (
+                            <Button 
+                              variant="accent" 
+                              size="sm" 
+                              onClick={() => handleRetry(app)}
+                              disabled={retryMutation.isPending}
+                            >
+                              {retryMutation.isPending ? 'Retrying...' : 'Retry Analysis'}
+                            </Button>
                           ) : (
                             <Button variant="secondary" size="sm" disabled>
                               Analyzing…
@@ -570,6 +605,12 @@ export function JobDetail() {
                           )}
                         </div>
                       </div>
+
+                      {isFailed && app.errorMessage && (
+                        <div className="mt-3 rounded-xl border border-red-500/20 bg-red-50/50 p-3 text-xs text-red-700 dark:bg-red-950/10 dark:text-red-400">
+                          <span className="font-bold">Error:</span> {app.errorMessage}
+                        </div>
+                      )}
 
                       {candidate?.whyApplying && (
                         <div className="mt-4 border-t border-border dark:border-darkborder pt-3">

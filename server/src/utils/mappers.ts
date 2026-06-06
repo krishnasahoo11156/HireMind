@@ -106,6 +106,9 @@ export function mapApplication(doc: any): Application {
     portfolioUrl: obj.portfolioUrl ?? '',
     leetcodeUsername: obj.leetcodeUsername ?? '',
     candidateName: obj.candidateName ?? '',
-    whyApplying: obj.whyApplying ?? ''
+    whyApplying: obj.whyApplying ?? '',
+    analysisStatus: obj.analysisStatus,
+    progress: obj.progress,
+    errorMessage: obj.errorMessage
   };
 }

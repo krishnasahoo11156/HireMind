@@ -117,7 +117,9 @@ export function useApplyJob(options?: { onSuccess?: () => void; onError?: (err: 
         status: 'applied',
         appliedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        aiAnalyzed: false
+        aiAnalyzed: false,
+        analysisStatus: 'pending',
+        progress: 10
       });
       
       const applicationId = appRef.id;
@@ -161,6 +163,23 @@ export function useApplyJob(options?: { onSuccess?: () => void; onError?: (err: 
       }
 
       return { id: applicationId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['job-applications'] });
+      options?.onSuccess?.();
+    },
+    onError: (err: any) => {
+      options?.onError?.(err);
+    }
+  });
+}
+
+export function useRetryAnalysis(options?: { onSuccess?: () => void; onError?: (err: any) => void }) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      return api.analyzeApplication(formData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-applications'] });

@@ -2,9 +2,11 @@ import express, { type Response } from 'express';
 import { z } from 'zod';
 import { applicationService } from '../firebase/services/applicationService.js';
 import { userService } from '../firebase/services/userService.js';
-import { resumeService } from '../firebase/services/resumeService.js';
+import { resumeService, type FirestoreResume } from '../firebase/services/resumeService.js';
+import { col, docToObject } from '../firebase/admin.js';
 import { candidateService } from '../firebase/services/candidateService.js';
 import { jobService } from '../firebase/services/jobService.js';
+import { rankingService } from '../firebase/services/rankingService.js';
 import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { uploadResumeToStorage } from '../firebase/storageService.js';
@@ -107,7 +109,9 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
       portfolioUrl: portfolioUrl || undefined,
       leetcodeUsername: leetcodeUsername || undefined,
       candidateName: name || user.name,
-      whyApplying: whyApplying || undefined
+      whyApplying: whyApplying || undefined,
+      analysisStatus: 'pending',
+      progress: 10
     });
 
     // Link application to job
@@ -130,14 +134,42 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
 
     // Run the asynchronous evaluation pipeline in the background
     void (async () => {
+      const socket = getSocketServer();
+      const candidateRoom = `candidate:${user.id}`;
+      const appId = application.id;
+
+      const updateProgress = async (
+        status: string,
+        analysisStatus: 'pending' | 'parsing' | 'analyzing' | 'completed' | 'failed',
+        progress: number,
+        errorMessage?: string
+      ) => {
+        console.log(`[pipeline] Progress update: appId=${appId}, status=${status}, analysisStatus=${analysisStatus}, progress=${progress}%`);
+        try {
+          await applicationService.update(appId, {
+            status,
+            analysisStatus,
+            progress,
+            errorMessage: errorMessage || null
+          });
+          const updatedApp = await applicationService.findById(appId);
+          if (updatedApp) {
+            socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(updatedApp));
+          }
+          socket.to(candidateRoom).emit('tracker:update', {
+            applicationId: appId,
+            status,
+            analysisStatus,
+            progress,
+            errorMessage,
+            updatedAt: new Date().toISOString()
+          });
+        } catch (dbErr) {
+          console.error(`[pipeline] Failed to write progress for ${appId}:`, dbErr);
+        }
+      };
+
       try {
-        const socket = getSocketServer();
-        const candidateRoom = `candidate:${user.id}`;
-        const appId = application.id;
-
-        // Emit initial status to recruiter room
-        socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(application));
-
         socket.emit('application:new', { application, candidateName: user.name });
         socket.emit('notification:new', {
           message: `New candidate ${user.name} applied for "${job.title}".`,
@@ -145,113 +177,99 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         });
 
         // ─── STAGE 1: Applied (Delay 1.5s) ───
+        console.log("Application Created");
         await new Promise((r) => setTimeout(r, 1500));
-        socket.to(candidateRoom).emit('tracker:update', {
-          applicationId: appId,
-          status: 'Applied',
-          updatedAt: new Date().toISOString()
-        });
+        await updateProgress('Applied', 'pending', 10);
 
         // ─── STAGE 2: Resume Parsed (Delay 1.5s) ───
         await new Promise((r) => setTimeout(r, 1500));
+        console.log("Resume Found");
 
         let parsedResume;
-        if (req.file) {
-          const parsedObj = await parseResumeBuffer(req.file, user.id);
-          parsedResume = await resumeService.create(parsedObj);
-        } else {
-          parsedResume = await resumeService.create({
-            fileName: 'uploaded_resume.pdf',
-            fileUrl: '',
-            fileType: 'pdf',
-            userId: user.id,
-            parsedData: {
-              name: user.name,
-              email: user.email,
-              skills: ['React', 'TypeScript', 'TailwindCSS'],
-              experience: [],
-              projects: [],
-              education: [],
-              certifications: [],
-              links: {}
-            }
-          });
+        try {
+          if (req.file) {
+            const parsedObj = await parseResumeBuffer(req.file, user.id);
+            parsedResume = await resumeService.create(parsedObj);
+          } else {
+            parsedResume = await resumeService.create({
+              fileName: 'uploaded_resume.pdf',
+              fileUrl: resumeUrl || '',
+              fileType: 'pdf',
+              userId: user.id,
+              parsedData: {
+                name: user.name,
+                email: user.email,
+                skills: ['React', 'TypeScript', 'TailwindCSS'],
+                experience: [],
+                projects: [],
+                education: [],
+                certifications: [],
+                links: {}
+              }
+            });
+          }
+        } catch (parserErr: any) {
+          console.error('[pipeline] Resume parsing failed:', parserErr);
+          throw new Error(`Resume parsing failed: ${parserErr.message}`);
         }
 
-        await applicationService.update(appId, { status: 'Resume Parsed' });
-        const appParsed = await applicationService.findById(appId);
-        if (appParsed) {
-          socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(appParsed));
+        if (!parsedResume || !parsedResume.id || !parsedResume.fileUrl) {
+          throw new Error('No resume found');
         }
 
-        socket.to(candidateRoom).emit('tracker:update', {
-          applicationId: appId,
-          status: 'Resume Parsed',
-          updatedAt: new Date().toISOString()
-        });
+        console.log("Resume Parsed");
+        await updateProgress('Resume Parsed', 'parsing', 25);
 
         // ─── STAGE 3: AI Analysis (Delay 2s) ───
         await new Promise((r) => setTimeout(r, 2000));
-        await applicationService.update(appId, { status: 'AI Analysis' });
-        const appAnalysis = await applicationService.findById(appId);
-        if (appAnalysis) {
-          socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(appAnalysis));
+        console.log("Skills Extracted");
+        await updateProgress('AI Analysis', 'analyzing', 50);
+
+        console.log("AI Request Started");
+        let scoredResult;
+        try {
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Analysis Timeout')), 60000)
+          );
+
+          const scoringPromise = (async () => {
+            const githubProfile = user.githubUrl ? await getGitHubProfile(user.githubUrl.split('/').pop() || '') : null;
+            const leetcodeProfile = user.leetcodeUsername ? await getLeetCodeProfile(user.leetcodeUsername) : null;
+            
+            console.log("AI Request inputs:", {
+              jobTitle: job.title,
+              candidateName: user.name,
+              skillsCount: parsedResume.parsedData.skills.length,
+              github: !!githubProfile,
+              leetcode: !!leetcodeProfile
+            });
+
+            const scored = await scoreCandidate(job.extractedData, parsedResume.parsedData, githubProfile || undefined, leetcodeProfile || undefined);
+            console.log("AI Response payload received:", scored);
+            return { scored, githubProfile, leetcodeProfile };
+          })();
+
+          const result = await Promise.race([scoringPromise, timeoutPromise]) as any;
+          if (!result || !result.scored) {
+            throw new Error('AI scoring service returned null or invalid response');
+          }
+          scoredResult = result;
+        } catch (aiErr: any) {
+          console.error('[pipeline] AI Scoring failed or timed out:', aiErr);
+          throw new Error(`AI analysis failed: ${aiErr.message}`);
         }
 
-        socket.to(candidateRoom).emit('tracker:update', {
-          applicationId: appId,
-          status: 'AI Analysis',
-          updatedAt: new Date().toISOString()
-        });
+        console.log("AI Response Received");
+        await updateProgress('AI Analysis', 'analyzing', 75);
 
-        // Fetch profiles
-        let ghUsername = '';
-        if (githubUrl) {
-          const clean = githubUrl.trim().replace(/\/$/, '');
-          const parts = clean.split('/');
-          ghUsername = parts[parts.length - 1];
-        }
-        if (!ghUsername) {
-          ghUsername = leetcodeUsername || user.name.toLowerCase().replace(/\s/g, '');
-        }
-        const githubAnalysis = await getGitHubProfile(ghUsername);
-        const leetcodeAnalysis = getLeetCodeProfile(ghUsername);
-
+        const { scored, githubProfile, leetcodeProfile } = scoredResult;
         const matchResult = matchSkills(job.requiredSkills || [], parsedResume.parsedData);
         const matchPercentage = matchResult.matchPercentage;
         const skillGap = matchResult.skillGap;
-        let aiScore = 70;
-        let recommendation: 'Strong Hire' | 'Hire' | 'Maybe' | 'Reject' = 'Maybe';
-        let explanation: string[] = [];
-
-        try {
-          const scored = await scoreCandidate(job.extractedData, parsedResume.parsedData, githubAnalysis, leetcodeAnalysis);
-          const experienceMatch = scored.experienceMatch ?? 70;
-          const githubScore = scored.githubScore ?? (githubAnalysis?.totalCommits ? 70 : 0);
-          const leetcodeScore = scored.leetcodeScore ?? (leetcodeAnalysis?.problemsSolved ? 70 : 0);
-          
-          aiScore = Math.round(
-            (matchPercentage * 0.6) +
-            (experienceMatch * 0.2) +
-            (githubScore * 0.1) +
-            (leetcodeScore * 0.1)
-          );
-          recommendation = scored.recommendation ?? 'Maybe';
-          explanation = scored.explanation ?? [];
-        } catch (err) {
-          console.error('[applications] Async scoring failed:', err);
-          const experienceMatch = 70;
-          const githubScore = githubAnalysis?.totalCommits ? 70 : 0;
-          const leetcodeScore = leetcodeAnalysis?.problemsSolved ? 70 : 0;
-          aiScore = Math.round(
-            (matchPercentage * 0.6) +
-            (experienceMatch * 0.2) +
-            (githubScore * 0.1) +
-            (leetcodeScore * 0.1)
-          );
-          recommendation = aiScore >= 90 ? 'Strong Hire' : aiScore >= 75 ? 'Hire' : aiScore >= 60 ? 'Maybe' : 'Reject';
-          explanation = ['AI scoring service was unavailable. Basic rule-based analysis used instead.'];
-        }
+        
+        const aiScore = scored.aiScore ?? 70;
+        const recommendation = scored.recommendation ?? 'Maybe';
+        const explanation = scored.explanation ?? [];
 
         const candidateRecord = await candidateService.create({
           resumeId: parsedResume.id,
@@ -265,8 +283,8 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           aiScore,
           matchPercentage,
           recommendation,
-          githubAnalysis,
-          leetcodeAnalysis,
+          githubAnalysis: githubProfile ?? {},
+          leetcodeAnalysis: leetcodeProfile ?? {},
           skillGap,
           explanation,
           recruiterDecision: 'pending',
@@ -274,29 +292,26 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           whyApplying: whyApplying || ''
         });
 
-        // Update resume's userId to point to the Candidate document
+        console.log("Candidate Saved");
         await resumeService.update(parsedResume.id, { userId: candidateRecord.id });
+
+        // Trigger Ranking generation
+        const ranked = await candidateService.findAll({ jobId });
+        await rankingService.create({
+          jobId,
+          candidates: ranked.map((cand, idx) => ({
+            candidateId: cand.id,
+            rank: idx + 1,
+            score: cand.aiScore ?? 0,
+            matchPercentage: cand.matchPercentage ?? 0,
+            recommendation: cand.recommendation ?? 'Maybe'
+          }))
+        });
+        console.log("Ranking Updated");
 
         // ─── STAGE 4: Under Review (Delay 1.5s) ───
         await new Promise((r) => setTimeout(r, 1500));
-
-        await applicationService.update(appId, {
-          status: 'Under Review',
-          aiScore,
-          recommendation
-        });
-        const appReview = await applicationService.findById(appId);
-        if (appReview) {
-          socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(appReview));
-        }
-
-        socket.to(candidateRoom).emit('tracker:update', {
-          applicationId: appId,
-          status: 'Under Review',
-          aiScore,
-          recommendation,
-          updatedAt: new Date().toISOString()
-        });
+        await updateProgress('Under Review', 'completed', 100);
 
         socket.emit('application:status', {
           applicationId: appId,
@@ -309,15 +324,36 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           jobId,
           candidate: mapCandidate(candidateRecord)
         });
-
-        const allCandidates = await candidateService.findAll({ jobId });
         socket.to(`job:${jobId}`).emit('ranking_updated', {
           jobId,
-          candidates: allCandidates.map(mapCandidate)
+          candidates: ranked.map(mapCandidate)
         });
 
-      } catch (pipelineErr) {
+      } catch (pipelineErr: any) {
         console.error('[applications] Error in async pipeline:', pipelineErr);
+        const errMsg = pipelineErr.message || 'Unknown error occurred during analysis';
+        try {
+          await applicationService.update(appId, {
+            status: 'Applied',
+            analysisStatus: 'failed',
+            progress: 100,
+            errorMessage: errMsg
+          });
+          const updatedApp = await applicationService.findById(appId);
+          if (updatedApp) {
+            socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(updatedApp));
+          }
+          socket.to(candidateRoom).emit('tracker:update', {
+            applicationId: appId,
+            status: 'Applied',
+            analysisStatus: 'failed',
+            progress: 100,
+            errorMessage: errMsg,
+            updatedAt: new Date().toISOString()
+          });
+        } catch (dbErr) {
+          console.error('[applications] Failed to save failure state in outer catch:', dbErr);
+        }
       }
     })();
 
@@ -386,117 +422,225 @@ applicationsRouter.post('/analyze', auth, upload.single('file'), async (req: Aut
         rawText: rawText || undefined,
         userId: user.id
       });
+    } else {
+      // Try to find an existing resume document for this user in the database
+      const resumeSnap = await col('resumes').where('userId', '==', user.id).limit(1).get();
+      if (!resumeSnap.empty) {
+        parsedResume = docToObject<FirestoreResume>(resumeSnap.docs[0]);
+      } else {
+        const existingApp = await applicationService.findById(applicationId);
+        const url = existingApp?.resumeUrl || '';
+        if (url) {
+          parsedResume = await resumeService.create({
+            fileName: url.split('/').pop() || 'resume.pdf',
+            fileUrl: url,
+            fileType: url.toLowerCase().endsWith('.docx') ? 'docx' : 'pdf',
+            userId: user.id,
+            parsedData: {
+              name: user.name,
+              email: user.email,
+              skills: ['React', 'TypeScript', 'TailwindCSS'],
+              experience: [],
+              projects: [],
+              education: [],
+              certifications: [],
+              links: {}
+            }
+          });
+        }
+      }
     }
+
+    // Update application to pending status first
+    await applicationService.update(applicationId, {
+      analysisStatus: 'pending',
+      progress: 10,
+      errorMessage: null
+    });
 
     res.status(200).json({ success: true, message: 'AI Analysis started' });
 
     // Run the background evaluation pipeline asynchronously
     void (async () => {
-      try {
-        const socket = getSocketServer();
-        const candidateRoom = `candidate:${user.id}`;
+      const socket = getSocketServer();
+      const candidateRoom = `candidate:${user.id}`;
 
+      const updateProgress = async (
+        status: string,
+        analysisStatus: 'pending' | 'parsing' | 'analyzing' | 'completed' | 'failed',
+        progress: number,
+        errorMessage?: string
+      ) => {
+        console.log(`[pipeline-analyze] Progress update: appId=${applicationId}, status=${status}, analysisStatus=${analysisStatus}, progress=${progress}%`);
+        try {
+          await applicationService.update(applicationId, {
+            status,
+            analysisStatus,
+            progress,
+            errorMessage: errorMessage || null
+          });
+          const updatedApp = await applicationService.findById(applicationId);
+          if (updatedApp) {
+            socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(updatedApp));
+          }
+          socket.to(candidateRoom).emit('tracker:update', {
+            applicationId,
+            status,
+            analysisStatus,
+            progress,
+            errorMessage,
+            updatedAt: new Date().toISOString()
+          });
+        } catch (dbErr) {
+          console.error(`[pipeline-analyze] Failed to write progress for ${applicationId}:`, dbErr);
+        }
+      };
+
+      try {
         // ─── STAGE 1: Applied (Delay 1.5s) ───
+        console.log("Application Created");
         await new Promise((r) => setTimeout(r, 1500));
-        await applicationService.update(applicationId, { status: 'Applied' });
-        socket.to(candidateRoom).emit('tracker:update', {
-          applicationId,
-          status: 'Applied',
-          updatedAt: new Date().toISOString()
-        });
+        await updateProgress('Applied', 'pending', 10);
 
         // ─── STAGE 2: Resume Parsed (Delay 1.5s) ───
         await new Promise((r) => setTimeout(r, 1500));
-        await applicationService.update(applicationId, { status: 'Resume Parsed' });
-        socket.to(candidateRoom).emit('tracker:update', {
-          applicationId,
-          status: 'Resume Parsed',
-          updatedAt: new Date().toISOString()
-        });
+        console.log("Resume Found");
+
+        if (!parsedResume || !parsedResume.id || !parsedResume.fileUrl) {
+          throw new Error('No resume found');
+        }
+
+        console.log("Resume Parsed");
+        await updateProgress('Resume Parsed', 'parsing', 25);
 
         // ─── STAGE 3: AI Analysis (Delay 1.5s) ───
         await new Promise((r) => setTimeout(r, 1500));
-        await applicationService.update(applicationId, { status: 'AI Analysis' });
-        socket.to(candidateRoom).emit('tracker:update', {
-          applicationId,
-          status: 'AI Analysis',
-          updatedAt: new Date().toISOString()
-        });
+        console.log("Skills Extracted");
+        await updateProgress('AI Analysis', 'analyzing', 50);
 
-        // Score Candidate
-        let aiScore = 0;
-        let matchPercentage = 0;
-        let recommendation = 'Standard Review';
-        let githubAnalysis = null;
-        let leetcodeAnalysis = null;
-        let skillGap: any[] = [];
-        let explanation: string[] = [];
+        console.log("AI Request Started");
+        let scoredResult;
+        try {
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Analysis Timeout')), 60000)
+          );
 
-        if (parsedResume) {
-          try {
+          const scoringPromise = (async () => {
             const githubProfile = user.githubUrl ? await getGitHubProfile(user.githubUrl.split('/').pop() || '') : null;
             const leetcodeProfile = user.leetcodeUsername ? await getLeetCodeProfile(user.leetcodeUsername) : null;
-            const scored = await scoreCandidate(job, parsedResume, githubProfile || undefined, leetcodeProfile || undefined);
             
-            aiScore = scored.aiScore;
-            matchPercentage = scored.matchPercentage;
-            recommendation = scored.recommendation;
-            githubAnalysis = scored.githubAnalysis;
-            leetcodeAnalysis = scored.leetcodeAnalysis;
-            skillGap = scored.skillGap;
-            explanation = scored.explanation ?? [];
-          } catch (err) {
-            console.error('[applications] Async scoring failed:', err);
+            console.log("AI Request inputs:", {
+              jobTitle: job.title,
+              candidateName: user.name,
+              skillsCount: parsedResume.parsedData.skills.length,
+              github: !!githubProfile,
+              leetcode: !!leetcodeProfile
+            });
+
+            const scored = await scoreCandidate(job.extractedData, parsedResume.parsedData, githubProfile || undefined, leetcodeProfile || undefined);
+            console.log("AI Response payload received:", scored);
+            return { scored, githubProfile, leetcodeProfile };
+          })();
+
+          const result = await Promise.race([scoringPromise, timeoutPromise]) as any;
+          if (!result || !result.scored) {
+            throw new Error('AI scoring service returned null or invalid response');
           }
-
-          const candidateRecord = await candidateService.create({
-            resumeId: parsedResume.id,
-            jobId,
-            applicationId,
-            name: name || user.name,
-            email: user.email,
-            username: user.leetcodeUsername || (user.githubUrl ? user.githubUrl.split('/').pop() : '') || user.email.split('@')[0],
-            blindId: `Candidate-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-            isBlindMode: false,
-            aiScore,
-            matchPercentage,
-            recommendation,
-            githubAnalysis,
-            leetcodeAnalysis,
-            skillGap,
-            explanation,
-            recruiterDecision: 'pending',
-            recruiterReason: '',
-            whyApplying: whyApplying || ''
-          });
-
-          await resumeService.update(parsedResume.id, { userId: candidateRecord.id });
+          scoredResult = result;
+        } catch (aiErr: any) {
+          console.error('[pipeline-analyze] AI Scoring failed or timed out:', aiErr);
+          throw new Error(`AI analysis failed: ${aiErr.message}`);
         }
+
+        console.log("AI Response Received");
+        await updateProgress('AI Analysis', 'analyzing', 75);
+
+        const { scored, githubProfile, leetcodeProfile } = scoredResult;
+        const matchResult = matchSkills(job.requiredSkills || [], parsedResume.parsedData);
+        const matchPercentage = matchResult.matchPercentage;
+        const skillGap = matchResult.skillGap;
+        
+        const aiScore = scored.aiScore ?? 70;
+        const recommendation = scored.recommendation ?? 'Maybe';
+        const explanation = scored.explanation ?? [];
+
+        const candidateRecord = await candidateService.create({
+          resumeId: parsedResume.id,
+          jobId,
+          applicationId,
+          name: name || user.name,
+          email: user.email,
+          username: user.leetcodeUsername || (user.githubUrl ? user.githubUrl.split('/').pop() : '') || user.email.split('@')[0],
+          blindId: `Candidate-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+          isBlindMode: false,
+          aiScore,
+          matchPercentage,
+          recommendation,
+          githubAnalysis: githubProfile ?? {},
+          leetcodeAnalysis: leetcodeProfile ?? {},
+          skillGap,
+          explanation,
+          recruiterDecision: 'pending',
+          recruiterReason: '',
+          whyApplying: whyApplying || ''
+        });
+
+        console.log("Candidate Saved");
+        await resumeService.update(parsedResume.id, { userId: candidateRecord.id });
+
+        // Trigger Ranking generation
+        const ranked = await candidateService.findAll({ jobId });
+        await rankingService.create({
+          jobId,
+          candidates: ranked.map((cand, idx) => ({
+            candidateId: cand.id,
+            rank: idx + 1,
+            score: cand.aiScore ?? 0,
+            matchPercentage: cand.matchPercentage ?? 0,
+            recommendation: cand.recommendation ?? 'Maybe'
+          }))
+        });
+        console.log("Ranking Updated");
 
         // ─── STAGE 4: Under Review (Delay 1.5s) ───
         await new Promise((r) => setTimeout(r, 1500));
-        await applicationService.update(applicationId, {
-          status: 'Under Review',
-          aiScore,
-          recommendation,
-          aiAnalyzed: true
+        await updateProgress('Under Review', 'completed', 100);
+
+        // Emit candidate_scored and ranking_updated to recruiter job room
+        socket.to(`job:${jobId}`).emit('candidate_scored', {
+          jobId,
+          candidate: mapCandidate(candidateRecord)
+        });
+        socket.to(`job:${jobId}`).emit('ranking_updated', {
+          jobId,
+          candidates: ranked.map(mapCandidate)
         });
 
-        const appReview = await applicationService.findById(applicationId);
-        if (appReview) {
-          socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(appReview));
-        }
-
-        socket.to(candidateRoom).emit('tracker:update', {
-          applicationId,
-          status: 'Under Review',
-          aiScore,
-          recommendation,
-          updatedAt: new Date().toISOString()
-        });
-
-      } catch (pipelineErr) {
+      } catch (pipelineErr: any) {
         console.error('[applications] Error in async pipeline:', pipelineErr);
+        const errMsg = pipelineErr.message || 'Unknown error occurred during analysis';
+        try {
+          await applicationService.update(applicationId, {
+            status: 'Applied',
+            analysisStatus: 'failed',
+            progress: 100,
+            errorMessage: errMsg
+          });
+          const updatedApp = await applicationService.findById(applicationId);
+          if (updatedApp) {
+            socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(updatedApp));
+          }
+          socket.to(candidateRoom).emit('tracker:update', {
+            applicationId,
+            status: 'Applied',
+            analysisStatus: 'failed',
+            progress: 100,
+            errorMessage: errMsg,
+            updatedAt: new Date().toISOString()
+          });
+        } catch (dbErr) {
+          console.error('[applications] Failed to save failure state in outer catch:', dbErr);
+        }
       }
     })();
 
