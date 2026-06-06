@@ -6,7 +6,7 @@ I'll analyze all three problem statements carefully and give you a strategic bre
 
 Here's the full strategy breakdown.
 
-**Why PS3 dominates the other two:** PS1 (OCR for Indian scripts) is a research problem — you'd need datasets, fine-tuned models, and weeks to get meaningful accuracy. PS2 (image-to-video) requires video generation infrastructure that doesn't exist cleanly on featherless.ai. PS3 is a full-stack product problem, which means your React + Node + MongoDB stack is a direct match. The AI is the cherry on top, not the entire foundation.
+**Why PS3 dominates the other two:** PS1 (OCR for Indian scripts) is a research problem — you'd need datasets, fine-tuned models, and weeks to get meaningful accuracy. PS2 (image-to-video) requires video generation infrastructure that doesn't exist cleanly on featherless.ai. PS3 is a full-stack product problem, which means your React + Node + Firebase stack is a direct match. The AI is the cherry on top, not the entire foundation.
 
 ---
 
@@ -46,6 +46,6 @@ That's 90 seconds of pure wow.
 
 Use featherless.ai with `deepseek-ai/DeepSeek-V3-0324` as your primary model — it has strong reasoning and coding capabilities which means it'll extract and structure resume data cleanly. For the frontend, Recharts for the skill heatmap and ranking charts. For resume parsing, use `pdf-parse` on the Node.js backend to extract raw text, then send it to featherless.ai with a structured prompt asking for JSON output (skills, experience years, education, certifications). Everything else is your existing MERN comfort zone.
 
-The architecture document you submit should show: React frontend → Express API → MongoDB (candidates, jobs, decisions) → featherless.ai (AI layer) → GitHub/LeetCode scraper (optional enrichment layer). Clean, explainable, scalable on paper.
+The architecture document you submit should show: React frontend → Express API → Firestore (candidates, jobs, decisions) → featherless.ai (AI layer) → GitHub/LeetCode scraper (optional enrichment layer). Clean, explainable, scalable on paper.
 
 You have roughly 48 working hours. The first 8 hours are your most important — get auth, resume upload, and the first AI call working end-to-end. Once that pipeline exists, everything else is UI and features layered on top.

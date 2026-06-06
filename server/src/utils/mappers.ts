@@ -23,7 +23,7 @@ export function mapCandidate(doc: any): Candidate {
   if (!doc) {
     throw new Error('Cannot map null or undefined candidate document');
   }
-  // Support both Firestore plain objects (with `id` field) and legacy Mongoose docs (with `_id`)
+  // Support Firestore plain objects (with `id` field) and any legacy objects (with `_id`)
   const obj = typeof doc.toObject === 'function' ? doc.toObject() : doc;
   const id = obj.id ?? obj._id?.toString() ?? '';
   return {

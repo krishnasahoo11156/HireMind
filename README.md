@@ -214,7 +214,7 @@ Express API Gateway
 Featherless AI
     │
     ▼
-MongoDB Database
+Firebase (Auth + Firestore + Storage)
 ```
 
 ---
@@ -240,10 +240,11 @@ MongoDB Database
 - REST APIs
 - Multer
 
-## Database
+## Database & Services
 
-- MongoDB
-- Mongoose ODM
+- Firebase Authentication
+- Firestore (NoSQL)
+- Firebase Storage
 
 ## AI
 

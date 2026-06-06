@@ -25,7 +25,7 @@ From the [Problem Statement](file:///c:/project/hiremind/HireMind/sources/Proble
 | **Decision Accuracy** | HIGH | Multi-source enrichment (GitHub + LeetCode) + weighted scoring + AI-powered matching |
 | **Explainability & Clarity** | HIGH | Streaming AI explanations + Skill Gap Heatmap + plain-English reasoning |
 | **Frontend Experience** | HIGH | Premium dark/light mode, animations, real-time WebSocket progress, blind screening |
-| **Backend Architecture** | MEDIUM | Clean REST + WebSocket, modular AI orchestration, MongoDB flexible schema |
+| **Backend Architecture** | MEDIUM | Clean REST + WebSocket, modular AI orchestration, Firestore flexible schema |
 | **Scalability & Performance** | MEDIUM | Batch processing (4 concurrent), capacity-based AI, queued pipeline |
 | **Innovation in Solution Design** | HIGH | JD Quality Scorer, Blind Screening, Interview Coach, Feedback Loop |
 
@@ -48,7 +48,7 @@ The existing project has a **MERN scaffold with mock data**. Here's what exists 
 | **Feedback Loop** | 🟡 Partial | Feedback route + schema exists | Admin accuracy dashboard, bias detection |
 | **Candidate Dashboard** | 🟡 Partial | `CandidateDashboard.tsx` page exists | Real candidate self-service, interview coach |
 | **WebSocket (Socket.io)** | 🔴 Missing | Not installed or configured | Real-time parsing progress |
-| **MongoDB** | 🟡 Optional | Mongoose schemas defined, runs on in-memory mock | Need to connect to Atlas for persistence |
+| **Firebase** | ✅ Required | Connected via `firebase-admin` and `firebase` client SDKs | Ready |
 | **Dark/Light Mode** | 🟡 Partial | Tailwind darkMode config exists | Full integration across every component |
 
 > [!IMPORTANT]
@@ -69,7 +69,7 @@ The existing project has a **MERN scaffold with mock data**. Here's what exists 
                              │ REST + SSE + WebSocket
 ┌────────────────────────────▼─────────────────────────────────────┐
 │                    SERVER (Node.js + Express + TypeScript)        │
-│  Routes → Services → AI Service (Featherless.ai) → MongoDB      │
+│  Routes → Services → AI Service (Featherless.ai) → Firestore      │
 │  pdf-parse │ Socket.io │ OpenAI SDK │ GitHub/LeetCode APIs       │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -128,13 +128,13 @@ Add to client dependencies:
 
 ---
 
-### Chunk 1.3: MongoDB Atlas Connection
+### Chunk 1.3: Firebase Connection
 
 #### [MODIFY] [index.ts](file:///c:/project/hiremind/HireMind/server/src/index.ts)
 
-- Ensure MongoDB Atlas connection works with the existing schemas
+- Ensure Firebase Admin SDK connects correctly with service account credentials
 - Add Socket.io server initialization alongside Express
-- Keep the in-memory fallback for demo safety (if MongoDB is unavailable, mock data still works)
+- Map existing mock data into Firestore collections if necessary
 
 ```typescript
 import { createServer } from 'http';
@@ -213,7 +213,7 @@ Replace mock upload with real pipeline:
 2. For each PDF:
    - Extract raw text via `pdf-parse`
    - Send to Featherless.ai for structured extraction
-   - Save to MongoDB as `Resume` document
+   - Save to Firestore as `Resume` document
    - Emit WebSocket event: `io.to(jobId).emit('resume_parsed', { resumeId, name, status })`
 3. Process in batches of 4 (Featherless concurrency limit)
 
@@ -591,9 +591,9 @@ Create a comprehensive seed script with:
 ### Chunk 6.5: Deployment
 
 - **Frontend**: Deploy to Vercel (free tier)
-- **Backend**: Deploy to Render or Railway (free tier)
-- **Database**: MongoDB Atlas (free tier, M0 cluster)
-- Environment variables: `FEATHERLESS_API_KEY`, `MONGODB_URI`, `JWT_SECRET`
+- **Backend**: Deploy to Render (Web Service)
+- **Database**: Firebase (Firestore, Auth, Storage)
+- Environment variables: `FEATHERLESS_API_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_PRIVATE_KEY`
 
 ---
 
@@ -658,7 +658,7 @@ Script the 90-second demo flow:
 > **1. Featherless.ai API Key**: Do you already have a Featherless.ai Premium subscription and API key? If not, we need to sign up with code `SUMMERHACK26` (1 month free) before we start Phase 2.
 
 > [!IMPORTANT]
-> **2. MongoDB Atlas**: Do you have a MongoDB Atlas cluster set up? Or should we continue with the in-memory mock data approach and add Atlas later?
+> **2. Firebase Setup**: Do you have a Firebase project created with Auth, Firestore, and Storage enabled?
 
 > [!WARNING]
 > **3. Team Allocation**: The roadmap mentions 4 developers. Are you the only developer, or do you have teammates working on specific features? This affects how we parallelize the phases.

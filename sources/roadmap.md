@@ -62,13 +62,13 @@ TalentIQ has **10 core features** that together create a “winner’s project�
 | # | Feature | User-Facing Value | Technical Core |
 |---|---------|-------------------|----------------|
 | 1 | JD Creation Wizard with AI Quality Scorer | Recruiters don’t just paste text — they configure weights and get AI feedback on JD clarity | POST `/api/jobs` → featherless.ai extracts `required_skills`, `nice_to_have`, `red_flags`, `clarity_score`  |
-| 2 | Batch Resume Upload & Real-Time AI Pipeline | Drag-drop 10 PDFs, watch cards appear live via WebSocket | `pdf-parse` → featherless.ai JSON extraction → MongoDB → WebSocket emit  |
+| 2 | Batch Resume Upload & Real-Time AI Pipeline | Drag-drop 10 PDFs, watch cards appear live via WebSocket | `pdf-parse` → featherless.ai JSON extraction → Firestore → WebSocket emit  |
 | 3 | AI Match Scoring & Ranking Engine | Ranked list with 0–100 score, SELECT/REJECT/REVIEW decision, confidence level | Scoring prompt includes JD + candidate JSON + GitHub/LeetCode + recruiter weights  |
 | 4 | Skill Gap Heatmap (3-Color Visual) | Green/amber/red pills show skill match in 2 seconds | Frontend computes color based on skill presence in candidate’s skills/experience/absent  |
 | 5 | Streaming AI Explanation Panel (SSE) | “Why #1?” slides in with word-by-word streaming like Claude | `text/event-stream` + `ReadableStream` consumer on frontend  |
 | 6 | Blind Screening Mode | Hides name/photo/college to reduce unconscious bias | UI-only toggle in React context — suppresses fields, zero backend changes  |
 | 7 | GitHub & LeetCode Enrichment | Public repo count, stars, commit frequency, problems solved on candidate card | GitHub REST API + LeetCode GraphQL (no auth needed for public data)  |
-| 8 | Feedback Loop & Model Accuracy Widget | Shows % AI decisions matching human, highlights skill types AI misses | `FeedbackEvent` in MongoDB → admin dashboard aggregates over 30 days  |
+| 8 | Feedback Loop & Model Accuracy Widget | Shows % AI decisions matching human, highlights skill types AI misses | `FeedbackEvent` in Firestore → admin dashboard aggregates over 30 days  |
 | 9 | Candidate-Facing AI Interview Coach | 5 likely interview questions with “why asked” + “how to approach” hints | Single featherless.ai call based on JD + candidate resume  |
 | 10 | Pipeline Stage Kanban (Applied→Hired) | Drag-drop candidates between stages, stage counts update live | `@hello-pangea/dnd` or CSS drag → PATCH `/api/candidates/:id/stage`  |
 
@@ -119,7 +119,7 @@ Before publishing, the AI returns a **JD Quality Score** with copy like:
     }
     ```
   - Uses **DeepSeek-V3.2** model (advanced reasoning & coding) 
-  - Saves extracted JSON + weights into MongoDB `Job` document:
+  - Saves extracted JSON + weights into Firestore `Job` document:
     ```js
     {
       _id, title, department, required_skills, nice_to_have, red_flags,
@@ -162,7 +162,7 @@ Recruiter drags 3–10 PDFs into a **drop zone** with a progress ring. As each r
      }
      ```
    - Model: **DeepSeek-V3.2** (excellent for structured extraction) 
-   - Saves parsed JSON as `Candidate` document in MongoDB, linked to `jobId`.
+   - Saves parsed JSON as `Candidate` document in Firestore, linked to `jobId`.
 3. WebSocket (Socket.io):
    - After each candidate is saved, server emits:
      ```js
@@ -400,7 +400,7 @@ Admin dashboard shows:
     })
   });
   ```
-- MongoDB `FeedbackEvent` collection:
+- Firestore `FeedbackEvent` collection:
   ```js
   {
     jobId, candidateId, aiDecision, humanDecision, reason, timestamp
@@ -472,7 +472,7 @@ Drag candidates between stages. Stage counts update live.
     body: JSON.stringify({ stage: 'Interview' })
   });
   ```
-- MongoDB `Candidate.stage` updates.
+- Firestore `Candidate.stage` updates.
 - Frontend re-renders column counts.
 
 **Why this wins:** Standard HR workflow that makes the platform feel like a **complete product**, not a prototype.
@@ -527,7 +527,7 @@ Drag candidates between stages. Stage counts update live.
 └───────────────────────────┬───────────────────────────────────────┘
                             │
 ┌───────────────────────────▼───────────────────────────────────────┐
-│                      DATA LAYER (MongoDB)                         │
+│                      DATA LAYER (Firestore)                         │
 │  ┌──────────────┐  ┌──────────────�┐  ┌────────────────────────┐   │
 │  │ Job          │  │ Candidate    │  │ FeedbackEvent          │   │
 │  │ { jd_text,   │  │ { name,      │  │ { jobId, candidateId,  │   │
@@ -547,12 +547,12 @@ Drag candidates between stages. Stage counts update live.
 | **Frontend** | React 18 + TypeScript + Tailwind CSS + Framer Motion | Modern, type-safe, animated UI, easy dark mode |
 | **State** | React Context + Zustand | Light/dark mode, blind mode, pipeline state |
 | **Backend** | Node.js + Express | Simple, fast, great for AI orchestration |
-| **Database** | MongoDB (Atlas) | Flexible schema for JSON-like candidate data |
+| **Database** | Firestore | Flexible schema for JSON-like candidate data |
 | **AI** | featherless.ai (DeepSeek-V3.2) | Unlimited access, advanced reasoning & coding, streaming support  |
 | **Real-Time** | Socket.io | Live candidate parsing progress |
 | **File Parsing** | `pdf-parse` | Lightweight, no external dependencies |
 | **External APIs** | GitHub REST, LeetCode GraphQL | Public data, no auth needed |
-| **Deploy** | Vercel (Frontend) + Render/ Railway (Backend) + MongoDB Atlas | Free tier friendly, fast deploy |
+| **Deploy** | Vercel (Frontend) + Render (Backend) + Firebase | Free tier friendly, fast deploy |
 
 ### Featherless.ai Integration Details
 
@@ -739,7 +739,7 @@ function ThemeProvider({ children }) {
 | **Decision Accuracy** | Multi-source enrichment (GitHub, LeetCode) + weighted scoring + recruiter overrides logged |
 | **Explainability & Clarity** | Strengths, gaps, plain-English explanation, skill heatmap, streaming panel |
 | **Frontend Experience** | Light/dark mode, streaming SSE, animated score bars, live WebSocket progress, blind mode |
-| **Backend Architecture** | Clean REST + WebSocket, modular AI orchestration, MongoDB flexible schema |
+| **Backend Architecture** | Clean REST + WebSocket, modular AI orchestration, Firestore flexible schema |
 | **Scalability & Performance** | Batch processing (4 concurrent), featherless.ai capacity-based scaling, no token billing |
 | **Innovation in Solution Design** | JD Quality Scorer, Blind Screening, Interview Coach, Feedback Loop, Skill Heatmap |
 
@@ -748,7 +748,7 @@ function ThemeProvider({ children }) {
 ## Next Steps for Implementation
 
 1. **Day 1:**  
-   - Setup repo (React + Node + MongoDB)  
+   - Setup repo (React + Node + Firebase)  
    - Implement JD Wizard + AI Quality Scorer  
    - Implement Batch Upload + PDF parsing + WebSocket  
 

@@ -41,11 +41,11 @@
 | `@hello-pangea/dnd` (client) | ❌ | Not installed |
 | `mammoth` (server) | ✅ | Installed for DOCX parsing (bonus, not in original plan) |
 
-### Chunk 1.3: MongoDB Atlas Connection
+### Chunk 1.3: Firebase Connection
 
 | Item | Status | Notes |
 |------|--------|-------|
-| MongoDB Atlas connection | ✅ | Conditional connect in `index.ts` — falls back to in-memory if URI absent |
+| Firebase connection | ✅ | Initialized in `index.ts` |
 | Socket.io server initialization | ✅ | `initSocket()` in `socket.ts` with typed events |
 | In-memory fallback for demo | ✅ | `data.ts` provides seeded in-memory data |
 
@@ -314,8 +314,8 @@
 | Item | Status | Notes |
 |------|--------|-------|
 | Frontend → Vercel | ❌ | Not deployed |
-| Backend → Render/Railway | ❌ | Not deployed |
-| MongoDB Atlas configured | ❌ | URI is empty in `.env.example` |
+| Backend → Render | ❌ | Not deployed |
+| Firebase configured | ❌ | API keys pending in production |
 
 ### Chunk 6.6: Demo Script & Video
 
@@ -362,7 +362,7 @@ These are the items that turn HireMind from a CRUD scaffold into an AI-powered p
 19. **Interview Coach** — `InterviewCoach.tsx` + `generateInterviewQuestions()` function
 20. **Candidate self-service** — Add `candidate` role, `JobListingPublic.tsx`, application flow, status tracker
 21. **Admin User Management** — `AdminUsers.tsx` with user table, role management, activity log
-22. **Deployment** — Vercel (frontend) + Render/Railway (backend) + MongoDB Atlas
+22. **Deployment** — Vercel/Render (frontend) + Render (backend) + Firebase
 23. **Demo Script & Video** — Write 90-second script, record video
 24. **Animation polish** — Staggered fade-ins, page transitions, skeleton loaders, toast notifications
 
