@@ -56,7 +56,7 @@ async function parseResumeBuffer(file: Express.Multer.File, userId?: string): Pr
     fileType,
     parsedData: minimalFallback(fileName),
     parseStatus: 'manual_review',
-    rawText: rawText || undefined
+    rawText: rawText || ''
   };
 }
 
@@ -105,12 +105,12 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
       candidateEmail: user.email,
       status: 'Applied',
       resumeUrl,
-      githubUrl: githubUrl || undefined,
-      linkedinUrl: linkedinUrl || undefined,
-      portfolioUrl: portfolioUrl || undefined,
-      leetcodeUsername: leetcodeUsername || undefined,
+      githubUrl: githubUrl || '',
+      linkedinUrl: linkedinUrl || '',
+      portfolioUrl: portfolioUrl || '',
+      leetcodeUsername: leetcodeUsername || '',
       candidateName: name || user.name,
-      whyApplying: whyApplying || undefined,
+      whyApplying: whyApplying || '',
       analysisStatus: 'pending',
       progress: 10
     });
@@ -428,7 +428,7 @@ applicationsRouter.post('/analyze', auth, upload.single('file'), async (req: Aut
         fileType: file.originalname.toLowerCase().endsWith('.docx') ? 'docx' : 'pdf',
         parsedData,
         parseStatus,
-        rawText: rawText || undefined,
+        rawText: rawText || '',
         userId: user.id
       });
     } else {

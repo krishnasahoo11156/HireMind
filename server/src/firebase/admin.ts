@@ -23,6 +23,9 @@ const app = existingApp ?? (
 
 export const adminAuth = app ? admin.auth(app) : null as any;
 export const db = app ? admin.firestore(app) : null as any;
+if (db) {
+  db.settings({ ignoreUndefinedProperties: true });
+}
 export const adminStorage = app ? admin.storage(app) : null as any;
 
 // Typed helper — get a typed Firestore collection reference

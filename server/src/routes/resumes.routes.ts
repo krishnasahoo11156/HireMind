@@ -47,7 +47,7 @@ async function buildResume(file: Express.Multer.File, userId?: string): Promise<
     fileType,
     parsedData: minimalFallback(fileName),
     parseStatus: 'manual_review',
-    rawText: rawText || undefined
+    rawText: rawText || ''
   };
 }
 
