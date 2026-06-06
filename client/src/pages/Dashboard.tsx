@@ -50,7 +50,7 @@ function JobCard({ job }: { job: Job }) {
           </BodyText>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {job.extractedData.skills.slice(0, 3).map((s) => (
+          {(job.requiredSkills?.length ? job.requiredSkills : job.extractedData.skills).slice(0, 3).map((s) => (
             <Badge key={s} tone="neutral">{s}</Badge>
           ))}
         </div>

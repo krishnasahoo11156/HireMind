@@ -66,6 +66,7 @@ export interface Job {
   company?: string;
   creatorName?: string;
   applicationsCount?: number;
+  requiredSkills: string[];
   extractedData: {
     skills: string[];
     experience: string;

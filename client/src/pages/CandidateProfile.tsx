@@ -388,6 +388,76 @@ export function CandidateProfile() {
             </div>
           </Card>
 
+          {/* Skill Match Summary Card */}
+          <Card className="p-6">
+            <SectionTitle className="mb-4">Skill Match Summary</SectionTitle>
+            <div className="grid grid-cols-3 gap-4">
+              {/* Matched Skills */}
+              <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] p-4 dark:border-emerald-500/20">
+                <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-success uppercase tracking-wider">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Matched ({candidate.skillGap?.filter((g) => g.candidateHas === 'match').length ?? 0})
+                </div>
+                <ul className="space-y-1">
+                  {candidate.skillGap?.filter((g) => g.candidateHas === 'match').map((g) => (
+                    <li key={g.skill} className="flex items-center gap-1.5 text-xs text-secondary dark:text-darkmuted font-medium">
+                      <span className="h-1 w-1 rounded-full bg-success flex-shrink-0" />
+                      {g.skill}
+                    </li>
+                  ))}
+                  {(candidate.skillGap?.filter((g) => g.candidateHas === 'match').length ?? 0) === 0 && (
+                    <li className="text-xs text-secondary dark:text-darkmuted italic">None</li>
+                  )}
+                </ul>
+              </div>
+
+              {/* Partial Skills */}
+              <div className="rounded-xl border border-yellow-500/10 bg-yellow-500/[0.02] p-4 dark:border-yellow-500/20">
+                <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-warning uppercase tracking-wider">
+                  <Lightbulb className="h-4 w-4" />
+                  Partial ({candidate.skillGap?.filter((g) => g.candidateHas === 'partial').length ?? 0})
+                </div>
+                <ul className="space-y-1.5">
+                  {candidate.skillGap?.filter((g) => g.candidateHas === 'partial').map((g) => (
+                    <li key={g.skill} className="flex flex-col gap-0.5 text-xs text-secondary dark:text-darkmuted font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-1 w-1 rounded-full bg-warning flex-shrink-0" />
+                        {g.skill}
+                      </div>
+                      {g.evidence && (
+                        <span className="text-[10px] text-secondary/70 dark:text-darkmuted/70 pl-2.5 font-normal">
+                          {g.evidence}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                  {(candidate.skillGap?.filter((g) => g.candidateHas === 'partial').length ?? 0) === 0 && (
+                    <li className="text-xs text-secondary dark:text-darkmuted italic">None</li>
+                  )}
+                </ul>
+              </div>
+
+              {/* Missing Skills */}
+              <div className="rounded-xl border border-red-500/10 bg-red-500/[0.02] p-4 dark:border-red-500/20">
+                <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-danger uppercase tracking-wider">
+                  <XCircle className="h-4 w-4" />
+                  Missing ({candidate.skillGap?.filter((g) => g.candidateHas === 'missing').length ?? 0})
+                </div>
+                <ul className="space-y-1">
+                  {candidate.skillGap?.filter((g) => g.candidateHas === 'missing').map((g) => (
+                    <li key={g.skill} className="flex items-center gap-1.5 text-xs text-secondary dark:text-darkmuted font-medium">
+                      <span className="h-1 w-1 rounded-full bg-danger flex-shrink-0" />
+                      {g.skill}
+                    </li>
+                  ))}
+                  {(candidate.skillGap?.filter((g) => g.candidateHas === 'missing').length ?? 0) === 0 && (
+                    <li className="text-xs text-secondary dark:text-darkmuted italic">None</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </Card>
+
           {/* Skill Gap Heatmap */}
           <Card className="p-6">
             <SectionTitle className="mb-5">Skill Gap Analysis</SectionTitle>

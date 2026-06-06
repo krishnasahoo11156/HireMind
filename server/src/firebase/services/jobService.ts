@@ -13,6 +13,7 @@ export interface FirestoreJob {
   salary?: string;
   company?: string;
   applicationsCount?: number;
+  requiredSkills?: string[];
   extractedData?: any;
   createdAt?: admin.firestore.Timestamp;
   updatedAt?: admin.firestore.Timestamp;

@@ -54,7 +54,7 @@ export function Button({
 // ─────────────────────────────────────────────
 // BADGE
 // ─────────────────────────────────────────────
-export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'green' | 'emerald' | 'yellow' | 'red' | 'gold' | 'blue' | 'purple' }) {
+export function Badge({ children, tone = 'neutral', className = '' }: { children: ReactNode; tone?: 'neutral' | 'green' | 'emerald' | 'yellow' | 'red' | 'gold' | 'blue' | 'purple'; className?: string }) {
   const tones = {
     neutral: 'bg-gray-100 text-gray-600 dark:bg-darkborder dark:text-darkmuted',
     green: 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800/40',
@@ -66,7 +66,7 @@ export function Badge({ children, tone = 'neutral' }: { children: ReactNode; ton
     purple: 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800/40'
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tones[tone]}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tones[tone]} ${className}`}>
       {children}
     </span>
   );
@@ -293,7 +293,7 @@ export function SkillHeatmap({ skillGap }: { skillGap: Array<{ skill: string; is
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: i * 0.04 }}
           title={gap.evidence}
-          className={`flex flex-col gap-1.5 p-3 cursor-default ${
+          className={`flex flex-col gap-1.5 p-3 cursor-default rounded-xl transition-all ${
             gap.candidateHas === 'match' ? 'hm-heat-match' :
             gap.candidateHas === 'partial' ? 'hm-heat-partial' :
             'hm-heat-missing'
@@ -311,6 +311,11 @@ export function SkillHeatmap({ skillGap }: { skillGap: Array<{ skill: string; is
             {gap.isRequired ? 'Required' : 'Nice to have'} ·{' '}
             {gap.candidateHas === 'match' ? 'Strong Match' : gap.candidateHas === 'partial' ? 'Partial' : 'Missing'}
           </span>
+          {gap.evidence && (
+            <p className="mt-1.5 border-t border-current/10 pt-1 text-[10.5px] leading-relaxed opacity-90 font-normal">
+              {gap.evidence}
+            </p>
+          )}
         </motion.div>
       ))}
     </div>

@@ -51,6 +51,8 @@ async function callWithRetry<T>(fn: (client: OpenAI) => Promise<T>, retries = 3,
 
 const PARSE_RESUME_SYSTEM_PROMPT = `You are a precise resume parser. Extract structured data from the resume text and return ONLY valid JSON matching the schema below. If a field is not present, use an empty string or empty array.
 
+For 'skills', extract all technical and soft skills mentioned anywhere in the resume, including the dedicated skills section, project descriptions, professional experience, certifications, and technical summaries. Normalize spelling variations to standard professional naming (e.g., 'React.js', 'ReactJS', 'React JS' should all be extracted as 'React').
+
 Schema:
 {
   "name": "string",
@@ -151,7 +153,8 @@ export async function analyzeJobDescription(jdText: string) {
 
 const SCORE_CANDIDATE_SYSTEM_PROMPT = `You are an expert AI recruiter scoring candidates for a job.
 Analyze the candidate's parsed resume, and their GitHub and LeetCode activity (if provided), against the job description requirements.
-Calculate an match score and candidate recommendations, identify the skill gaps, and provide a plain-English explanation.
+Evaluate experience fit, GitHub profile activity and quality, and LeetCode metrics.
+Provide sub-scores and candidate recommendations, and write a plain-English explanation that highlights evidence of required or missing skills.
 
 Recommendation mapping:
 - Strong Hire: Excellent fit, satisfies all required skills, strong projects/experience.
@@ -161,18 +164,11 @@ Recommendation mapping:
 
 Return ONLY valid JSON matching this schema:
 {
-  "aiScore": number, // 0 to 100. Be realistic.
-  "matchPercentage": number, // percentage of required skills/requirements met (0-100)
+  "experienceMatch": number, // 0 to 100 score indicating candidate experience match compared to job requirements.
+  "githubScore": number, // 0 to 100 score evaluating the candidate's GitHub repositories, commits, and activity. If not provided or mock, score accordingly.
+  "leetcodeScore": number, // 0 to 100 score evaluating the candidate's LeetCode problems solved and contest ratings. If not provided, score accordingly.
   "recommendation": "Strong Hire" | "Hire" | "Maybe" | "Reject",
-  "skillGap": [
-    {
-      "skill": "string",
-      "isRequired": boolean,
-      "candidateHas": "match" | "partial" | "missing",
-      "evidence": "string" // mention exact projects/experience or lack thereof
-    }
-  ],
-  "explanation": ["string"] // list of plain-English sentences justifying the score and decision
+  "explanation": ["string"] // list of plain-English sentences justifying the decision, referencing actual matched and missing skills (e.g. 'Matches 8 of 10 required skills', 'Strong React experience used in 3 projects', 'Missing required skill Docker'). Do not write generic explanations.
 }`;
 
 /**

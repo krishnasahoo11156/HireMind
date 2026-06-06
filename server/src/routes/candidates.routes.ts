@@ -8,6 +8,7 @@ import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { getLeetCodeProfile } from '../services/external.js';
 import { getGitHubProfile } from '../services/github.service.js';
 import { scoreCandidate } from '../services/ai.service.js';
+import { matchSkills } from '../services/skillMatcher.js';
 import { mapCandidate, mapJob } from '../utils/mappers.js';
 
 export const candidatesRouter = express.Router();
@@ -51,35 +52,40 @@ candidatesRouter.post('/analyze', auth, async (req: AuthedRequest, res: Response
     const githubAnalysis = await getGitHubProfile(body.data.githubUsername ?? 'uploaded-dev');
     const leetcodeAnalysis = getLeetCodeProfile(body.data.leetcodeUsername ?? 'uploaded-dev');
 
+    const matchResult = matchSkills(job.requiredSkills || [], resume.parsedData);
+    let matchPercentage = matchResult.matchPercentage;
+    let skillGap = matchResult.skillGap;
     let aiScore = 50;
-    let matchPercentage = 50;
     let recommendation: 'Strong Hire' | 'Hire' | 'Maybe' | 'Reject' = 'Maybe';
-    let skillGap: any[] = [];
     let explanation: string[] = [];
 
     try {
       const scored = await scoreCandidate(job.extractedData, resume.parsedData, githubAnalysis, leetcodeAnalysis);
-      aiScore = scored.aiScore ?? 50;
-      matchPercentage = scored.matchPercentage ?? 50;
-      recommendation = (scored.recommendation as any) ?? 'Maybe';
-      skillGap = scored.skillGap ?? [];
+      const experienceMatch = scored.experienceMatch ?? 70;
+      const githubScore = scored.githubScore ?? (githubAnalysis?.totalCommits ? 70 : 0);
+      const leetcodeScore = scored.leetcodeScore ?? (leetcodeAnalysis?.problemsSolved ? 70 : 0);
+      
+      aiScore = Math.round(
+        (matchPercentage * 0.6) +
+        (experienceMatch * 0.2) +
+        (githubScore * 0.1) +
+        (leetcodeScore * 0.1)
+      );
+      recommendation = scored.recommendation ?? 'Maybe';
       explanation = scored.explanation ?? [];
     } catch (error) {
       console.error('[candidates] AI scoring failed, falling back to basic scoring:', error);
-      const required = job.extractedData.skills ?? [];
-      const candidateSkills = resume.parsedData.skills || [];
-      const matched = required.filter((skill: string) =>
-        candidateSkills.some((cs: string) => cs.toLowerCase().includes(skill.toLowerCase()))
+      const experienceMatch = 70;
+      const githubScore = githubAnalysis?.totalCommits ? 70 : 0;
+      const leetcodeScore = leetcodeAnalysis?.problemsSolved ? 70 : 0;
+      
+      aiScore = Math.round(
+        (matchPercentage * 0.6) +
+        (experienceMatch * 0.2) +
+        (githubScore * 0.1) +
+        (leetcodeScore * 0.1)
       );
-      matchPercentage = Math.round((matched.length / Math.max(required.length, 1)) * 100);
-      aiScore = Math.min(100, Math.max(0, matchPercentage + (body.data.githubUsername ? 8 : 0) + (body.data.leetcodeUsername ? 5 : 0) - (required.length - matched.length) * 5));
       recommendation = aiScore >= 90 ? 'Strong Hire' : aiScore >= 75 ? 'Hire' : aiScore >= 60 ? 'Maybe' : 'Reject';
-      skillGap = required.map((skill: string) => ({
-        skill,
-        isRequired: true,
-        candidateHas: matched.includes(skill) ? 'match' : 'missing',
-        evidence: matched.includes(skill) ? 'Found in parsed resume skills' : 'No direct evidence in resume'
-      }));
       explanation = ['AI scoring service was unavailable. Basic rule-based analysis used instead.'];
     }
 

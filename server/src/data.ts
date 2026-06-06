@@ -35,6 +35,7 @@ export const jobs: Job[] = [
     rawText: 'We are looking for a Frontend Developer with strong React ecosystem experience...',
     status: 'active',
     createdBy: 'user_demo',
+    requiredSkills: ['React', 'TypeScript', 'Redux', 'Next.js', 'Tailwind CSS'],
     extractedData: {
       skills: ['React', 'TypeScript', 'Redux', 'Next.js', 'TailwindCSS'],
       experience: '3-5 Years',

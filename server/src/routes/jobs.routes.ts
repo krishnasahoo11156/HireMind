@@ -25,6 +25,10 @@ jobsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res
     const salary = req.body.salary ? String(req.body.salary) : 'Competitive';
     const company = req.body.company ? String(req.body.company) : 'HireMind Inc';
 
+    const requiredSkills = req.body.requiredSkills
+      ? (Array.isArray(req.body.requiredSkills) ? req.body.requiredSkills : JSON.parse(req.body.requiredSkills))
+      : [];
+
     let extractedData;
     try {
       extractedData = await analyzeJobDescription(description);
@@ -39,6 +43,8 @@ jobsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res
       };
     }
 
+    // Set recruiter requiredSkills as source of truth
+    extractedData.skills = requiredSkills;
     extractedData.weights = weights;
 
     const job = await jobService.create({
@@ -51,6 +57,7 @@ jobsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequest, res
       location,
       salary,
       company,
+      requiredSkills,
       extractedData
     });
 
@@ -86,6 +93,9 @@ jobsRouter.post('/:id/upload-jd', auth, upload.single('file'), async (req: Authe
         weights: job.extractedData?.weights ?? { github: 50, leetcode: 30, education: 20 }
       };
     }
+
+    // Preserve the recruiter's chosen required skills
+    extractedData.skills = job.requiredSkills || [];
 
     await jobService.update(req.params.id, { rawText: newRawText, extractedData });
     const updated = await jobService.findById(req.params.id);
@@ -199,7 +209,21 @@ jobsRouter.put('/:id', auth, async (req: AuthedRequest, res: Response) => {
       res.status(403).json({ error: 'Access denied: recruiter owner only' });
       return;
     }
-    await jobService.update(req.params.id, req.body);
+    const updatePayload = { ...req.body };
+    if (updatePayload.requiredSkills !== undefined) {
+      const parsedSkills = Array.isArray(updatePayload.requiredSkills)
+        ? updatePayload.requiredSkills
+        : JSON.parse(updatePayload.requiredSkills);
+      updatePayload.requiredSkills = parsedSkills;
+      
+      const currentExtracted = job.extractedData || {};
+      updatePayload.extractedData = {
+        ...currentExtracted,
+        skills: parsedSkills
+      };
+    }
+
+    await jobService.update(req.params.id, updatePayload);
     const updated = await jobService.findById(req.params.id);
     res.json({ job: mapJob(updated) });
   } catch (error: any) {

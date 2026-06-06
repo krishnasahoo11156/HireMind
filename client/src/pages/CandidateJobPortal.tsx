@@ -22,11 +22,161 @@ import {
   User,
   ShieldCheck,
   BrainCircuit,
-  Settings
+  Settings,
+  Lightbulb,
+  XCircle
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAppStore } from '../store/appStore';
 import { Button, Badge, Card, SkillHeatmap } from '../components/ui';
+
+const SKILL_ALIASES: Record<string, string> = {
+  'react': 'React',
+  'react.js': 'React',
+  'reactjs': 'React',
+  'react js': 'React',
+  'typescript': 'TypeScript',
+  'ts': 'TypeScript',
+  'javascript': 'JavaScript',
+  'js': 'JavaScript',
+  'node.js': 'Node.js',
+  'nodejs': 'Node.js',
+  'node': 'Node.js',
+  'next.js': 'Next.js',
+  'nextjs': 'Next.js',
+  'next': 'Next.js',
+  'vue.js': 'Vue.js',
+  'vuejs': 'Vue.js',
+  'vue': 'Vue.js',
+  'tailwind': 'Tailwind CSS',
+  'tailwindcss': 'Tailwind CSS',
+  'tailwind css': 'Tailwind CSS',
+  'css': 'CSS',
+  'html': 'HTML',
+  'mongodb': 'MongoDB',
+  'mongo': 'MongoDB',
+  'postgresql': 'PostgreSQL',
+  'postgres': 'PostgreSQL',
+  'docker': 'Docker',
+  'kubernetes': 'Kubernetes',
+  'k8s': 'Kubernetes',
+  'aws': 'AWS',
+  'amazon web services': 'AWS',
+  'gcp': 'GCP',
+  'google cloud': 'GCP',
+  'firebase': 'Firebase',
+  'redux': 'Redux',
+  'graphql': 'GraphQL',
+  'python': 'Python',
+  'java': 'Java',
+  'cpp': 'C++',
+  'c++': 'C++',
+  'csharp': 'C#',
+  'c#': 'C#',
+  'go': 'Go',
+  'golang': 'Go',
+  'rust': 'Rust',
+  'ruby': 'Ruby',
+  'rails': 'Ruby on Rails',
+  'ruby on rails': 'Ruby on Rails',
+  'php': 'PHP',
+  'laravel': 'Laravel',
+  'git': 'Git',
+  'github': 'GitHub'
+};
+
+function normalizeSkill(skill: string): string {
+  const trimmed = skill.trim();
+  const lower = trimmed.toLowerCase();
+  if (SKILL_ALIASES[lower]) {
+    return SKILL_ALIASES[lower];
+  }
+  return trimmed
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function normalizeSkills(skills: string[]): string[] {
+  if (!Array.isArray(skills)) return [];
+  const normalized = skills.map(normalizeSkill);
+  return Array.from(new Set(normalized));
+}
+
+function checkSkillsMatch(requiredSkills: string[], candidateSkills: string[], projects: any[] = [], experience: any[] = []) {
+  if (!requiredSkills || requiredSkills.length === 0) {
+    return { matched: [], partial: [], missing: [], percentage: 100 };
+  }
+
+  const normalizedRequired = normalizeSkills(requiredSkills);
+  const normalizedResumeSkills = normalizeSkills(candidateSkills);
+  const lowercaseResumeSkills = normalizedResumeSkills.map((s) => s.toLowerCase());
+
+  const matched: string[] = [];
+  const partial: Array<{ skill: string; evidence: string }> = [];
+  const missing: string[] = [];
+  let matchedCount = 0;
+  let partialCount = 0;
+
+  for (const skill of normalizedRequired) {
+    const skillLower = skill.toLowerCase();
+
+    // 1. Direct Match
+    if (lowercaseResumeSkills.includes(skillLower)) {
+      matchedCount++;
+      matched.push(skill);
+      continue;
+    }
+
+    // 2. Project match
+    let foundInProject = false;
+    if (Array.isArray(projects)) {
+      for (const proj of projects) {
+        const hasTech = Array.isArray(proj.technologies) && 
+          proj.technologies.some((t: string) => t.toLowerCase().includes(skillLower) || skillLower.includes(t.toLowerCase()));
+        const inDesc = proj.description?.toLowerCase().includes(skillLower);
+        const inName = proj.name?.toLowerCase().includes(skillLower);
+
+        if (hasTech || inDesc || inName) {
+          partialCount++;
+          partial.push({ skill, evidence: `Project: ${proj.name}` });
+          foundInProject = true;
+          break;
+        }
+      }
+    }
+
+    if (foundInProject) continue;
+
+    // 3. Experience match
+    let foundInExp = false;
+    if (Array.isArray(experience)) {
+      for (const exp of experience) {
+        const inTitle = exp.title?.toLowerCase().includes(skillLower);
+        const inCompany = exp.company?.toLowerCase().includes(skillLower);
+        const inDesc = exp.description?.toLowerCase().includes(skillLower);
+
+        if (inTitle || inCompany || inDesc) {
+          partialCount++;
+          partial.push({ skill, evidence: `Experience at ${exp.company}` });
+          foundInExp = true;
+          break;
+        }
+      }
+    }
+
+    if (foundInExp) continue;
+
+    // 4. Missing
+    missing.push(skill);
+  }
+
+  const percentage = Math.round(
+    ((matchedCount + partialCount * 0.5) / normalizedRequired.length) * 100
+  );
+
+  return { matched, partial, missing, percentage };
+}
 
 export function CandidateJobPortal() {
   const queryClient = useQueryClient();
@@ -56,6 +206,7 @@ export function CandidateJobPortal() {
   // Application matching states
   const [applications, setApplications] = useState<Record<string, any>>({});
   const [loadingAppJobId, setLoadingAppJobId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState('');
 
   // Fetch vacancies
   const { data: jobsData, isLoading: jobsLoading } = useQuery({
@@ -260,6 +411,122 @@ export function CandidateJobPortal() {
                 )}
               </AnimatePresence>
             </Card>
+
+            {/* Real-time Skill Validation Card */}
+            {resumeParsedData && (
+              <Card className="p-6 border-accent/20 bg-gradient-to-br from-accent/[0.01] to-surface dark:from-darkaccent/[0.01] shadow-sm">
+                <div className="mb-4 flex items-center gap-2">
+                  <div className="rounded-xl bg-accent/10 p-2 dark:bg-darkaccent/10">
+                    <BrainCircuit className="h-4.5 w-4.5 text-accent dark:text-darkaccent" />
+                  </div>
+                  <h2 className="font-heading text-sm font-bold tracking-tight">Real-Time Skill Validation</h2>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block mb-1.5">
+                      Select Target Job
+                    </label>
+                    <select
+                      className="hm-input w-full"
+                      value={selectedJobId}
+                      onChange={(e) => setSelectedJobId(e.target.value)}
+                    >
+                      <option value="">-- Choose a job to match --</option>
+                      {jobsData?.jobs?.map((j: any) => (
+                        <option key={j._id} value={j._id}>{j.title}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {selectedJobId ? (() => {
+                    const targetJob = jobsData?.jobs?.find((j: any) => j._id === selectedJobId);
+                    if (!targetJob) return null;
+
+                    const match = checkSkillsMatch(
+                      targetJob.requiredSkills || [],
+                      resumeParsedData.skills || [],
+                      resumeParsedData.projects || [],
+                      resumeParsedData.experience || []
+                    );
+
+                    return (
+                      <div className="space-y-4 animate-fadeIn border-t border-border dark:border-darkborder pt-4">
+                        {/* Match score bar */}
+                        <div>
+                          <div className="mb-1.5 flex justify-between text-xs font-semibold">
+                            <span className="text-secondary dark:text-darkmuted">Match Confidence</span>
+                            <span className="text-accent dark:text-darkaccent font-bold">{match.percentage}%</span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-darkborder">
+                            <div
+                              className={`h-2 rounded-full transition-all duration-500 ${
+                                match.percentage >= 75 ? 'bg-success' : match.percentage >= 50 ? 'bg-warning' : 'bg-danger'
+                              }`}
+                              style={{ width: `${match.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Matched & Missing breakdown */}
+                        <div className="space-y-3">
+                          {/* Matched */}
+                          <div>
+                            <span className="text-[10px] font-bold text-success uppercase tracking-wider block mb-1">
+                              Matched Skills ({match.matched.length})
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {match.matched.map((s) => (
+                                <Badge key={s} tone="emerald" className="text-[10px] px-2 py-0.5">{s}</Badge>
+                              ))}
+                              {match.matched.length === 0 && (
+                                <span className="text-[10px] text-secondary dark:text-darkmuted italic">None</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Partial Match */}
+                          {match.partial.length > 0 && (
+                            <div>
+                              <span className="text-[10px] font-bold text-warning uppercase tracking-wider block mb-1">
+                                Partial Matches ({match.partial.length})
+                              </span>
+                              <div className="space-y-1.5">
+                                {match.partial.map((p) => (
+                                  <div key={p.skill} className="flex flex-col text-[10px] text-secondary dark:text-darkmuted border-l-2 border-warning/30 pl-2">
+                                    <span className="font-semibold text-primary dark:text-darktext">{p.skill}</span>
+                                    <span className="text-[9px] text-secondary/70 dark:text-darkmuted/70">{p.evidence}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Missing */}
+                          <div>
+                            <span className="text-[10px] font-bold text-danger uppercase tracking-wider block mb-1">
+                              Missing Required Skills ({match.missing.length})
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {match.missing.map((s) => (
+                                <Badge key={s} tone="red" className="text-[10px] px-2 py-0.5">{s}</Badge>
+                              ))}
+                              {match.missing.length === 0 && (
+                                <span className="text-[10px] text-secondary dark:text-darkmuted italic">None</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })() : (
+                    <p className="text-[10.5px] text-secondary dark:text-darkmuted italic bg-background/50 dark:bg-darkbg/50 p-2.5 rounded-xl border border-border/50 dark:border-darkborder/50">
+                      Select a job from the dropdown to validate your resume against its required skills in real-time.
+                    </p>
+                  )}
+                </div>
+              </Card>
+            )}
 
             {/* Profile Enrichment Card */}
             <Card className="p-6">

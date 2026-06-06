@@ -13,6 +13,7 @@ import { extractText } from '../services/documentParser.js';
 import { getLeetCodeProfile } from '../services/external.js';
 import { getGitHubProfile } from '../services/github.service.js';
 import { getSocketServer } from '../socket.js';
+import { normalizeSkills, matchSkills } from '../services/skillMatcher.js';
 import { mapCandidate, mapJob } from '../utils/mappers.js';
 
 export const applicationsRouter = express.Router();
@@ -40,6 +41,7 @@ async function parseResumeBuffer(file: Express.Multer.File, userId?: string): Pr
   if (rawText) {
     try {
       const parsedData = await extractResumeData(rawText);
+      parsedData.skills = normalizeSkills(parsedData.skills || []);
       return { fileName, fileUrl, fileType, parsedData, parseStatus: 'parsed', rawText };
     } catch (err) {
       console.warn(`[applications] AI extraction failed for "${fileName}":`, err);
@@ -189,21 +191,40 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         const githubAnalysis = await getGitHubProfile(ghUsername);
         const leetcodeAnalysis = getLeetCodeProfile(ghUsername);
 
+        const matchResult = matchSkills(job.requiredSkills || [], parsedResume.parsedData);
+        const matchPercentage = matchResult.matchPercentage;
+        const skillGap = matchResult.skillGap;
         let aiScore = 70;
-        let matchPercentage = 70;
         let recommendation: 'Strong Hire' | 'Hire' | 'Maybe' | 'Reject' = 'Maybe';
-        let skillGap: any[] = [];
         let explanation: string[] = [];
 
         try {
           const scored = await scoreCandidate(job.extractedData, parsedResume.parsedData, githubAnalysis, leetcodeAnalysis);
-          aiScore = scored.aiScore ?? 70;
-          matchPercentage = scored.matchPercentage ?? 70;
-          recommendation = (scored.recommendation as any) ?? 'Maybe';
-          skillGap = scored.skillGap ?? [];
+          const experienceMatch = scored.experienceMatch ?? 70;
+          const githubScore = scored.githubScore ?? (githubAnalysis?.totalCommits ? 70 : 0);
+          const leetcodeScore = scored.leetcodeScore ?? (leetcodeAnalysis?.problemsSolved ? 70 : 0);
+          
+          aiScore = Math.round(
+            (matchPercentage * 0.6) +
+            (experienceMatch * 0.2) +
+            (githubScore * 0.1) +
+            (leetcodeScore * 0.1)
+          );
+          recommendation = scored.recommendation ?? 'Maybe';
           explanation = scored.explanation ?? [];
         } catch (err) {
           console.error('[applications] Async scoring failed:', err);
+          const experienceMatch = 70;
+          const githubScore = githubAnalysis?.totalCommits ? 70 : 0;
+          const leetcodeScore = leetcodeAnalysis?.problemsSolved ? 70 : 0;
+          aiScore = Math.round(
+            (matchPercentage * 0.6) +
+            (experienceMatch * 0.2) +
+            (githubScore * 0.1) +
+            (leetcodeScore * 0.1)
+          );
+          recommendation = aiScore >= 90 ? 'Strong Hire' : aiScore >= 75 ? 'Hire' : aiScore >= 60 ? 'Maybe' : 'Reject';
+          explanation = ['AI scoring service was unavailable. Basic rule-based analysis used instead.'];
         }
 
         const candidateRecord = await candidateService.create({

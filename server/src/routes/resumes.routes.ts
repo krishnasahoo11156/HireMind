@@ -6,6 +6,7 @@ import { uploadResumeToStorage } from '../firebase/storageService.js';
 import { extractResumeData, minimalFallback } from '../services/ai.service.js';
 import { extractText } from '../services/documentParser.js';
 import { getSocketServer } from '../socket.js';
+import { normalizeSkills } from '../services/skillMatcher.js';
 import type { AuthedRequest } from '../middleware/auth.js';
 
 export const resumesRouter = express.Router();
@@ -33,6 +34,7 @@ async function buildResume(file: Express.Multer.File, userId?: string): Promise<
   if (rawText) {
     try {
       const parsedData = await extractResumeData(rawText);
+      parsedData.skills = normalizeSkills(parsedData.skills || []);
       return { fileName, fileUrl, fileType, parsedData, parseStatus: 'parsed', rawText };
     } catch (aiErr) {
       console.warn(`[resumes] AI extraction failed for "${fileName}":`, aiErr);

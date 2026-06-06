@@ -159,7 +159,7 @@ export function JobDetail() {
                 {data?.job.description}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
-                {data?.job.extractedData.skills.map((skill) => (
+                {(data?.job.requiredSkills?.length ? data.job.requiredSkills : data?.job.extractedData.skills ?? []).map((skill) => (
                   <Badge key={skill} tone="gold">
                     {skill}
                   </Badge>

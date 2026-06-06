@@ -8,8 +8,8 @@
 
 import * as db from '../data.js';
 
-const githubCache = new Map<string, unknown>();
-const leetcodeCache = new Map<string, unknown>();
+const githubCache = new Map<string, any>();
+const leetcodeCache = new Map<string, any>();
 
 export function getGithubProfile(username: string) {
   if (githubCache.has(username)) return githubCache.get(username);

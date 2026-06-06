@@ -39,12 +39,19 @@ function JobCard({ job, onDelete }: { job: Job; onDelete?: () => void }) {
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        {job.extractedData.skills.slice(0, 4).map((s) => (
-          <Badge key={s} tone="neutral">{s}</Badge>
-        ))}
-        {job.extractedData.skills.length > 4 && (
-          <Badge tone="neutral">+{job.extractedData.skills.length - 4}</Badge>
-        )}
+        {(() => {
+          const displaySkills = job.requiredSkills?.length ? job.requiredSkills : job.extractedData.skills;
+          return (
+            <>
+              {displaySkills.slice(0, 4).map((s) => (
+                <Badge key={s} tone="neutral">{s}</Badge>
+              ))}
+              {displaySkills.length > 4 && (
+                <Badge tone="neutral">+{displaySkills.length - 4}</Badge>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background px-3 py-2.5 text-sm dark:border-darkborder dark:bg-darkbg">
@@ -101,6 +108,13 @@ function Preview({ label, items }: { label: string; items: string[] }) {
   );
 }
 
+const COMMON_SKILLS = [
+  'React', 'TypeScript', 'JavaScript', 'Node.js', 'Next.js', 
+  'Tailwind CSS', 'Docker', 'Kubernetes', 'Firebase', 'MongoDB', 
+  'PostgreSQL', 'Python', 'Java', 'Go', 'Rust', 'C++', 'AWS', 
+  'GCP', 'Redux', 'GraphQL'
+];
+
 // ─── Jobs Page ─────────────────────────────────────────────────────────────
 export function Jobs() {
   const [open, setOpen] = useState(false);
@@ -114,18 +128,18 @@ export function Jobs() {
   const [description, setDescription] = useState(
     'We are looking for a Frontend Developer with strong React ecosystem experience, TypeScript fluency, Redux state management, Next.js delivery experience, and production TailwindCSS practice.'
   );
+  const [requiredSkills, setRequiredSkills] = useState<string[]>(['React', 'TypeScript', 'Next.js', 'Tailwind CSS']);
+  const [skillInput, setSkillInput] = useState('');
   const [githubWeight, setGithubWeight] = useState(50);
   const [leetcodeWeight, setLeetcodeWeight] = useState(30);
   const [educationWeight, setEducationWeight] = useState(20);
 
   const extracted = useMemo(() => ({
-    skills: ['React', 'TypeScript', 'Redux', 'Next.js', 'TailwindCSS'].filter((skill) =>
-      description.toLowerCase().includes(skill.toLowerCase())
-    ),
+    skills: requiredSkills,
     experience: '3-5 Years',
     education: 'Computer Science or equivalent practical experience',
     keywords: ['React ecosystem', 'component architecture', 'state management', 'responsive UI']
-  }), [description]);
+  }), [requiredSkills]);
 
   const jobs = useJobs();
   const create = useCreateJob({
@@ -147,6 +161,7 @@ export function Jobs() {
       title,
       description,
       department,
+      requiredSkills,
       weights: {
         github: githubWeight,
         leetcode: leetcodeWeight,
@@ -296,22 +311,108 @@ export function Jobs() {
                       className="grid grid-cols-[1fr_280px] gap-5 min-h-[300px]"
                     >
                       <div className="space-y-4">
-                        <h4 className="text-sm font-bold text-primary dark:text-darktext">Step 2: Job Description</h4>
+                        <h4 className="text-sm font-bold text-primary dark:text-darktext">Step 2: Job Description & Skills</h4>
                         <div>
                           <Caption as="label" className="mb-1.5 block font-semibold">Paste Job Description</Caption>
                           <textarea
-                            className="hm-textarea min-h-52 w-full"
+                            className="hm-textarea min-h-36 w-full"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Describe the role requirements, technology stack, and qualifications..."
                           />
+                        </div>
+
+                        <div>
+                          <Caption as="label" className="mb-1.5 block font-semibold">Required Skills (Manually Select)</Caption>
+                          
+                          {/* Tag UI */}
+                          <div className="flex flex-wrap gap-1.5 mb-2 p-2 rounded-xl border border-border dark:border-darkborder bg-background dark:bg-darkbg min-h-[42px]">
+                            {requiredSkills.map((skill) => (
+                              <Badge key={skill} tone="gold">
+                                <span className="flex items-center gap-1.5">
+                                  {skill}
+                                  <button
+                                    type="button"
+                                    onClick={() => setRequiredSkills(prev => prev.filter(s => s !== skill))}
+                                    className="hover:bg-yellow-200 dark:hover:bg-yellow-900 rounded-full p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </span>
+                              </Badge>
+                            ))}
+                            {requiredSkills.length === 0 && (
+                              <span className="text-xs text-secondary dark:text-darkmuted italic self-center">No required skills selected</span>
+                            )}
+                          </div>
+
+                          {/* Search & Custom Entry */}
+                          <div className="relative">
+                            <div className="flex gap-2">
+                              <input
+                                className="hm-input flex-1"
+                                placeholder="Search suggestions or type custom skill and press Enter"
+                                value={skillInput}
+                                onChange={(e) => setSkillInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const trimmed = skillInput.trim();
+                                    if (trimmed) {
+                                      if (!requiredSkills.includes(trimmed)) {
+                                        setRequiredSkills(prev => [...prev, trimmed]);
+                                      }
+                                      setSkillInput('');
+                                    }
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  const trimmed = skillInput.trim();
+                                  if (trimmed) {
+                                    if (!requiredSkills.includes(trimmed)) {
+                                      setRequiredSkills(prev => [...prev, trimmed]);
+                                    }
+                                    setSkillInput('');
+                                  }
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </div>
+
+                            {/* Dropdown Suggestions */}
+                            {skillInput.trim() && (
+                              <div className="absolute left-0 right-0 z-40 mt-1 max-h-40 overflow-y-auto rounded-xl border border-border bg-surface shadow-lg dark:border-darkborder dark:bg-darksurface">
+                                {COMMON_SKILLS
+                                  .filter((s) => s.toLowerCase().includes(skillInput.toLowerCase()) && !requiredSkills.includes(s))
+                                  .map((s) => (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      className="w-full px-4 py-2 text-left text-xs font-semibold hover:bg-gray-100 dark:hover:bg-darkborder"
+                                      onClick={() => {
+                                        setRequiredSkills(prev => [...prev, s]);
+                                        setSkillInput('');
+                                      }}
+                                    >
+                                      {s}
+                                    </button>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       <div className="rounded-2xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg">
                         <div className="mb-4 flex items-center gap-2">
                           <BrainCircuit className="h-4 w-4 text-accent dark:text-darkaccent" />
-                          <CardTitle>AI Extraction Preview</CardTitle>
+                          <CardTitle>Selected Skills Preview</CardTitle>
                         </div>
                         <Preview label="Skills" items={extracted.skills.length ? extracted.skills : ['React', 'TypeScript']} />
                         <Preview label="Experience" items={[extracted.experience]} />

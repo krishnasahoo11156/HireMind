@@ -20,6 +20,7 @@ interface CreateJobPayload {
   title: string;
   description: string;
   department: string;
+  requiredSkills: string[];
   weights: {
     github: number;
     leetcode: number;

@@ -71,6 +71,7 @@ export function mapJob(doc: any): Job {
     creatorName: obj.creatorName ?? '',
     applicationsCount: obj.applicationsCount ?? 0,
     candidateCount: obj.candidateCount ?? obj.applicationsCount ?? 0,
+    requiredSkills: obj.requiredSkills ?? [],
     extractedData: obj.extractedData ?? {
       skills: [],
       experience: '',
