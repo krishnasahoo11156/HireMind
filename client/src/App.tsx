@@ -88,13 +88,13 @@ function ParamRedirect({ to }: { to: string }) {
 
 function SessionDebugPanel() {
   const { user, loading } = useAuth();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 z-[9999] rounded-xl bg-accent/90 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur hover:bg-accent transition"
+        className="fixed bottom-4 left-4 z-[9999] rounded-xl bg-accent/90 px-3 py-1.5 text-[11px] font-bold text-white shadow-lg backdrop-blur hover:bg-accent transition"
       >
         🔍 Debug Session
       </button>
@@ -102,7 +102,7 @@ function SessionDebugPanel() {
   }
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] w-64 rounded-2xl border border-border bg-surface/90 dark:border-darkborder dark:bg-darksurface/90 p-4 shadow-2xl backdrop-blur-md text-primary dark:text-darktext">
+    <div className="fixed bottom-4 left-4 z-[9999] w-64 rounded-2xl border border-border bg-surface/90 dark:border-darkborder dark:bg-darksurface/90 p-4 shadow-2xl backdrop-blur-md text-primary dark:text-darktext">
       <div className="flex items-center justify-between border-b border-border dark:border-darkborder pb-2 mb-3">
         <span className="text-[11px] font-bold uppercase tracking-wider text-accent dark:text-darkaccent">Session Debugger</span>
         <button
