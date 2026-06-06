@@ -30,8 +30,15 @@ export async function parseDOCX(buffer: Buffer): Promise<string> {
  * Reads the file from the path multer wrote to disk.
  */
 export async function extractText(file: Express.Multer.File): Promise<string> {
-  const filePath = file.path ?? path.join('server/uploads', file.filename ?? file.originalname);
-  const buffer = await fs.readFile(filePath);
+  let buffer: Buffer;
+  if (file.buffer) {
+    buffer = file.buffer;
+  } else {
+    const cwd = process.cwd();
+    const uploadsDir = cwd.endsWith('server') ? 'uploads' : 'server/uploads';
+    const filePath = file.path ?? path.join(uploadsDir, file.filename ?? file.originalname);
+    buffer = await fs.readFile(filePath);
+  }
 
   const isPDF =
     file.mimetype === 'application/pdf' ||
