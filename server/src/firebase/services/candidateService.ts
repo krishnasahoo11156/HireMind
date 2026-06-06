@@ -5,6 +5,7 @@ export interface FirestoreCandidate {
   id: string;
   resumeId: string;
   jobId: string;
+  applicationId?: string;
   name?: string;
   email?: string;
   username?: string;

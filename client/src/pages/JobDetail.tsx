@@ -37,6 +37,11 @@ export function JobDetail() {
     queryFn: () => api.job(id) as Promise<{ job: Job; resumes: Resume[]; candidates: Candidate[] }>
   });
 
+  const applicationsQuery = useQuery({
+    queryKey: ['job-applications', id],
+    queryFn: () => api.recruiterJobApplications(id)
+  });
+
   const upload = useMutation({
     mutationFn: (files?: File[]) => api.uploadBatch(files, id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['job', id] })
@@ -107,10 +112,17 @@ export function JobDetail() {
               </span>
             </div>
             <DisplayTitle>{data?.job.title ?? 'Job Detail'}</DisplayTitle>
-            <p className="mt-2 flex items-center gap-2 text-secondary dark:text-darkmuted">
-              <Users className="h-4 w-4" />
-              {data?.candidates.length ?? 0} candidates analyzed
-            </p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-secondary dark:text-darkmuted">
+              <span className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-accent dark:text-darkaccent" />
+                <span className="font-semibold text-primary dark:text-darktext">{applicationsQuery.data?.length ?? 0}</span> Applications Received
+              </span>
+              <span className="text-border dark:text-darkborder">|</span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <span className="font-semibold text-primary dark:text-darktext">{data?.candidates.length ?? 0}</span> Candidates Analyzed
+              </span>
+            </div>
           </div>
           <div className="flex flex-shrink-0 items-center gap-3">
             <Button
@@ -413,7 +425,7 @@ export function JobDetail() {
       {activeTab === 'Candidates' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <SectionTitle>Applied Candidates ({mergedCandidates.length})</SectionTitle>
+            <SectionTitle>Applied Candidates ({(applicationsQuery.data ?? []).length})</SectionTitle>
             <Link to={`/recruiter/jobs/${id}/candidates`}>
               <Button size="sm">
                 <ArrowRight className="h-4 w-4" />
@@ -422,76 +434,115 @@ export function JobDetail() {
             </Link>
           </div>
 
-          {mergedCandidates.length === 0 ? (
+          {applicationsQuery.isLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div key={idx} className="h-24 hm-skeleton rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : !(applicationsQuery.data && applicationsQuery.data.length > 0) ? (
             <Card className="p-16 text-center flex flex-col items-center justify-center">
               <Users className="h-10 w-10 text-secondary dark:text-darkmuted mb-3" />
               <p className="text-secondary dark:text-darkmuted">
-                No candidates have applied or been analyzed for this role yet.
+                No candidates have applied for this role yet.
               </p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {mergedCandidates.map((candidate, i) => (
-                <Card key={candidate._id} className="p-5 flex flex-col justify-between hover:border-accent/30 dark:hover:border-darkaccent/30 transition-all border border-border dark:border-darkborder">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-accent/10 dark:bg-darkaccent/10 text-accent dark:text-darkaccent text-sm font-bold">
-                        #{i + 1}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Link to={`/recruiter/candidates/${candidate._id}`} className="hover:underline">
-                            <h3 className="text-base font-bold text-primary dark:text-darktext">
-                              {candidate.name}
-                            </h3>
-                          </Link>
-                          {candidate.username && (
-                            <span className="text-xs text-accent font-semibold px-2 py-0.5 bg-accent/10 rounded-full">
-                              @{candidate.username}
-                            </span>
+              {(() => {
+                const list = [...(applicationsQuery.data ?? [])];
+                list.sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
+                return list.map((app, i) => {
+                  const candidate = mergedCandidates.find((c) => c.email.toLowerCase() === app.email.toLowerCase());
+                  const statusTone = 
+                    app.status === 'Under Review' || app.status === 'AI Analysis' ? 'yellow' :
+                    app.status === 'Shortlisted' || app.status === 'Selected' ? 'emerald' :
+                    app.status === 'Rejected' ? 'danger' : 'neutral';
+                  
+                  return (
+                    <Card key={app.applicationId} className="p-5 flex flex-col justify-between hover:border-accent/30 dark:hover:border-darkaccent/30 transition-all border border-border dark:border-darkborder">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-accent/10 dark:bg-darkaccent/10 text-accent dark:text-darkaccent text-sm font-bold">
+                            #{i + 1}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              {candidate ? (
+                                <Link to={`/recruiter/candidates/${candidate._id}`} className="hover:underline">
+                                  <h3 className="text-base font-bold text-primary dark:text-darktext">
+                                    {app.candidateName}
+                                  </h3>
+                                </Link>
+                              ) : (
+                                <h3 className="text-base font-bold text-primary dark:text-darktext">
+                                  {app.candidateName}
+                                </h3>
+                              )}
+                              <Badge tone={statusTone as any}>{app.status}</Badge>
+                            </div>
+                            <p className="text-xs text-secondary dark:text-darkmuted mt-1 flex flex-col gap-0.5">
+                              <span>{app.email}</span>
+                              <span className="text-[10px] text-secondary/70 dark:text-darkmuted/70">
+                                Applied: {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'Not Available'}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+                          <div className="text-center">
+                            <div className="text-base font-bold text-primary dark:text-darktext">
+                              {candidate ? `${candidate.matchPercentage}%` : '—'}
+                            </div>
+                            <div className="text-[9px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">Match</div>
+                          </div>
+
+                          <div className="text-center">
+                            <div className="text-base font-bold text-primary dark:text-darktext">
+                              {candidate ? candidate.aiScore : '—'}
+                            </div>
+                            <div className="text-[9px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">AI Score</div>
+                          </div>
+
+                          <div className="text-right">
+                            {candidate ? (
+                              <RecommendationBadge recommendation={candidate.recommendation} />
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-xs font-semibold text-warning animate-pulse">
+                                Processing
+                              </span>
+                            )}
+                          </div>
+
+                          {candidate ? (
+                            <Link to={`/recruiter/candidates/${candidate._id}`}>
+                              <Button variant="secondary" size="sm">
+                                View Details
+                              </Button>
+                            </Link>
+                          ) : (
+                            <Button variant="secondary" size="sm" disabled>
+                              Analyzing…
+                            </Button>
                           )}
                         </div>
-                        <p className="text-xs text-secondary dark:text-darkmuted mt-0.5">
-                          {candidate.email}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-                      <div className="text-center">
-                        <div className="text-base font-bold text-primary dark:text-darktext">{candidate.matchPercentage}%</div>
-                        <div className="text-[9px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">Match</div>
                       </div>
 
-                      <div className="text-center">
-                        <div className="text-base font-bold text-primary dark:text-darktext">{candidate.aiScore}</div>
-                        <div className="text-[9px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">AI Score</div>
-                      </div>
-
-                      <div className="text-right">
-                        <RecommendationBadge recommendation={candidate.recommendation} />
-                      </div>
-
-                      <Link to={`/recruiter/candidates/${candidate._id}`}>
-                        <Button variant="secondary" size="sm">
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {candidate.whyApplying && (
-                    <div className="mt-4 border-t border-border dark:border-darkborder pt-3">
-                      <span className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block mb-1">
-                        Candidate Statement:
-                      </span>
-                      <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed whitespace-pre-line italic">
-                        "{candidate.whyApplying}"
-                      </p>
-                    </div>
-                  )}
-                </Card>
-              ))}
+                      {candidate?.whyApplying && (
+                        <div className="mt-4 border-t border-border dark:border-darkborder pt-3">
+                          <span className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block mb-1">
+                            Candidate Statement:
+                          </span>
+                          <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed whitespace-pre-line italic">
+                            "{candidate.whyApplying}"
+                          </p>
+                        </div>
+                      )}
+                    </Card>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>

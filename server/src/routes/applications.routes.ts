@@ -99,6 +99,7 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
     const application = await applicationService.create({
       candidateId: user.id,
       jobId,
+      recruiterId: job.createdBy || '',
       status: 'Applied',
       resumeUrl,
       githubUrl: githubUrl || undefined,
@@ -109,10 +110,23 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
       whyApplying: whyApplying || undefined
     });
 
+    // Link application to job
+    await jobService.addApplicant(jobId, user.id);
+
     // Increment applications count on the job
     await jobService.incrementApplicationsCount(jobId);
 
-    res.status(201).json({ application });
+    console.log("Application Created", application);
+
+    const io = getSocketServer();
+    io.to(`recruiter-${job.createdBy}`).emit('new_application', {
+      candidateId: user.id,
+      candidateName: name || user.name,
+      jobId,
+      jobTitle: job.title
+    });
+
+    res.status(201).json({ application: mapApplication(application) });
 
     // Run the asynchronous evaluation pipeline in the background
     void (async () => {
@@ -120,6 +134,9 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         const socket = getSocketServer();
         const candidateRoom = `candidate:${user.id}`;
         const appId = application.id;
+
+        // Emit initial status to recruiter room
+        socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(application));
 
         socket.emit('application:new', { application, candidateName: user.name });
         socket.emit('notification:new', {
@@ -147,6 +164,7 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
             fileName: 'uploaded_resume.pdf',
             fileUrl: '',
             fileType: 'pdf',
+            userId: user.id,
             parsedData: {
               name: user.name,
               email: user.email,
@@ -161,6 +179,10 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         }
 
         await applicationService.update(appId, { status: 'Resume Parsed' });
+        const appParsed = await applicationService.findById(appId);
+        if (appParsed) {
+          socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(appParsed));
+        }
 
         socket.to(candidateRoom).emit('tracker:update', {
           applicationId: appId,
@@ -171,6 +193,10 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         // ─── STAGE 3: AI Analysis (Delay 2s) ───
         await new Promise((r) => setTimeout(r, 2000));
         await applicationService.update(appId, { status: 'AI Analysis' });
+        const appAnalysis = await applicationService.findById(appId);
+        if (appAnalysis) {
+          socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(appAnalysis));
+        }
 
         socket.to(candidateRoom).emit('tracker:update', {
           applicationId: appId,
@@ -230,6 +256,7 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         const candidateRecord = await candidateService.create({
           resumeId: parsedResume.id,
           jobId,
+          applicationId: appId,
           name: name || user.name,
           email: user.email,
           username: user.leetcodeUsername || (user.githubUrl ? user.githubUrl.split('/').pop() : '') || user.email.split('@')[0],
@@ -247,6 +274,9 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           whyApplying: whyApplying || ''
         });
 
+        // Update resume's userId to point to the Candidate document
+        await resumeService.update(parsedResume.id, { userId: candidateRecord.id });
+
         // ─── STAGE 4: Under Review (Delay 1.5s) ───
         await new Promise((r) => setTimeout(r, 1500));
 
@@ -255,6 +285,10 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           aiScore,
           recommendation
         });
+        const appReview = await applicationService.findById(appId);
+        if (appReview) {
+          socket.to(`job:${jobId}`).emit('application_status_updated', mapApplication(appReview));
+        }
 
         socket.to(candidateRoom).emit('tracker:update', {
           applicationId: appId,
@@ -268,6 +302,18 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           applicationId: appId,
           status: 'Under Review',
           candidate: mapCandidate(candidateRecord)
+        });
+
+        // Emit candidate_scored and ranking_updated to recruiter job room
+        socket.to(`job:${jobId}`).emit('candidate_scored', {
+          jobId,
+          candidate: mapCandidate(candidateRecord)
+        });
+
+        const allCandidates = await candidateService.findAll({ jobId });
+        socket.to(`job:${jobId}`).emit('ranking_updated', {
+          jobId,
+          candidates: allCandidates.map(mapCandidate)
         });
 
       } catch (pipelineErr) {
@@ -284,7 +330,7 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
 applicationsRouter.get('/my', auth, async (req: AuthedRequest, res: Response) => {
   try {
     const list = await applicationService.findAll({ candidateId: req.userId });
-    res.json({ applications: list });
+    res.json({ applications: list.map(mapApplication) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -313,7 +359,7 @@ applicationsRouter.get('/:id', auth, async (req: AuthedRequest, res: Response) =
     }
 
     const job = await jobService.findById(app.jobId);
-    res.json({ application: app, job: job ? mapJob(job) : null });
+    res.json({ application: mapApplication(app), job: job ? mapJob(job) : null });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -388,7 +434,7 @@ applicationsRouter.patch('/:id/status', auth, async (req: AuthedRequest, res: Re
     });
 
     const updatedApp = await applicationService.findById(app.id);
-    res.json({ application: updatedApp });
+    res.json({ application: mapApplication(updatedApp) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

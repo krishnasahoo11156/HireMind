@@ -29,6 +29,7 @@ router.post('/seed/reset', (_req: Request, res: Response) => {
 });
 
 router.use('/auth', authRouter);
+router.use('/recruiter/jobs', jobsRouter);
 router.use('/jobs', jobsRouter);
 router.use('/resumes', resumesRouter);
 router.use('/candidates', candidatesRouter);

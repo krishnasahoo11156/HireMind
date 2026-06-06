@@ -6,6 +6,7 @@ export interface FirestoreResume {
   fileName: string;
   fileUrl: string;
   fileType: 'pdf' | 'docx';
+  userId?: string;
   parsedData?: any;
   parseStatus?: 'parsed' | 'manual_review';
   rawText?: string;
@@ -40,6 +41,10 @@ export const resumeService = {
 
   async delete(id: string): Promise<void> {
     await col('resumes').doc(id).delete();
+  },
+
+  async update(id: string, data: Partial<FirestoreResume>): Promise<void> {
+    await col('resumes').doc(id).update(data);
   },
 
   async count(): Promise<number> {

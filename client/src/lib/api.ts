@@ -89,5 +89,7 @@ export const api = {
     request<{ application: import('../types').Application }>(
       `/api/applications/${id}/status`,
       { method: 'PATCH', body: JSON.stringify({ status }) }
-    )
+    ),
+  recruiterJobApplications: (jobId: string) =>
+    request<any[]>(`/api/recruiter/jobs/${jobId}/applications`)
 };

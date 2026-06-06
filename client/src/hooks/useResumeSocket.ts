@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io as connectSocket, Socket } from 'socket.io-client';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Candidate } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +25,7 @@ export interface ResumeSocketState {
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') : 'http://localhost:5001');
 
 export function useResumeSocket(jobId: string): ResumeSocketState {
+  const queryClient = useQueryClient();
   const [state, setState] = useState<ResumeSocketState>({
     connected: false,
     total: 0,
@@ -110,6 +112,12 @@ export function useResumeSocket(jobId: string): ResumeSocketState {
           liveCandidates: next.sort((a, b) => b.aiScore - a.aiScore)
         };
       });
+    });
+
+    socket.on('application_status_updated', (app) => {
+      console.log('[socket] application status updated:', app);
+      queryClient.invalidateQueries({ queryKey: ['job-applications', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
     });
 
     socket.on('ranking_updated', ({ candidates }) => {

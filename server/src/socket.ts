@@ -29,6 +29,13 @@ export interface ServerToClientEvents {
     recommendation?: string;
     updatedAt: string;
   }) => void;
+  new_application: (payload: {
+    candidateId: string;
+    candidateName: string;
+    jobId: string;
+    jobTitle: string;
+  }) => void;
+  application_status_updated: (payload: any) => void;
 }
 
 export interface ClientToServerEvents {
@@ -36,6 +43,8 @@ export interface ClientToServerEvents {
   leave_job: (jobId: string) => void;
   join_candidate: (candidateId: string) => void;
   leave_candidate: (candidateId: string) => void;
+  join_recruiter: (recruiterId: string) => void;
+  leave_recruiter: (recruiterId: string) => void;
 }
 
 export type AppSocket = SocketIOServer<ClientToServerEvents, ServerToClientEvents>;
@@ -75,6 +84,16 @@ export function initSocket(httpServer: HttpServer): AppSocket {
     socket.on('leave_candidate', (candidateId: string) => {
       void socket.leave(`candidate:${candidateId}`);
       console.log(`[socket] ${socket.id} left room candidate:${candidateId}`);
+    });
+
+    socket.on('join_recruiter', (recruiterId: string) => {
+      void socket.join(`recruiter-${recruiterId}`);
+      console.log(`[socket] ${socket.id} joined room recruiter-${recruiterId}`);
+    });
+
+    socket.on('leave_recruiter', (recruiterId: string) => {
+      void socket.leave(`recruiter-${recruiterId}`);
+      console.log(`[socket] ${socket.id} left room recruiter-${recruiterId}`);
     });
 
     socket.on('disconnect', (reason) => {

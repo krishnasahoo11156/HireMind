@@ -1,4 +1,4 @@
-import type { Candidate, Job } from '../types.js';
+import type { Candidate, Job, Application } from '../types.js';
 
 function toIsoString(val: any): string {
   if (!val) return new Date().toISOString();
@@ -81,5 +81,31 @@ export function mapJob(doc: any): Job {
     },
     createdAt: toIsoString(obj.createdAt),
     updatedAt: toIsoString(obj.updatedAt)
+  };
+}
+
+export function mapApplication(doc: any): Application {
+  if (!doc) {
+    throw new Error('Cannot map null or undefined application document');
+  }
+  const obj = typeof doc.toObject === 'function' ? doc.toObject() : doc;
+  const id = obj.id ?? obj._id?.toString() ?? '';
+  return {
+    _id: id,
+    candidateId: obj.candidateId?.toString() ?? '',
+    jobId: obj.jobId?.toString() ?? '',
+    recruiterId: obj.recruiterId?.toString() ?? '',
+    status: obj.status ?? 'Applied',
+    appliedAt: toIsoString(obj.appliedAt),
+    updatedAt: toIsoString(obj.updatedAt),
+    aiScore: obj.aiScore,
+    recommendation: obj.recommendation,
+    resumeUrl: obj.resumeUrl ?? '',
+    githubUrl: obj.githubUrl ?? '',
+    linkedinUrl: obj.linkedinUrl ?? '',
+    portfolioUrl: obj.portfolioUrl ?? '',
+    leetcodeUsername: obj.leetcodeUsername ?? '',
+    candidateName: obj.candidateName ?? '',
+    whyApplying: obj.whyApplying ?? ''
   };
 }
