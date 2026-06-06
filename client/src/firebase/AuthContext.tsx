@@ -42,7 +42,7 @@ export const RecruiterAuthContext = createContext<AuthContextValue | null>(null)
 export const CandidateAuthContext = createContext<AuthContextValue | null>(null);
 export const AdminAuthContext = createContext<AuthContextValue | null>(null);
 
-async function fetchAppUser(uid: string): Promise<AppUser | null> {
+async function fetchAppUser(uid: string, idToken?: string): Promise<AppUser | null> {
   if (!db) return null;
   try {
     const snap = await getDoc(doc(db, 'users', uid));
@@ -59,9 +59,38 @@ async function fetchAppUser(uid: string): Promise<AppUser | null> {
         leetcodeUsername: data.leetcodeUsername
       };
     }
-  } catch (err) {
-    console.error('[AuthContext] Failed to fetch user profile from Firestore:', err);
+  } catch (err: any) {
+    console.warn('[AuthContext] Direct Firestore profile fetch failed/permission denied, falling back to API:', err.message || err);
   }
+
+  if (idToken) {
+    try {
+      const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001').replace(/\/api$/, '');
+      const resp = await fetch(`${apiBase}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${idToken}`
+        }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.user) {
+          return {
+            id: data.user.id,
+            name: data.user.name,
+            email: data.user.email,
+            role: data.user.role,
+            githubUrl: data.user.githubUrl,
+            linkedinUrl: data.user.linkedinUrl,
+            portfolioUrl: data.user.portfolioUrl,
+            leetcodeUsername: data.user.leetcodeUsername
+          };
+        }
+      }
+    } catch (apiErr: any) {
+      console.error('[AuthContext] API profile fetch fallback failed:', apiErr.message || apiErr);
+    }
+  }
+
   return null;
 }
 
@@ -84,8 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const idToken = await fbUser.getIdToken(false);
           localStorage.setItem(TOKEN_KEY, idToken);
 
-          // Read profile from Firestore directly
-          const appUser = await fetchAppUser(fbUser.uid);
+          // Read profile from Firestore directly (falls back to API if permission issue occurs)
+          const appUser = await fetchAppUser(fbUser.uid, idToken);
           if (appUser) {
             setUser(appUser);
             localStorage.setItem(USER_KEY, JSON.stringify(appUser));
@@ -124,8 +153,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const idToken = await cred.user.getIdToken(true);
     localStorage.setItem(TOKEN_KEY, idToken);
 
-    // Read directly from Firestore
-    const appUser = await fetchAppUser(cred.user.uid);
+    // Read directly from Firestore (falls back to API if permission issue occurs)
+    const appUser = await fetchAppUser(cred.user.uid, idToken);
     if (!appUser) {
       throw new Error('User profile not found in Firestore');
     }
@@ -157,8 +186,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const idToken = await cred.user.getIdToken(true);
     localStorage.setItem(TOKEN_KEY, idToken);
 
-    // Read directly from Firestore
-    const appUser = await fetchAppUser(cred.user.uid);
+    // Read directly from Firestore (falls back to API if permission issue occurs)
+    const appUser = await fetchAppUser(cred.user.uid, idToken);
     if (!appUser) {
       throw new Error('User profile was not initialized in Firestore by the backend.');
     }
@@ -222,8 +251,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Read directly from Firestore
-    const appUser = await fetchAppUser(uid);
+    // Read directly from Firestore (falls back to API if permission issue occurs)
+    const appUser = await fetchAppUser(uid, idToken);
     if (!appUser) {
       throw new Error('User profile not found in Firestore');
     }
@@ -257,8 +286,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     await updateDoc(userDocRef, payload);
 
-    // Read directly from Firestore
-    const appUser = await fetchAppUser(firebaseUser.uid);
+    // Read directly from Firestore (falls back to API if permission issue occurs)
+    const appUser = await fetchAppUser(firebaseUser.uid, idToken);
     if (!appUser) {
       throw new Error('User profile not found in Firestore');
     }
