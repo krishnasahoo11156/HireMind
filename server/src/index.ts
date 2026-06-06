@@ -88,7 +88,7 @@ async function start() {
   const httpServer = createServer(app);
   initSocket(httpServer);
 
-  httpServer.listen(port, async () => {
+  httpServer.listen(port, '0.0.0.0', async () => {
     console.log('=== HireMind Server Startup ===');
     console.log(`PORT:     ${port}`);
     console.log(`ENV:      ${process.env.NODE_ENV ?? 'development'}`);
