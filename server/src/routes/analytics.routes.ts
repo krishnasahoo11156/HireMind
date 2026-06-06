@@ -2,17 +2,19 @@ import express, { type Response } from 'express';
 import { candidateService } from '../firebase/services/candidateService.js';
 import { feedbackService } from '../firebase/services/feedbackService.js';
 import { resumeService } from '../firebase/services/resumeService.js';
+import { applicationService } from '../firebase/services/applicationService.js';
 import { auth, type AuthedRequest } from '../middleware/auth.js';
 
 export const analyticsRouter = express.Router();
 
 analyticsRouter.get('/dashboard', auth, async (_req: AuthedRequest, res: Response) => {
   try {
-    const [total, resumesReviewed, overrides, feedbackList] = await Promise.all([
+    const [total, resumesReviewed, overrides, feedbackList, applicationsCount] = await Promise.all([
       candidateService.countTotal(),
       resumeService.count(),
       feedbackService.countOverrides(),
-      feedbackService.findAll()
+      feedbackService.findAll(),
+      applicationService.count()
     ]);
 
     const selected = await candidateService.countSelected();
@@ -27,7 +29,7 @@ analyticsRouter.get('/dashboard', auth, async (_req: AuthedRequest, res: Respons
         averageScreeningTime: 3
       },
       funnel: {
-        applied: resumesReviewed,
+        applied: applicationsCount,
         screened: total,
         interviewed: 3,
         offered: 2,

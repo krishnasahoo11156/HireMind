@@ -8,11 +8,13 @@ export interface FirestoreJob {
   rawText?: string;
   status: string;
   createdBy?: string;
+  recruiterId?: string;
   department?: string;
   location?: string;
   salary?: string;
   company?: string;
   applicationsCount?: number;
+  applicants?: string[];
   extractedData?: any;
   createdAt?: admin.firestore.Timestamp;
   updatedAt?: admin.firestore.Timestamp;
@@ -33,11 +35,13 @@ export const jobService = {
     const payload = {
       ...data,
       applicationsCount: data.applicationsCount ?? 0,
+      recruiterId: data.recruiterId ?? data.createdBy ?? '',
+      applicants: [],
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
     const ref = await col('jobs').add(payload);
-    return { id: ref.id, ...data };
+    return { id: ref.id, ...data, recruiterId: data.recruiterId ?? data.createdBy ?? '', applicants: [] };
   },
 
   async update(id: string, data: Partial<FirestoreJob>): Promise<void> {
@@ -54,6 +58,12 @@ export const jobService = {
   async incrementApplicationsCount(id: string): Promise<void> {
     await col('jobs').doc(id).update({
       applicationsCount: admin.firestore.FieldValue.increment(1)
+    });
+  },
+
+  async addApplicant(jobId: string, candidateId: string): Promise<void> {
+    await col('jobs').doc(jobId).update({
+      applicants: admin.firestore.FieldValue.arrayUnion(candidateId)
     });
   }
 };

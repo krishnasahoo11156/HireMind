@@ -8,7 +8,7 @@ import { upload } from '../middleware/upload.js';
 import { extractJobData } from '../services/extraction.js';
 import { analyzeJobDescription } from '../services/ai.service.js';
 import { userService } from '../firebase/services/userService.js';
-import { mapJob, mapCandidate } from '../utils/mappers.js';
+import { mapJob, mapCandidate, mapApplication } from '../utils/mappers.js';
 
 export const jobsRouter = express.Router();
 
@@ -168,6 +168,43 @@ jobsRouter.get('/:id', auth, async (req: AuthedRequest, res: Response) => {
   }
 });
 
+// GET /:id/applications — Get applications for a job (recruiter only)
+jobsRouter.get('/:id/applications', auth, async (req: AuthedRequest, res: Response) => {
+  try {
+    const job = await jobService.findById(req.params.id);
+    if (!job) {
+      res.status(404).json({ error: 'Job not found' });
+      return;
+    }
+    if (job.createdBy && job.createdBy !== req.userId && req.userRole !== 'admin') {
+      res.status(403).json({ error: 'Access denied: recruiter owner only' });
+      return;
+    }
+    const applicants = await applicationService.findAll({ jobId: req.params.id });
+    const formatted = await Promise.all(
+      applicants.map(async (app) => {
+        let email = '';
+        if (app.candidateId) {
+          const u = await userService.findById(app.candidateId);
+          if (u) email = u.email;
+        }
+        const mapped = mapApplication(app);
+        return {
+          applicationId: mapped._id,
+          candidateId: mapped.candidateId,
+          candidateName: mapped.candidateName || 'Unknown',
+          email,
+          status: mapped.status || 'Applied',
+          appliedAt: mapped.appliedAt
+        };
+      })
+    );
+    res.json(formatted);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /:id/applicants — Get applicants for a job (recruiter only)
 jobsRouter.get('/:id/applicants', auth, async (req: AuthedRequest, res: Response) => {
   try {
@@ -181,7 +218,25 @@ jobsRouter.get('/:id/applicants', auth, async (req: AuthedRequest, res: Response
       return;
     }
     const applicants = await applicationService.findAll({ jobId: req.params.id });
-    res.json({ applicants });
+    const formatted = await Promise.all(
+      applicants.map(async (app) => {
+        let email = '';
+        if (app.candidateId) {
+          const u = await userService.findById(app.candidateId);
+          if (u) email = u.email;
+        }
+        const mapped = mapApplication(app);
+        return {
+          applicationId: mapped._id,
+          candidateId: mapped.candidateId,
+          candidateName: mapped.candidateName || 'Unknown',
+          email,
+          status: mapped.status || 'Applied',
+          appliedAt: mapped.appliedAt
+        };
+      })
+    );
+    res.json(formatted);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, BarChart3, BriefcaseBusiness, Clock, FilePlus2, Gauge, Sparkles, Users } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { io as connectSocket, Socket } from 'socket.io-client';
+import { ArrowRight, BarChart3, BriefcaseBusiness, Clock, FilePlus2, Gauge, Sparkles, Users, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { useJobs } from '../hooks/queries';
 import { useAuth } from '../firebase/AuthContext';
@@ -22,6 +24,13 @@ import {
   BodyText,
   Caption,
 } from '../components/ui';
+
+interface Toast {
+  id: string;
+  message: string;
+}
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/api$/, '') : 'http://localhost:5001');
 
 // ─── Greeting helper ───────────────────────────────────────────────────────
 function getGreeting() {
@@ -45,9 +54,15 @@ function JobCard({ job }: { job: Job }) {
         </div>
         <div>
           <CardTitle>{job.title}</CardTitle>
-          <BodyText variant="small" color="secondary" className="mt-1">
-            {job.candidateCount ?? 0} candidate{(job.candidateCount ?? 0) !== 1 ? 's' : ''}
-          </BodyText>
+          <div className="mt-1 flex flex-col gap-0.5">
+            <BodyText variant="small" color="secondary">
+              {job.applicationsCount ?? 0} application{(job.applicationsCount ?? 0) !== 1 ? 's' : ''} received
+            </BodyText>
+            <BodyText variant="small" color="secondary" className="flex items-center gap-1 text-[11px]">
+              <Sparkles className="h-3 w-3 text-accent dark:text-darkaccent" />
+              {job.candidateCount ?? 0} candidate{(job.candidateCount ?? 0) !== 1 ? 's' : ''} analyzed
+            </BodyText>
+          </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {job.extractedData.skills.slice(0, 3).map((s) => (
@@ -127,6 +142,10 @@ function PriorityCandidateCard({ candidate, rank }: { candidate: Candidate; rank
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 export function Dashboard() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const socketRef = useRef<Socket | null>(null);
+
   const analytics = useQuery({ queryKey: ['analytics'], queryFn: () => api.analytics() as Promise<DashboardAnalytics> });
   const jobs = useJobs();
   const firstJobId = jobs.data?.jobs[0]?._id;
@@ -135,6 +154,54 @@ export function Dashboard() {
     queryFn: () => api.candidates(firstJobId!) as Promise<{ candidates: Candidate[] }>,
     enabled: Boolean(firstJobId)
   });
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const socket: Socket = connectSocket(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      reconnection: true
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log(`[dashboard-socket] Connected. Joining recruiter room: recruiter-${user.id}`);
+      socket.emit('join_recruiter', user.id);
+    });
+
+    socket.on('new_application', (payload: { candidateId: string; candidateName: string; jobId: string; jobTitle: string }) => {
+      console.log('[dashboard-socket] Received new_application:', payload);
+      
+      // Invalidate queries
+      void queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      void queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      if (firstJobId) {
+        void queryClient.invalidateQueries({ queryKey: ['candidates', firstJobId] });
+      }
+
+      // Trigger toast message
+      const toastId = Math.random().toString();
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: toastId,
+          message: `New application from ${payload.candidateName} for ${payload.jobTitle}!`
+        }
+      ]);
+      
+      // Auto close toast
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== toastId));
+      }, 5000);
+    });
+
+    return () => {
+      socket.emit('leave_recruiter', user.id);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [user?.id, firstJobId, queryClient]);
 
   if (analytics.isLoading || jobs.isLoading) {
     return (
@@ -166,7 +233,27 @@ export function Dashboard() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 relative">
+      {/* Live Toasts Container */}
+      <div className="fixed top-6 right-6 z-50 space-y-2 pointer-events-none max-w-sm">
+        <AnimatePresence>
+          {toasts.map((t) => (
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, y: -20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-surface/95 dark:bg-darksurface/95 shadow-xl p-4 backdrop-blur-md"
+            >
+              <Bell className="h-5 w-5 text-emerald-500 flex-shrink-0 animate-bounce" />
+              <div className="text-sm font-semibold text-primary dark:text-darktext">
+                {t.message}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
       {/* ── SECTION 1: Welcome Header ── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -217,7 +304,7 @@ export function Dashboard() {
           </Link>
         } />
         <div className="grid grid-cols-4 gap-4">
-          <StatCard label="Candidates Analyzed" value={metrics?.resumesReviewed ?? 0} icon={<Users className="h-4 w-4" />} trend="up" trendLabel="vs last week" />
+          <StatCard label="Applications Received" value={funnel.applied} icon={<Users className="h-4 w-4" />} trend="up" trendLabel="vs last week" />
           <StatCard label="Selected" value={metrics?.candidatesSelected ?? 0} icon={<BriefcaseBusiness className="h-4 w-4" />} trend="up" trendLabel="this month" />
           <StatCard label="Time Saved" value={`${metrics?.timeSaved ?? 0}h`} icon={<Clock className="h-4 w-4" />} trend="up" trendLabel="vs manual review" />
           <StatCard label="AI Accuracy" value={`${metrics?.decisionAccuracy ?? 100}%`} icon={<Gauge className="h-4 w-4" />} trend="neutral" trendLabel="decision accuracy" />

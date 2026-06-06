@@ -45,13 +45,14 @@ export const applicationService = {
   },
 
   async create(data: Omit<FirestoreApplication, 'id'>): Promise<FirestoreApplication> {
+    const now = admin.firestore.Timestamp.now();
     const payload = {
       ...data,
-      appliedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      appliedAt: now,
+      updatedAt: now
     };
     const ref = await col('applications').add(payload);
-    return { id: ref.id, ...data };
+    return { id: ref.id, ...data, appliedAt: now, updatedAt: now };
   },
 
   async update(id: string, data: Partial<FirestoreApplication>): Promise<void> {
@@ -59,5 +60,10 @@ export const applicationService = {
       ...data,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     } as admin.firestore.UpdateData<FirestoreApplication>);
+  },
+
+  async count(): Promise<number> {
+    const snap = await col('applications').count().get();
+    return snap.data().count;
   }
 };
