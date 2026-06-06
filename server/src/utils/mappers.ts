@@ -95,6 +95,7 @@ export function mapApplication(doc: any): Application {
     candidateId: obj.candidateId?.toString() ?? '',
     jobId: obj.jobId?.toString() ?? '',
     recruiterId: obj.recruiterId?.toString() ?? '',
+    candidateEmail: obj.candidateEmail ?? '',
     status: obj.status ?? 'Applied',
     appliedAt: toIsoString(obj.appliedAt),
     updatedAt: toIsoString(obj.updatedAt),

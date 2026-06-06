@@ -31,6 +31,7 @@ export interface Application {
   candidateId: string;
   jobId: string;
   recruiterId?: string;
+  candidateEmail?: string;
   status:
     | 'Applied'
     | 'Resume Parsed'

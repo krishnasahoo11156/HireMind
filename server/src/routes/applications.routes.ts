@@ -102,6 +102,7 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
       candidateId: user.id,
       jobId,
       recruiterId: job.createdBy || '',
+      candidateEmail: user.email,
       status: 'Applied',
       resumeUrl,
       githubUrl: githubUrl || undefined,

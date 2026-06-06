@@ -1,5 +1,6 @@
 const tokenKey = 'hiremind_token';
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/api$/, '');
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const API_BASE_URL = (import.meta.env.VITE_API_URL || (isLocalhost ? 'http://localhost:5001' : 'https://hiremind-sbs0.onrender.com')).replace(/\/api$/, '');
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);

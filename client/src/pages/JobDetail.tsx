@@ -495,12 +495,15 @@ export function JobDetail() {
 
                 const list = [...realtimeApps];
                 list.sort((a, b) => {
-                  const timeA = a.appliedAt?.toDate ? a.appliedAt.toDate().getTime() : new Date(a.appliedAt).getTime();
-                  const timeB = b.appliedAt?.toDate ? b.appliedAt.toDate().getTime() : new Date(b.appliedAt).getTime();
+                  const timeA = a.appliedAt ? (a.appliedAt.toDate ? a.appliedAt.toDate().getTime() : new Date(a.appliedAt).getTime()) : 0;
+                  const timeB = b.appliedAt ? (b.appliedAt.toDate ? b.appliedAt.toDate().getTime() : new Date(b.appliedAt).getTime()) : 0;
                   return timeB - timeA;
                 });
                 return list.map((app, i) => {
-                  const candidate = mergedCandidates.find((c) => c.email.toLowerCase() === app.candidateEmail.toLowerCase());
+                  const candidateEmailStr = app.candidateEmail || app.email || '';
+                  const candidate = candidateEmailStr
+                    ? mergedCandidates.find((c) => c.email.toLowerCase() === candidateEmailStr.toLowerCase())
+                    : mergedCandidates.find((c) => c.name.toLowerCase() === app.candidateName?.toLowerCase());
                   const isFailed = app.analysisStatus === 'failed';
                   const isAnalyzing = app.analysisStatus === 'analyzing' || app.analysisStatus === 'parsing' || app.analysisStatus === 'pending';
                   
@@ -535,7 +538,7 @@ export function JobDetail() {
                               </Badge>
                             </div>
                             <p className="text-xs text-secondary dark:text-darkmuted mt-1 flex flex-col gap-0.5">
-                              <span>{app.candidateEmail}</span>
+                              <span>{app.candidateEmail || app.email || 'No email provided'}</span>
                               <span className="text-[10px] text-secondary/70 dark:text-darkmuted/70">
                                 Applied: {formatAppliedDate(app.appliedAt)}
                               </span>

@@ -180,7 +180,7 @@ export function Dashboard() {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
           const newApp = change.doc.data();
-          const appliedTime = newApp.appliedAt?.toDate ? newApp.appliedAt.toDate().getTime() : new Date(newApp.appliedAt).getTime();
+          const appliedTime = newApp.appliedAt ? (newApp.appliedAt.toDate ? newApp.appliedAt.toDate().getTime() : new Date(newApp.appliedAt).getTime()) : Date.now();
           const now = Date.now();
           if (now - appliedTime < 10000) {
             const toastId = Math.random().toString();

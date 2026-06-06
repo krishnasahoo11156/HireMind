@@ -119,8 +119,8 @@ export default function Landing() {
   const theme = useAppStore((state) => state.theme);
   const setTheme = useAppStore((state) => state.setTheme);
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
-  const isAuthenticated = !loading && user !== null;
+  const { user } = useAuth();
+  const isAuthenticated = user !== null;
   
   const handleGoToDashboard = () => {
     if (user?.role === 'candidate') {

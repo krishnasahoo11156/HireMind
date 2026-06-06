@@ -299,7 +299,7 @@ export function CandidateProfile() {
       {/* ── MAIN 3-COLUMN DESKTOP GRID ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* ── COLUMN 1: CANDIDATE OVERVIEW (20% -> col-span-2) ── */}
-        <div className="space-y-6 lg:col-span-2.5">
+        <div className="space-y-6 lg:col-span-2">
           <Card className="p-5 flex flex-col space-y-4">
             <div className="flex flex-col items-center text-center pb-4 border-b border-border dark:border-darkborder">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-yellow-600/10 text-xl font-bold text-accent dark:from-darkaccent/10 dark:to-yellow-500/10 dark:text-darkaccent shadow-sm border border-accent/20">
@@ -422,8 +422,8 @@ export function CandidateProfile() {
           </Card>
         </div>
 
-        {/* ── COLUMN 2: PRIMARY DECISION AREA (55% -> col-span-6.5) ── */}
-        <div className="space-y-6 lg:col-span-6.5">
+        {/* ── COLUMN 2: PRIMARY DECISION AREA (55% -> col-span-7) ── */}
+        <div className="space-y-6 lg:col-span-7">
           {/* Section 1: Match Overview (Hero Component) */}
           <Card className="p-6">
             <div className="flex flex-col md:flex-row items-center gap-8">

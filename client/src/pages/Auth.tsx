@@ -250,14 +250,14 @@ export function Login() {
               {/* Input 1 - Email */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Email or Password
+                  Email Address
                 </label>
                 <div className="relative flex items-center">
                   <User className="absolute left-3.5 h-4.5 w-4.5 text-slate-500" />
                   <input
                     type="text"
                     required
-                    placeholder="Enter your email or password"
+                    placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 bg-[#0a0d14]/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#D4A017] transition duration-200"

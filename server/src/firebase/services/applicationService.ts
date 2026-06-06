@@ -6,6 +6,7 @@ export interface FirestoreApplication {
   candidateId: string;
   jobId: string;
   recruiterId?: string;
+  candidateEmail?: string;
   status: string;
   resumeUrl?: string;
   githubUrl?: string;
