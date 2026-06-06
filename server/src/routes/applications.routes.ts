@@ -14,7 +14,7 @@ import { getLeetCodeProfile } from '../services/external.js';
 import { getGitHubProfile } from '../services/github.service.js';
 import { getSocketServer } from '../socket.js';
 import { normalizeSkills, matchSkills } from '../services/skillMatcher.js';
-import { mapCandidate, mapJob } from '../utils/mappers.js';
+import { mapCandidate, mapJob, mapApplication } from '../utils/mappers.js';
 
 export const applicationsRouter = express.Router();
 

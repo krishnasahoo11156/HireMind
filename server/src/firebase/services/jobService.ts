@@ -15,6 +15,7 @@ export interface FirestoreJob {
   company?: string;
   applicationsCount?: number;
   requiredSkills?: string[];
+  applicants?: string[];
   extractedData?: any;
   createdAt?: admin.firestore.Timestamp;
   updatedAt?: admin.firestore.Timestamp;
