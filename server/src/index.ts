@@ -5,13 +5,15 @@ import { createServer } from 'http';
 import router from './routes/index.js';
 import { initSocket } from './socket.js';
 
-// Validate required Firebase env vars at startup
+// Validate and sanitize required Firebase env vars at startup
 const requiredEnvVars = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
 for (const key of requiredEnvVars) {
-  if (!process.env[key]) {
+  const value = process.env[key];
+  if (!value) {
     console.error(`[Startup] Missing required environment variable: ${key}`);
     process.exit(1);
   }
+  process.env[key] = value.trim();
 }
 
 // Importing this module initializes Firebase Admin SDK
