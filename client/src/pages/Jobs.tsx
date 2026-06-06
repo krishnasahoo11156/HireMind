@@ -2,7 +2,7 @@ import { FormEvent, useMemo, useState, useEffect } from 'react';
 import { BrainCircuit, BriefcaseBusiness, Calendar, Plus, Search, Trash2, Users, X, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useJobs, useCreateJob } from '../hooks/queries';
+import { useJobs, useCreateJob, useDeleteJob } from '../hooks/queries';
 import type { Job } from '../types';
 import { Badge, Button, Card, EmptyState, PageTitle, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
 import { collection, query, onSnapshot } from 'firebase/firestore';
@@ -163,6 +163,7 @@ export function Jobs() {
       setStep(1);
     }
   });
+  const deleteJobMutation = useDeleteJob();
 
   const filtered = useMemo(() => {
     return (jobs.data?.jobs ?? [])
@@ -172,6 +173,11 @@ export function Jobs() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (step < 3) {
+      if (step === 1 && !title.trim()) return;
+      setStep(prev => prev + 1);
+      return;
+    }
     create.mutate({
       title,
       description,
@@ -240,7 +246,15 @@ export function Jobs() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <JobCard job={job} applicationsCount={count} />
+                <JobCard
+                  job={job}
+                  applicationsCount={count}
+                  onDelete={() => {
+                    if (confirm('Are you sure you want to delete this job? This will delete all candidates and analysis for this job.')) {
+                      deleteJobMutation.mutate(job._id);
+                    }
+                  }}
+                />
               </motion.div>
             );
           })}
@@ -534,7 +548,7 @@ export function Jobs() {
                       </Button>
                     ) : (
                       <Button type="submit" variant="accent" disabled={create.isPending}>
-                        {create.isPending ? 'Analyzing & Saving…' : 'Submit Job'}
+                        {create.isPending ? 'Analyzing & Saving…' : 'Create the Job'}
                       </Button>
                     )}
                   </div>

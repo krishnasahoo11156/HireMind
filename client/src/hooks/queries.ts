@@ -42,6 +42,17 @@ export function useCreateJob(options?: { onSuccess?: () => void }) {
   });
 }
 
+export function useDeleteJob(options?: { onSuccess?: () => void }) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteJob(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      options?.onSuccess?.();
+    }
+  });
+}
+
 export function useApplyJob(options?: { onSuccess?: () => void; onError?: (err: any) => void }) {
   const queryClient = useQueryClient();
   return useMutation({

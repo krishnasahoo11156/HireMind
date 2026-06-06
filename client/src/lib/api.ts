@@ -39,6 +39,8 @@ export const api = {
   job: (id: string) => request(`/api/jobs/${id}`),
   createJob: (payload: unknown) =>
     request('/api/jobs', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteJob: (id: string) =>
+    request(`/api/jobs/${id}`, { method: 'DELETE' }),
 
   uploadBatch: (files?: File[], jobId?: string) => {
     const form = new FormData();
