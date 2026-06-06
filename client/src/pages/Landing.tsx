@@ -311,14 +311,10 @@ export default function Landing() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Hero Left Content */}
             <div className="lg:col-span-5 text-center lg:text-left space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50/50 px-3.5 py-1 text-xs font-semibold text-accent dark:border-darkaccent/20 dark:bg-darkaccent/10 dark:text-darkaccent animate-fade-up">
-                <Sparkles className="h-3.5 w-3.5" />
-                Explainable Recruitment Intelligence
-              </div>
               
               <h1 className="font-heading text-4xl sm:text-5xl lg:text-[54px] font-extrabold tracking-[-0.04em] leading-[1.08] text-primary dark:text-white">
-                Hire Smarter.<br />
-                <span className="bg-gradient-to-r from-accent to-yellow-600 bg-clip-text text-transparent dark:from-darkaccent dark:to-yellow-400">Not Harder.</span>
+                Find the Perfect<br />
+                Developer for Your Team.
               </h1>
               
               <p className="text-base sm:text-lg leading-relaxed text-secondary dark:text-darkmuted max-w-lg mx-auto lg:mx-0">
