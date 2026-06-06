@@ -62,8 +62,8 @@ export function useApplyJob(options?: { onSuccess?: () => void; onError?: (err: 
         throw new Error('You must be logged in to apply.');
       }
 
-      // 1. Submit application to backend via multipart REST API endpoint.
-      // This handles resume upload, applications mapping, and database edits under admin privilege safely.
+      // Submit application to backend via multipart REST API endpoint.
+      // This handles resume upload, applications mapping, database edits, and user profile updates under admin privilege safely.
       const result = await api.applyJob(formData);
       const application = result.application;
       const applicationId = application._id;
@@ -71,24 +71,6 @@ export function useApplyJob(options?: { onSuccess?: () => void; onError?: (err: 
       if (!applicationId) {
         throw new Error('Failed to submit application to the server.');
       }
-
-      // 2. Update candidate profile metadata in 'users' collection on Firestore.
-      // Since the user is writing to their own profile, this is fully allowed under Firestore security rules.
-      const githubUrl = formData.get('githubUrl') as string;
-      const linkedinUrl = formData.get('linkedinUrl') as string;
-      const portfolioUrl = formData.get('portfolioUrl') as string;
-      const leetcodeUsername = formData.get('leetcodeUsername') as string;
-      const whyApplying = formData.get('whyApplying') as string;
-
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userDocRef, {
-        githubUrl: githubUrl || '',
-        linkedinUrl: linkedinUrl || '',
-        portfolioUrl: portfolioUrl || '',
-        leetcodeUsername: leetcodeUsername || '',
-        whyApplying: whyApplying || '',
-        applicationId
-      });
 
       return { id: applicationId };
     },

@@ -120,6 +120,14 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
     // Increment applications count on the job
     await jobService.incrementApplicationsCount(jobId);
 
+    // Update candidate profile metadata in 'users' collection on Firestore using admin privilege
+    await userService.update(user.id, {
+      githubUrl: githubUrl || user.githubUrl || '',
+      linkedinUrl: linkedinUrl || user.linkedinUrl || '',
+      portfolioUrl: portfolioUrl || user.portfolioUrl || '',
+      leetcodeUsername: leetcodeUsername || user.leetcodeUsername || ''
+    });
+
     console.log("Application Created", application);
 
     const io = getSocketServer();
