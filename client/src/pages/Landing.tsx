@@ -32,6 +32,7 @@ import {
 import { useAppStore } from '../store/appStore';
 import { Button, Badge, Card, ScoreBar } from '../components/ui';
 import { api } from '../lib/api';
+import { useAuth } from '../firebase/AuthContext';
 
 // ─────────────────────────────────────────────
 // TYPES & MOCK DATA FOR INTERACTIVE FEATURES
@@ -118,24 +119,11 @@ export default function Landing() {
   const theme = useAppStore((state) => state.theme);
   const setTheme = useAppStore((state) => state.setTheme);
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const isAuthenticated = !loading && user !== null;
   
-  const hasToken = Boolean(localStorage.getItem('hiremind_token'));
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (hasToken) {
-      api.me()
-        .then((res: any) => {
-          setUserRole(res.user?.role);
-        })
-        .catch(() => {
-          localStorage.removeItem('hiremind_token');
-        });
-    }
-  }, [hasToken]);
-
   const handleGoToDashboard = () => {
-    if (userRole === 'candidate') {
+    if (user?.role === 'candidate') {
       navigate('/candidate/dashboard');
     } else {
       navigate('/dashboard');
@@ -247,7 +235,7 @@ export default function Landing() {
               )}
             </button>
 
-            {hasToken ? (
+            {isAuthenticated ? (
               <Button onClick={handleGoToDashboard} variant="accent">
                 Go to Dashboard
                 <ArrowRight className="h-4 w-4" />
@@ -286,7 +274,7 @@ export default function Landing() {
                 <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="hover:text-primary dark:hover:text-darktext">Testimonials</a>
                 <div className="h-px bg-border dark:bg-darkborder my-2" />
                 
-                {hasToken ? (
+                {isAuthenticated ? (
                   <Button onClick={() => { setMobileMenuOpen(false); handleGoToDashboard(); }} variant="accent" className="w-full">
                     Go to Dashboard
                   </Button>
@@ -322,7 +310,7 @@ export default function Landing() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                {hasToken ? (
+                {isAuthenticated ? (
                   <Button onClick={handleGoToDashboard} variant="accent" size="lg" className="w-full sm:w-auto shadow-md">
                     Go to Dashboard
                     <ArrowRight className="h-4.5 w-4.5" />
@@ -333,7 +321,7 @@ export default function Landing() {
                     <ArrowRight className="h-4.5 w-4.5" />
                   </Button>
                 )}
-                <Button onClick={() => navigate(hasToken ? '/jobs' : '/login')} variant="secondary" size="lg" className="w-full sm:w-auto">
+                <Button onClick={() => navigate(isAuthenticated ? '/jobs' : '/login')} variant="secondary" size="lg" className="w-full sm:w-auto">
                   Explore Jobs
                 </Button>
               </div>
@@ -522,7 +510,7 @@ export default function Landing() {
               </div>
 
               <div className="mt-8 pt-4">
-                <Button onClick={() => navigate(hasToken ? (userRole === 'candidate' ? '/candidate/dashboard' : '/jobs') : '/login')} variant="secondary" className="w-full justify-between">
+                <Button onClick={() => navigate(isAuthenticated ? (user?.role === 'candidate' ? '/candidate/dashboard' : '/jobs') : '/login')} variant="secondary" className="w-full justify-between">
                   <span>Find Jobs</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -571,7 +559,7 @@ export default function Landing() {
               </div>
 
               <div className="mt-8 pt-4">
-                <Button onClick={() => navigate(hasToken ? (userRole === 'candidate' ? '/candidate/dashboard' : '/dashboard') : '/login')} variant="accent" className="w-full justify-between shadow-sm shadow-accent/15">
+                <Button onClick={() => navigate(isAuthenticated ? (user?.role === 'candidate' ? '/candidate/dashboard' : '/dashboard') : '/login')} variant="accent" className="w-full justify-between shadow-sm shadow-accent/15">
                   <span>Start Hiring</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -925,7 +913,7 @@ export default function Landing() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button onClick={() => navigate(hasToken ? '/dashboard' : '/register')} variant="accent" size="lg" className="w-full sm:w-auto shadow-md">
+            <Button onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')} variant="accent" size="lg" className="w-full sm:w-auto shadow-md">
               Get Started
             </Button>
             <Button onClick={() => setShowDemoModal(true)} variant="secondary" size="lg" className="w-full sm:w-auto">
