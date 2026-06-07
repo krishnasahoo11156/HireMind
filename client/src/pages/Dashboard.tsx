@@ -301,7 +301,7 @@ export function Dashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-start justify-between gap-6 rounded-2xl border border-border bg-gradient-to-br from-surface to-background p-6 dark:border-darkborder dark:from-darksurface dark:to-darkbg"
+        className="flex items-start justify-between gap-6 rounded-2xl border border-border bg-surface p-6 dark:border-darkborder dark:bg-darksurface shadow-sm"
       >
         <div>
           <div className="flex items-center gap-2 text-sm font-medium text-secondary dark:text-darkmuted">
@@ -428,21 +428,75 @@ export function Dashboard() {
             All Jobs <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         } />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {recentJobs.map((job, i) => {
-            const count = realtimeApplications.filter((app) => app.jobId === job._id).length;
-            const selectedCount = realtimeApplications.filter((app) => app.jobId === job._id && app.status === 'Selected').length;
-            return (
-              <motion.div
-                key={job._id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-              >
-                <JobCard job={job} applicationsCount={count} selectedCount={selectedCount} />
-              </motion.div>
-            );
-          })}
+        
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface dark:border-darkborder dark:bg-darksurface shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-gray-50/50 dark:border-darkborder dark:bg-darkbg/30 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted">
+                  <th className="px-6 py-4">Role / Title</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Pipeline Metrics</th>
+                  <th className="px-6 py-4">Key Skills</th>
+                  <th className="px-6 py-4">Created</th>
+                  <th className="px-6 py-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border dark:divide-darkborder text-sm">
+                {recentJobs.map((job) => {
+                  const count = realtimeApplications.filter((app) => app.jobId === job._id).length;
+                  const selectedCount = realtimeApplications.filter((app) => app.jobId === job._id && app.status === 'Selected').length;
+                  const statusTone = job.status === 'active' ? 'emerald' : job.status === 'draft' ? 'yellow' : 'neutral';
+                  return (
+                    <tr key={job._id} className="hover:bg-gray-50/40 dark:hover:bg-darkbg/10 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-primary dark:text-darktext">
+                        <Link to={`/recruiter/jobs/${job._id}`} className="hover:underline">
+                          {job.title}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge tone={statusTone}>{job.status}</Badge>
+                      </td>
+                      <td className="px-6 py-4 space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-secondary dark:text-darkmuted">
+                          <span className="font-semibold text-primary dark:text-darktext">{count}</span> application{count !== 1 ? 's' : ''}
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-secondary dark:text-darkmuted">
+                          <Sparkles className="h-3 w-3 text-accent dark:text-darkaccent" />
+                          <span>{job.candidateCount ?? 0} analyzed</span>
+                        </div>
+                        {selectedCount > 0 && (
+                          <div className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                            <CheckCircle className="h-3 w-3" />
+                            <span>{selectedCount} recruited</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {(job.requiredSkills?.length ? job.requiredSkills : job.extractedData.skills).slice(0, 2).map((s) => (
+                            <Badge key={s} tone="neutral" className="text-[10px] px-2 py-0">
+                              {s}
+                            </Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-secondary dark:text-darkmuted text-xs">
+                        {new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Link to={`/recruiter/jobs/${job._id}`}>
+                          <Button variant="ghost" size="sm" className="h-8 py-0">
+                            View <ArrowRight className="h-3.5 w-3.5" />
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

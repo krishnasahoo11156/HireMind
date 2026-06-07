@@ -46,60 +46,112 @@ export function Settings() {
       title: 'Profile',
       description: 'Your personal information and recruiter identity.',
       content: (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Caption as="label" className="mb-1.5 block font-semibold">Full Name</Caption>
-            <input className="hm-input w-full" value={name} onChange={(e) => setName(e.target.value)} />
+            <Caption as="label" className="mb-1.5 block font-semibold text-primary dark:text-darktext">Full Name</Caption>
+            <input className="hm-input w-full bg-white dark:bg-darkbg" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
-            <Caption as="label" className="mb-1.5 block font-semibold">Email</Caption>
-            <input className="hm-input w-full" value={user?.email || 'recruiter@hiremind.ai'} readOnly />
+            <Caption as="label" className="mb-1.5 block font-semibold text-primary dark:text-darktext">Email</Caption>
+            <input className="hm-input w-full bg-white dark:bg-darkbg" value={user?.email || 'recruiter@hiremind.ai'} readOnly />
           </div>
           <div>
-            <Caption as="label" className="mb-1.5 block font-semibold">Role</Caption>
-            <input className="hm-input w-full" value={role} onChange={(e) => setRole(e.target.value)} />
+            <Caption as="label" className="mb-1.5 block font-semibold text-primary dark:text-darktext">Role</Caption>
+            <input className="hm-input w-full bg-white dark:bg-darkbg" value={role} onChange={(e) => setRole(e.target.value)} />
           </div>
           <div>
-            <Caption as="label" className="mb-1.5 block font-semibold">Phone</Caption>
-            <input className="hm-input w-full" placeholder="+1 (555) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Caption as="label" className="mb-1.5 block font-semibold text-primary dark:text-darktext">Phone</Caption>
+            <input className="hm-input w-full bg-white dark:bg-darkbg" placeholder="+1 (555) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           {saved && (
-            <div className="col-span-2 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 px-4 py-3 text-xs text-success">
+            <div className="col-span-1 md:col-span-2 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 px-4 py-3 text-xs text-success">
               <CheckCircle className="h-4 w-4" />
               Profile details updated successfully!
             </div>
           )}
           {error && (
-            <div className="col-span-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-danger dark:border-red-800/40 dark:bg-red-950/30 dark:text-red-400">
+            <div className="col-span-1 md:col-span-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-danger dark:border-red-800/40 dark:bg-red-950/30 dark:text-red-400">
               {error}
             </div>
           )}
-          <div className="col-span-2 flex justify-end">
+          <div className="col-span-1 md:col-span-2 flex justify-end">
             <Button variant="accent" onClick={handleSaveProfile}>Save Profile</Button>
           </div>
         </div>
       )
     },
     {
-      icon: <Building2 className="h-5 w-5" />,
-      title: 'Workspace',
-      description: 'Organization name and team settings.',
+      icon: <Shield className="h-5 w-5" />,
+      title: 'Account & Security',
+      description: 'Manage your organization workspace settings, integrations, and password security.',
       content: (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-6">
+          {/* Sub-section: Workspace */}
           <div>
-            <Caption as="label" className="mb-1.5 block font-semibold">Organization</Caption>
-            <input className="hm-input w-full" defaultValue="Acme Recruiting" />
+            <h5 className="text-sm font-bold text-primary dark:text-darktext mb-3">Workspace Details</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Caption as="label" className="mb-1.5 block font-semibold text-primary dark:text-darktext">Organization</Caption>
+                <input className="hm-input w-full bg-white dark:bg-darkbg" defaultValue="Acme Recruiting" />
+              </div>
+              <div>
+                <Caption as="label" className="mb-1.5 block font-semibold text-primary dark:text-darktext">Industry</Caption>
+                <select className="hm-input w-full bg-white dark:bg-darkbg">
+                  <option>Technology</option>
+                  <option>Finance</option>
+                  <option>Healthcare</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <Button variant="secondary" size="sm">Save Workspace</Button>
+            </div>
           </div>
+
+          <hr className="border-border dark:border-darkborder" />
+
+          {/* Sub-section: Integrations */}
           <div>
-            <Caption as="label" className="mb-1.5 block font-semibold">Industry</Caption>
-            <select className="hm-input w-full">
-              <option>Technology</option>
-              <option>Finance</option>
-              <option>Healthcare</option>
-            </select>
+            <h5 className="text-sm font-bold text-primary dark:text-darktext mb-1">Integrations</h5>
+            <p className="text-xs text-secondary dark:text-darkmuted mb-3">Connect HireMind to your existing tools.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {['Slack', 'Google Calendar', 'Greenhouse ATS', 'LinkedIn Recruiter'].map((tool) => (
+                <div
+                  key={tool}
+                  className="flex items-center justify-between rounded-xl border border-border p-3.5 dark:border-darkborder bg-background/30 dark:bg-darkbg/10"
+                >
+                  <span className="text-xs font-semibold text-primary dark:text-darktext">{tool}</span>
+                  <Button variant="secondary" size="sm" className="h-8 px-2.5 text-xs rounded-lg">Connect</Button>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="col-span-2 flex justify-end">
-            <Button variant="accent">Save Workspace</Button>
+
+          <hr className="border-border dark:border-darkborder" />
+
+          {/* Sub-section: Security */}
+          <div>
+            <h5 className="text-sm font-bold text-primary dark:text-darktext mb-3">Security & Password</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Caption as="label" className="mb-1.5 block font-semibold text-primary dark:text-darktext">Current Password</Caption>
+                <input type="password" className="hm-input w-full bg-white dark:bg-darkbg" placeholder="••••••••" />
+              </div>
+              <div>
+                <Caption as="label" className="mb-1.5 block font-semibold text-primary dark:text-darktext">New Password</Caption>
+                <input type="password" className="hm-input w-full bg-white dark:bg-darkbg" placeholder="••••••••" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-border p-4 dark:border-darkborder bg-background/30 dark:bg-darkbg/10">
+              <div>
+                <div className="text-xs font-bold text-primary dark:text-darktext">Two-Factor Authentication</div>
+                <div className="mt-0.5 text-[11px] text-secondary dark:text-darkmuted">Add an extra layer of security to your account.</div>
+              </div>
+              <Button variant="secondary" size="sm"><Shield className="h-3.5 w-3.5" />Enable 2FA</Button>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button variant="accent">Update Password</Button>
+            </div>
           </div>
         </div>
       )
@@ -118,13 +170,13 @@ export function Settings() {
           ].map((item) => (
             <label
               key={item}
-              className="flex cursor-pointer items-center justify-between rounded-xl border border-border p-4 text-sm transition hover:bg-gray-50 dark:border-darkborder dark:hover:bg-darkborder/30"
+              className="flex cursor-pointer items-center justify-between rounded-xl border border-border p-4 text-xs font-semibold transition hover:bg-gray-50 dark:border-darkborder dark:hover:bg-darkborder/30 bg-background/10"
             >
               <span className="text-primary dark:text-darktext">{item}</span>
               <input
                 type="checkbox"
                 defaultChecked={item.includes('rankings')}
-                className="h-4 w-4 accent-accent"
+                className="h-4.5 w-4.5 accent-accent rounded"
               />
             </label>
           ))}
@@ -136,71 +188,28 @@ export function Settings() {
       title: 'Appearance',
       description: 'Choose your preferred visual theme.',
       content: (
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {([
-            { key: 'light', label: 'Light', icon: Sun },
-            { key: 'dark', label: 'Dark', icon: Moon },
-            { key: 'system', label: 'System', icon: Monitor },
+            { key: 'light', label: 'Light Mode', icon: Sun },
+            { key: 'dark', label: 'Dark Mode', icon: Moon },
+            { key: 'system', label: 'System Theme', icon: Monitor },
           ] as const).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setTheme(key)}
-              className={`flex flex-1 flex-col items-center gap-3 rounded-2xl border-2 p-6 text-sm font-medium transition-all ${
+              className={`flex flex-col items-center gap-3 rounded-2xl border-2 p-5 text-xs font-bold transition-all ${
                 theme === key
                   ? 'border-accent bg-accent/5 text-accent dark:border-darkaccent dark:bg-darkaccent/5 dark:text-darkaccent'
-                  : 'border-border text-secondary hover:border-accent/50 dark:border-darkborder dark:text-darkmuted'
+                  : 'border-border text-secondary hover:border-accent/50 hover:bg-gray-50/50 dark:border-darkborder dark:text-darkmuted dark:hover:bg-darkborder/30'
               }`}
             >
-              <Icon className="h-6 w-6" />
+              <Icon className="h-5 w-5" />
               {label}
             </button>
           ))}
         </div>
       )
-    },
-    {
-      icon: <Globe className="h-5 w-5" />,
-      title: 'Integrations',
-      description: 'Connect HireMind to your existing tools.',
-      content: (
-        <div className="space-y-3">
-          {['Slack', 'Google Calendar', 'Greenhouse ATS', 'LinkedIn Recruiter'].map((tool) => (
-            <div
-              key={tool}
-              className="flex items-center justify-between rounded-xl border border-border p-4 dark:border-darkborder"
-            >
-              <span className="text-sm font-medium text-primary dark:text-darktext">{tool}</span>
-              <Button variant="secondary" size="sm">Connect</Button>
-            </div>
-          ))}
-        </div>
-      )
-    },
-    {
-      icon: <Lock className="h-5 w-5" />,
-      title: 'Security',
-      description: 'Password and access control settings.',
-      content: (
-        <div className="space-y-4">
-          <div>
-            <Caption as="label" className="mb-1.5 block font-semibold">Current Password</Caption>
-            <input type="password" className="hm-input w-full max-w-sm" placeholder="••••••••" />
-          </div>
-          <div>
-            <Caption as="label" className="mb-1.5 block font-semibold">New Password</Caption>
-            <input type="password" className="hm-input w-full max-w-sm" placeholder="••••••••" />
-          </div>
-          <div className="flex items-center justify-between rounded-xl border border-border p-4 dark:border-darkborder">
-            <div>
-              <div className="text-sm font-medium text-primary dark:text-darktext">Two-Factor Authentication</div>
-              <div className="mt-0.5 text-xs text-secondary dark:text-darkmuted">Add an extra layer of security</div>
-            </div>
-            <Button variant="secondary" size="sm"><Shield className="h-3.5 w-3.5" />Enable 2FA</Button>
-          </div>
-          <Button variant="accent">Update Password</Button>
-        </div>
-      )
-    },
+    }
   ];
 
   return (
@@ -213,7 +222,7 @@ export function Settings() {
       <div className="space-y-5">
         {sections.map((section, i) => (
           <div key={section.title}>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden !p-0">
               <div className="flex items-start gap-4 border-b border-border bg-background/50 px-6 py-4 dark:border-darkborder dark:bg-darkbg/50">
                 <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
                   {section.icon}

@@ -18,20 +18,30 @@ import {
 import { useAuth } from '../firebase/AuthContext';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../firebase/config';
+import { Button } from '../components/ui';
 
 // ─────────────────────────────────────────────
 // HERO LEFT PANEL (SHARED FOR LOGIN & REGISTER)
 // ─────────────────────────────────────────────
 function AuthHeroPanel() {
   return (
-    <div className="lg:col-span-5 flex flex-col justify-between p-8 sm:p-12 relative overflow-hidden bg-gradient-to-b from-[#0c0f16] to-[#080b13] border-b lg:border-b-0 lg:border-r border-white/5 select-none">
+    <div className="lg:col-span-5 flex flex-col justify-between p-8 sm:p-12 relative overflow-hidden bg-gradient-to-b from-neutral-900 to-neutral-950 border-b lg:border-b-0 lg:border-r border-neutral-800 select-none text-white">
       {/* Background glowing particles/circles */}
       <div className="absolute top-1/4 left-1/4 h-64 w-64 -translate-x-1/2 rounded-full bg-accent/5 blur-3xl" />
 
       {/* Header Logo */}
       <div className="flex items-center gap-3 relative z-10">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#C88908] to-[#A16207] shadow-md shadow-accent/10">
-          <Sparkles className="h-5 w-5 text-white" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-neutral-800 to-neutral-700 border border-neutral-600 shadow-sm">
+          <svg className="h-5 w-5" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="30" y1="75" x2="30" y2="25" stroke="white" strokeWidth="6" strokeLinecap="round" />
+            <line x1="70" y1="75" x2="70" y2="25" stroke="white" strokeWidth="6" strokeLinecap="round" />
+            <line x1="30" y1="50" x2="70" y2="50" stroke="white" strokeWidth="6" strokeLinecap="round" />
+            <circle cx="30" cy="25" r="7" fill="white" />
+            <circle cx="30" cy="75" r="7" fill="white" />
+            <circle cx="70" cy="25" r="7" fill="white" />
+            <circle cx="70" cy="75" r="7" fill="white" />
+            <circle cx="50" cy="50" r="8.5" fill="white" stroke="black" strokeWidth="2.5" />
+          </svg>
         </div>
         <span className="font-heading text-xl font-extrabold tracking-tight text-white">HireMind</span>
       </div>
@@ -41,9 +51,9 @@ function AuthHeroPanel() {
         <div className="space-y-4">
           <h1 className="font-heading text-4xl xl:text-5xl font-extrabold tracking-tight leading-[1.15] text-white">
             Smarter Hiring.<br />
-            <span className="bg-gradient-to-r from-[#D4A017] to-yellow-500 bg-clip-text text-transparent">Stronger Teams.</span>
+            <span className="bg-gradient-to-r from-accent to-yellow-500 bg-clip-text text-transparent dark:from-darkaccent dark:to-yellow-400">Stronger Teams.</span>
           </h1>
-          <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+          <p className="text-xs text-neutral-400 max-w-sm leading-relaxed">
             AI-Powered platform to help you find, match, and hire the best talent faster.
           </p>
         </div>
@@ -51,32 +61,32 @@ function AuthHeroPanel() {
         {/* Feature List */}
         <div className="space-y-5">
           <div className="flex items-start gap-3.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-accent shadow-sm">
-              <Zap className="h-4.5 w-4.5 text-[#D4A017]" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-800 bg-neutral-800/40 text-accent shadow-sm">
+              <Zap className="h-4.5 w-4.5 text-accent dark:text-darkaccent" />
             </div>
             <div>
               <h3 className="text-xs font-bold text-white">AI-Powered Screening</h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">Filter top candidates in seconds</p>
+              <p className="text-[11px] text-neutral-400 mt-0.5">Filter top candidates in seconds</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-accent shadow-sm">
-              <Target className="h-4.5 w-4.5 text-[#D4A017]" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-800 bg-neutral-800/40 text-accent shadow-sm">
+              <Target className="h-4.5 w-4.5 text-accent dark:text-darkaccent" />
             </div>
             <div>
               <h3 className="text-xs font-bold text-white">Better Match</h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">Find the perfect fit for every role</p>
+              <p className="text-[11px] text-neutral-400 mt-0.5">Find the perfect fit for every role</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-accent shadow-sm">
-              <Shield className="h-4.5 w-4.5 text-[#D4A017]" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-800 bg-neutral-800/40 text-accent shadow-sm">
+              <Shield className="h-4.5 w-4.5 text-accent dark:text-darkaccent" />
             </div>
             <div>
               <h3 className="text-xs font-bold text-white">Secure & Reliable</h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">Enterprise-grade data protection</p>
+              <p className="text-[11px] text-neutral-400 mt-0.5">Enterprise-grade data protection</p>
             </div>
           </div>
         </div>
@@ -213,7 +223,7 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#07090e] p-4 sm:p-8 relative overflow-hidden text-white">
+    <div className="flex min-h-screen items-center justify-center bg-background dark:bg-darkbg p-4 sm:p-8 relative overflow-hidden text-primary dark:text-darktext transition-colors duration-300">
       {/* Floating global background highlights */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-yellow-500/5 blur-[120px] pointer-events-none" />
@@ -223,7 +233,7 @@ export function Login() {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-5xl bg-[#080b13]/85 border border-white/10 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[640px] relative z-10 backdrop-blur-md"
+        className="w-full max-w-5xl bg-surface dark:bg-darksurface border border-border dark:border-darkborder rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[640px] relative z-10 backdrop-blur-md transition-colors duration-300"
       >
         {/* Left Column - Hero */}
         <AuthHeroPanel />
@@ -233,7 +243,7 @@ export function Login() {
           {/* Back Link */}
           <Link
             to="/"
-            className="absolute top-6 right-8 text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1"
+            className="absolute top-6 right-8 text-xs font-semibold text-secondary hover:text-primary dark:text-darkmuted dark:hover:text-darktext transition flex items-center gap-1"
           >
             &larr; Back to home
           </Link>
@@ -242,25 +252,25 @@ export function Login() {
           <div className="w-full max-w-md mx-auto">
             {/* Header */}
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white font-heading">Welcome back</h2>
-              <p className="text-xs text-slate-400 mt-1">Sign in to continue to your account</p>
+              <h2 className="text-2xl font-bold text-primary dark:text-darktext font-heading">Welcome back</h2>
+              <p className="text-xs text-secondary dark:text-darkmuted mt-1">Sign in to continue to your account</p>
             </div>
 
             <form className="space-y-4" onSubmit={handleEmailSignIn}>
               {/* Input 1 - Email */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-secondary dark:text-darkmuted block">
                   Email Address
                 </label>
                 <div className="relative flex items-center">
-                  <User className="absolute left-3.5 h-4.5 w-4.5 text-slate-500" />
+                  <User className="absolute left-3.5 h-4.5 w-4.5 text-secondary/60 dark:text-darkmuted" />
                   <input
                     type="text"
                     required
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-[#0a0d14]/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#D4A017] transition duration-200"
+                    className="hm-input w-full pl-11"
                   />
                 </div>
               </div>
@@ -268,31 +278,31 @@ export function Login() {
               {/* Input 2 - Password */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-secondary dark:text-darkmuted block">
                     Password
                   </label>
                   <button
                     type="button"
                     onClick={() => alert('For recovery, please contact your administrator.')}
-                    className="text-xs font-semibold text-[#D4A017] hover:underline"
+                    className="text-xs font-semibold text-accent dark:text-darkaccent hover:underline bg-transparent border-0 cursor-pointer"
                   >
                     Forgot password?
                   </button>
                 </div>
                 <div className="relative flex items-center">
-                  <Lock className="absolute left-3.5 h-4.5 w-4.5 text-slate-500" />
+                  <Lock className="absolute left-3.5 h-4.5 w-4.5 text-secondary/60 dark:text-darkmuted" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-11 py-3 bg-[#0a0d14]/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#D4A017] transition duration-200"
+                    className="hm-input w-full pl-11 pr-11"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 text-slate-500 hover:text-white"
+                    className="absolute right-3.5 text-secondary/60 hover:text-primary dark:text-darkmuted dark:hover:text-darktext bg-transparent border-0 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
                   </button>
@@ -305,9 +315,9 @@ export function Login() {
                   id="remember"
                   type="checkbox"
                   defaultChecked
-                  className="h-4 w-4 rounded border-white/10 bg-[#0a0d14] text-[#D4A017] focus:ring-0 cursor-pointer"
+                  className="h-4 w-4 rounded border-border bg-white text-accent dark:border-darkborder dark:bg-darkbg dark:text-darkaccent focus:ring-0 cursor-pointer"
                 />
-                <label htmlFor="remember" className="text-xs font-medium text-slate-400 select-none cursor-pointer">
+                <label htmlFor="remember" className="text-xs font-medium text-secondary dark:text-darkmuted select-none cursor-pointer">
                   Keep me signed in
                 </label>
               </div>
@@ -320,11 +330,12 @@ export function Login() {
               )}
 
               {/* Google Login Button */}
-              <button
+              <Button
                 type="button"
                 onClick={() => handleGoogleSignIn()}
                 disabled={loadingGoogle}
-                className="w-full py-3 bg-gradient-to-r from-[#C88908] to-[#A16207] hover:from-[#D4A017] hover:to-[#B57C14] text-white font-semibold rounded-xl flex items-center justify-center gap-2.5 shadow-lg transition duration-200 mt-2 disabled:opacity-50"
+                variant="accent"
+                className="w-full mt-2"
               >
                 <svg className="h-4 w-4 shrink-0 fill-current" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -333,40 +344,42 @@ export function Login() {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
                 <span>{loadingGoogle ? 'Connecting Google...' : 'Continue with Google'}</span>
-              </button>
+              </Button>
             </form>
 
             {/* Divider */}
             <div className="relative my-6 flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-              <span className="relative px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-[#080b13]">OR</span>
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border dark:border-darkborder"></div></div>
+              <span className="relative px-3 text-[10px] font-bold uppercase tracking-wider text-secondary dark:text-darkmuted bg-surface dark:bg-darksurface">OR</span>
             </div>
 
             {/* Secondary Actions */}
             <div className="flex gap-4">
-              <button
+              <Button
                 onClick={handleEmailSignIn}
                 disabled={loading}
-                className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 hover:text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition duration-200"
+                variant="secondary"
+                className="flex-1"
               >
                 <Mail className="h-4 w-4 shrink-0" />
-                <span>{loading ? 'Verifying...' : 'Continue with Email'}</span>
-              </button>
-              <button
+                <span>{loading ? 'Verifying...' : 'Use Email'}</span>
+              </Button>
+              <Button
                 onClick={handleEmailSignIn}
                 disabled={loading}
-                className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 hover:text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition duration-200"
+                variant="secondary"
+                className="flex-1"
               >
                 <Key className="h-4 w-4 shrink-0" />
                 <span>Use Password</span>
-              </button>
+              </Button>
             </div>
 
             {/* Register Link */}
-            <div className="mt-8 text-center text-xs font-medium text-slate-400">
+            <div className="mt-8 text-center text-xs font-medium text-secondary dark:text-darkmuted">
               Don't have an account?{' '}
               <Link
-                className="font-bold text-[#D4A017] hover:underline inline-flex items-center gap-0.5 ml-1"
+                className="font-bold text-accent dark:text-darkaccent hover:underline inline-flex items-center gap-0.5 ml-1"
                 to="/register"
               >
                 <span>Sign up</span>
@@ -451,7 +464,7 @@ export function Register() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#07090e] p-4 sm:p-8 relative overflow-hidden text-white">
+    <div className="flex min-h-screen items-center justify-center bg-background dark:bg-darkbg p-4 sm:p-8 relative overflow-hidden text-primary dark:text-darktext transition-colors duration-300">
       {/* Floating global background highlights */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-yellow-500/5 blur-[120px] pointer-events-none" />
@@ -461,7 +474,7 @@ export function Register() {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-5xl bg-[#080b13]/85 border border-white/10 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[640px] relative z-10 backdrop-blur-md"
+        className="w-full max-w-5xl bg-surface dark:bg-darksurface border border-border dark:border-darkborder rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[640px] relative z-10 backdrop-blur-md transition-colors duration-300"
       >
         {/* Left Column - Hero */}
         <AuthHeroPanel />
@@ -471,7 +484,7 @@ export function Register() {
           {/* Back Link */}
           <Link
             to="/"
-            className="absolute top-6 right-8 text-xs font-semibold text-slate-400 hover:text-white transition flex items-center gap-1"
+            className="absolute top-6 right-8 text-xs font-semibold text-secondary hover:text-primary dark:text-darkmuted dark:hover:text-darktext transition flex items-center gap-1"
           >
             &larr; Back to home
           </Link>
@@ -480,76 +493,76 @@ export function Register() {
           <div className="w-full max-w-md mx-auto">
             {/* Header */}
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white font-heading">Create account</h2>
-              <p className="text-xs text-slate-400 mt-1">Register to get started on the platform</p>
+              <h2 className="text-2xl font-bold text-primary dark:text-darktext font-heading">Create account</h2>
+              <p className="text-xs text-secondary dark:text-darkmuted mt-1">Register to get started on the platform</p>
             </div>
 
             <form className="space-y-4" onSubmit={handleEmailSignUp}>
               {/* Input 1 - Full Name */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-secondary dark:text-darkmuted block">
                   Full Name
                 </label>
                 <div className="relative flex items-center">
-                  <User className="absolute left-3.5 h-4.5 w-4.5 text-slate-500" />
+                  <User className="absolute left-3.5 h-4.5 w-4.5 text-secondary/60 dark:text-darkmuted" />
                   <input
                     type="text"
                     required
                     placeholder="Your full name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-[#0a0d14]/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#D4A017] transition duration-200"
+                    className="hm-input w-full pl-11"
                   />
                 </div>
               </div>
 
               {/* Input 2 - Email Address */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-secondary dark:text-darkmuted block">
                   Email Address
                 </label>
                 <div className="relative flex items-center">
-                  <Mail className="absolute left-3.5 h-4.5 w-4.5 text-slate-500" />
+                  <Mail className="absolute left-3.5 h-4.5 w-4.5 text-secondary/60 dark:text-darkmuted" />
                   <input
                     type="email"
                     required={!loadingGoogle}
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-[#0a0d14]/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#D4A017] transition duration-200"
+                    className="hm-input w-full pl-11"
                   />
                 </div>
               </div>
 
               {/* Input 3 - Create Password */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-secondary dark:text-darkmuted block">
                   Password
                 </label>
                 <div className="relative flex items-center">
-                  <Lock className="absolute left-3.5 h-4.5 w-4.5 text-slate-500" />
+                  <Lock className="absolute left-3.5 h-4.5 w-4.5 text-secondary/60 dark:text-darkmuted" />
                   <input
                     type="password"
                     required
                     placeholder="Create a secure password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-[#0a0d14]/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#D4A017] transition duration-200"
+                    className="hm-input w-full pl-11"
                   />
                 </div>
               </div>
 
               {/* Input 4 - Role Selection */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-secondary dark:text-darkmuted block">
                   Register As
                 </label>
                 <div className="relative flex items-center">
-                  <Briefcase className="absolute left-3.5 h-4.5 w-4.5 text-slate-500" />
+                  <Briefcase className="absolute left-3.5 h-4.5 w-4.5 text-secondary/60 dark:text-darkmuted" />
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-[#0a0d14]/80 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-[#D4A017] cursor-pointer transition duration-200"
+                    className="hm-input w-full pl-11 cursor-pointer"
                   >
                     <option value="recruiter">Recruiter / Hiring Manager</option>
                     <option value="candidate">Candidate (Job Seeker)</option>
@@ -565,11 +578,12 @@ export function Register() {
               )}
 
               {/* Register with Google Button */}
-              <button
+              <Button
                 type="button"
                 onClick={handleGoogleSignUp}
                 disabled={loadingGoogle}
-                className="w-full py-3 bg-gradient-to-r from-[#C88908] to-[#A16207] hover:from-[#D4A017] hover:to-[#B57C14] text-white font-semibold rounded-xl flex items-center justify-center gap-2.5 shadow-lg transition duration-200 mt-2 disabled:opacity-50"
+                variant="accent"
+                className="w-full mt-2"
               >
                 <svg className="h-4 w-4 shrink-0 fill-current" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -578,30 +592,31 @@ export function Register() {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
                 <span>{loadingGoogle ? 'Connecting Google...' : 'Register with Google'}</span>
-              </button>
+              </Button>
             </form>
 
             {/* Divider */}
             <div className="relative my-6 flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-              <span className="relative px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-[#080b13]">OR</span>
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border dark:border-darkborder"></div></div>
+              <span className="relative px-3 text-[10px] font-bold uppercase tracking-wider text-secondary dark:text-darkmuted bg-surface dark:bg-darksurface">OR</span>
             </div>
 
             {/* Email Signup */}
-            <button
+            <Button
               onClick={handleEmailSignUp}
               disabled={loadingEmail}
-              className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 hover:text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition duration-200"
+              variant="secondary"
+              className="w-full"
             >
               <Mail className="h-4 w-4 shrink-0" />
               <span>{loadingEmail ? 'Registering...' : 'Register with Email'}</span>
-            </button>
+            </Button>
 
             {/* Login Link */}
-            <div className="mt-8 text-center text-xs font-medium text-slate-400">
+            <div className="mt-8 text-center text-xs font-medium text-secondary dark:text-darkmuted">
               Already have an account?{' '}
               <Link
-                className="font-bold text-[#D4A017] hover:underline inline-flex items-center gap-0.5 ml-1"
+                className="font-bold text-accent dark:text-darkaccent hover:underline inline-flex items-center gap-0.5 ml-1"
                 to="/login"
               >
                 <span>Sign in</span>

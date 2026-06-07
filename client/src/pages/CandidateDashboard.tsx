@@ -6,13 +6,10 @@ import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { useAppStore } from '../store/appStore';
 import type { Candidate, Recommendation } from '../types';
-import { Badge, Button, Card, EmptyState, PageTitle, RankBadge, RecommendationBadge } from '../components/ui';
+import { Badge, Button, Card, EmptyState, PageTitle, RankBadge, RecommendationBadge, Caption } from '../components/ui';
 import { BlindToggle } from '../components/BlindToggle';
 import { ExplanationPanel } from '../components/ExplanationPanel';
 
-
-
-// ─── Candidate Rankings Page ────────────────────────────────────────────────
 export function CandidateDashboard() {
   const { id = 'job_frontend' } = useParams();
   const blindMode = useAppStore((state) => state.blindMode);
@@ -44,8 +41,8 @@ export function CandidateDashboard() {
 
       {/* Filter bar */}
       <Card className="mb-6 p-4">
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col md:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary dark:text-darkmuted" />
             <input
               className="hm-input w-full pl-9"
@@ -54,27 +51,29 @@ export function CandidateDashboard() {
               placeholder="Search by name or blind ID…"
             />
           </div>
-          <select
-            className="hm-input w-44"
-            value={recommendation}
-            onChange={(e) => setRecommendation(e.target.value as 'All' | Recommendation)}
-          >
-            {['All', 'Strong Hire', 'Hire', 'Maybe', 'Reject'].map((r) => (
-              <option key={r}>{r}</option>
-            ))}
-          </select>
-          <div className="flex h-11 items-center gap-3 rounded-xl border border-border px-3 dark:border-darkborder">
-            <SlidersHorizontal className="h-4 w-4 text-secondary dark:text-darkmuted" />
-            <input
-              aria-label="Minimum score"
-              type="range"
-              min={0}
-              max={100}
-              value={minScore}
-              onChange={(e) => setMinScore(Number(e.target.value))}
-              className="accent-accent"
-            />
-            <span className="w-10 text-right text-sm font-semibold text-primary dark:text-darktext">{minScore}+</span>
+          <div className="flex w-full md:w-auto items-center gap-3 flex-wrap sm:flex-nowrap">
+            <select
+              className="hm-input flex-1 md:w-44 bg-white dark:bg-darkbg"
+              value={recommendation}
+              onChange={(e) => setRecommendation(e.target.value as 'All' | Recommendation)}
+            >
+              {['All', 'Strong Hire', 'Hire', 'Maybe', 'Reject'].map((r) => (
+                <option key={r}>{r}</option>
+              ))}
+            </select>
+            <div className="flex h-12 flex-1 md:w-auto items-center gap-3 rounded-xl border border-border px-3 dark:border-darkborder bg-white dark:bg-darkbg">
+              <SlidersHorizontal className="h-4 w-4 text-secondary dark:text-darkmuted" />
+              <input
+                aria-label="Minimum score"
+                type="range"
+                min={0}
+                max={100}
+                value={minScore}
+                onChange={(e) => setMinScore(Number(e.target.value))}
+                className="accent-accent flex-1 min-w-[60px]"
+              />
+              <span className="w-10 text-right text-xs font-bold text-primary dark:text-darktext">{minScore}+</span>
+            </div>
           </div>
         </div>
       </Card>
@@ -102,17 +101,17 @@ export function CandidateDashboard() {
           icon={<Search className="h-7 w-7" />}
         />
       ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
+        <Card className="overflow-hidden !p-0">
+          <div className="overflow-x-auto max-h-[600px]">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border bg-gray-50/50 dark:border-darkborder dark:bg-darkbg/50">
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted w-16">Rank</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted">Candidate</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted w-48">Skill Match</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted w-24">AI Score</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted w-36">Status</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted text-right w-44">Actions</th>
+                <tr className="border-b border-border dark:border-darkborder bg-gray-50/50 dark:bg-darkbg/50">
+                  <th className="sticky top-0 z-10 bg-background/95 dark:bg-darkbg/95 backdrop-blur-md px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted w-16">Rank</th>
+                  <th className="sticky top-0 z-10 bg-background/95 dark:bg-darkbg/95 backdrop-blur-md px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted">Candidate</th>
+                  <th className="sticky top-0 z-10 bg-background/95 dark:bg-darkbg/95 backdrop-blur-md px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted w-48">Skill Match</th>
+                  <th className="sticky top-0 z-10 bg-background/95 dark:bg-darkbg/95 backdrop-blur-md px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted w-24">AI Score</th>
+                  <th className="sticky top-0 z-10 bg-background/95 dark:bg-darkbg/95 backdrop-blur-md px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted w-36">Status</th>
+                  <th className="sticky top-0 z-10 bg-background/95 dark:bg-darkbg/95 backdrop-blur-md px-6 py-4 text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted text-right w-44">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-darkborder">
@@ -120,12 +119,12 @@ export function CandidateDashboard() {
                   const rank = i + 1;
                   const isTop3 = rank <= 3;
                   const rowBg = rank === 1
-                    ? 'bg-yellow-50/20 dark:bg-yellow-950/10'
+                    ? 'bg-yellow-50/15 dark:bg-yellow-950/5 hover:bg-yellow-50/25 dark:hover:bg-yellow-950/10'
                     : rank === 2
-                    ? 'bg-gray-50/20 dark:bg-gray-900/10'
+                    ? 'bg-gray-50/15 dark:bg-gray-900/5 hover:bg-gray-50/25 dark:hover:bg-gray-950/10'
                     : rank === 3
-                    ? 'bg-amber-50/20 dark:bg-amber-950/10'
-                    : 'hover:bg-gray-50/50 dark:hover:bg-darkborder/20';
+                    ? 'bg-amber-50/15 dark:bg-amber-950/5 hover:bg-amber-50/25 dark:hover:bg-amber-950/10'
+                    : 'hover:bg-gray-50/50 dark:hover:bg-darkborder/25';
 
                   return (
                     <tr key={candidate._id} className={`transition-colors ${rowBg}`}>
@@ -142,12 +141,12 @@ export function CandidateDashboard() {
                           </span>
                           {isTop3 && <Star className="h-3.5 w-3.5 fill-accent text-accent dark:fill-darkaccent dark:text-darkaccent" />}
                           {!blindMode && candidate.username && (
-                            <span className="text-xs text-secondary dark:text-darkmuted">
+                            <Caption className="text-xs">
                               (@{candidate.username})
-                            </span>
+                            </Caption>
                           )}
                         </div>
-                        <p className="text-xs text-secondary dark:text-darkmuted mt-0.5">
+                        <p className="text-xs text-secondary dark:text-darkmuted mt-0.5 font-medium">
                           {blindMode ? 'PII hidden' : candidate.email}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-1">

@@ -67,7 +67,7 @@ export function Layout() {
             }`} />
 
             {/* Logo Container */}
-            <div className={`relative flex items-center justify-center transition-all duration-300 ease-out shadow-[0_2px_8px_rgba(161,98,7,0.12)] bg-gradient-to-br from-[#C88908] to-[#A16207] dark:from-[#D4A017] dark:to-[#A16207] hover:-translate-y-0.5 hover:scale-[1.03] ${
+            <div className={`relative flex items-center justify-center transition-all duration-300 ease-out bg-gradient-to-br from-neutral-900 to-neutral-800 dark:from-neutral-100 dark:to-neutral-200 hover:-translate-y-0.5 hover:scale-[1.02] ${
               sidebarCollapsed ? 'h-9 w-9 rounded-[10px]' : 'h-[38px] w-[38px] rounded-[12px]'
             }`}>
               {/* Custom Monogram H Neural SVG */}
@@ -78,26 +78,26 @@ export function Layout() {
                 xmlns="http://www.w3.org/2000/svg"
               >
                 {/* Neural net links */}
-                <line x1="30" y1="75" x2="30" y2="25" stroke="white" strokeWidth="6" strokeLinecap="round" />
-                <line x1="70" y1="75" x2="70" y2="25" stroke="white" strokeWidth="6" strokeLinecap="round" />
-                <line x1="30" y1="50" x2="70" y2="50" stroke="white" strokeWidth="6" strokeLinecap="round" />
+                <line x1="30" y1="75" x2="30" y2="25" stroke={theme === 'dark' ? 'black' : 'white'} strokeWidth="6" strokeLinecap="round" />
+                <line x1="70" y1="75" x2="70" y2="25" stroke={theme === 'dark' ? 'black' : 'white'} strokeWidth="6" strokeLinecap="round" />
+                <line x1="30" y1="50" x2="70" y2="50" stroke={theme === 'dark' ? 'black' : 'white'} strokeWidth="6" strokeLinecap="round" />
                 
-                <line x1="30" y1="75" x2="50" y2="50" stroke="white" strokeWidth="4" strokeOpacity="0.5" strokeLinecap="round" />
-                <line x1="50" y1="50" x2="70" y2="25" stroke="white" strokeWidth="4" strokeOpacity="0.5" strokeLinecap="round" />
+                <line x1="30" y1="75" x2="50" y2="50" stroke={theme === 'dark' ? 'black' : 'white'} strokeWidth="4" strokeOpacity="0.5" strokeLinecap="round" />
+                <line x1="50" y1="50" x2="70" y2="25" stroke={theme === 'dark' ? 'black' : 'white'} strokeWidth="4" strokeOpacity="0.5" strokeLinecap="round" />
 
                 {/* Nodes */}
-                <circle cx="30" cy="25" r="7" fill="white" />
-                <circle cx="30" cy="75" r="7" fill="white" />
-                <circle cx="70" cy="25" r="7" fill="white" />
-                <circle cx="70" cy="75" r="7" fill="white" />
-                <circle cx="50" cy="50" r="8.5" fill="white" stroke="#A16207" strokeWidth="2.5" />
+                <circle cx="30" cy="25" r="7" fill={theme === 'dark' ? 'black' : 'white'} />
+                <circle cx="30" cy="75" r="7" fill={theme === 'dark' ? 'black' : 'white'} />
+                <circle cx="70" cy="25" r="7" fill={theme === 'dark' ? 'black' : 'white'} />
+                <circle cx="70" cy="75" r="7" fill={theme === 'dark' ? 'black' : 'white'} />
+                <circle cx="50" cy="50" r="8.5" fill={theme === 'dark' ? 'black' : 'white'} stroke={theme === 'dark' ? 'white' : 'black'} strokeWidth="2.5" />
               </svg>
             </div>
           </div>
 
           {!sidebarCollapsed && (
             <div className="flex flex-col select-none group cursor-pointer" onClick={toggleSidebar}>
-              <div className="font-heading text-[20px] font-extrabold tracking-[-0.04em] leading-none text-primary dark:text-white hover:text-accent dark:hover:text-darkaccent transition-colors duration-200">
+              <div className="font-sans text-[20px] font-extrabold tracking-[-0.04em] leading-none text-primary dark:text-white transition-colors duration-200">
                 HireMind
               </div>
               <div className="mt-[2px] font-sans text-[11px] font-medium tracking-[0.02em] text-secondary dark:text-darkmuted leading-normal whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px] block">
@@ -110,10 +110,10 @@ export function Layout() {
         {/* Workspace badge */}
         <div className={`mx-4 mt-4 flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2.5'} rounded-xl border border-border bg-background dark:border-darkborder dark:bg-darkbg transition-all duration-300`}>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-neutral-100 text-primary dark:bg-darkborder dark:text-darktext">
               <Users className="h-3.5 w-3.5" />
             </div>
-            {!sidebarCollapsed && <span className="text-xs font-semibold text-primary dark:text-darktext">{role === 'recruiter' ? 'Acme Recruiting' : 'Candidate Portal'}</span>}
+            {!sidebarCollapsed && <span className="text-[13px] font-semibold text-primary dark:text-darktext">{role === 'recruiter' ? 'Acme Recruiting' : 'Candidate Portal'}</span>}
           </div>
           {!sidebarCollapsed && <ChevronDown className="h-3.5 w-3.5 text-secondary dark:text-darkmuted" />}
         </div>
@@ -123,7 +123,7 @@ export function Layout() {
           {sidebarCollapsed ? (
             <div className="h-px w-full bg-border dark:bg-darkborder" />
           ) : (
-            <p className="font-heading text-[11px] font-bold uppercase tracking-[0.08em] text-secondary dark:text-darkmuted">Navigation</p>
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-secondary/70 dark:text-darkmuted/70">Navigation</p>
           )}
         </div>
 
@@ -137,10 +137,10 @@ export function Layout() {
                 to={item.to}
                 title={sidebarCollapsed ? item.label : undefined}
                 className={({ isActive }) =>
-                  `hm-nav-item text-[14px] ${sidebarCollapsed ? 'justify-center px-0' : ''} ${
+                  `hm-nav-item text-[13px] border-l-2 ${sidebarCollapsed ? 'justify-center px-0' : 'pl-3'} transition-all duration-150 ${
                     isActive
-                      ? 'bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent font-semibold'
-                      : 'text-secondary hover:bg-gray-50 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder/50 dark:hover:text-darktext font-medium'
+                      ? 'border-accent dark:border-darkaccent bg-neutral-100 text-primary dark:bg-darkborder/50 dark:text-darktext font-semibold'
+                      : 'border-transparent text-secondary hover:bg-neutral-50 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder/20 dark:hover:text-darktext font-medium'
                   }`
                 }
               >

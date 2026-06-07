@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAppStore } from '../store/appStore';
-import { Button, Badge, Card, SkillHeatmap } from '../components/ui';
+import { Button, Badge, Card, SkillHeatmap, CardTitle, BodyText, Caption, Meta, SectionTitle } from '../components/ui';
 
 const SKILL_ALIASES: Record<string, string> = {
   'react': 'React',
@@ -325,7 +325,7 @@ export function CandidateJobPortal() {
           <button
             aria-label="Toggle theme"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="hm-button border border-border bg-surface px-3 text-secondary hover:text-primary dark:border-darkborder dark:bg-darkbg dark:text-darkmuted dark:hover:text-darktext"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-secondary hover:bg-gray-50 hover:text-primary dark:border-darkborder dark:bg-darkbg dark:text-darkmuted dark:hover:bg-darkborder/50 dark:hover:text-darktext transition-all duration-200"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
@@ -342,10 +342,10 @@ export function CandidateJobPortal() {
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-lg p-1.5 text-secondary hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder dark:hover:text-darktext transition-colors"
+              className="rounded-xl p-2 text-secondary hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder/50 dark:hover:text-darktext transition-colors"
               title="Sign out"
             >
-              <LogOut className="h-4.5 w-4.5" />
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -359,8 +359,8 @@ export function CandidateJobPortal() {
           <div className="lg:col-span-4 space-y-6">
             
             {/* Resume Upload Dropzone */}
-            <Card className="p-6">
-              <h2 className="font-heading text-base font-bold tracking-tight mb-3">1. Upload Resume</h2>
+            <Card>
+              <CardTitle className="mb-4">1. Upload Resume</CardTitle>
               
               <div
                 {...getRootProps()}
@@ -372,12 +372,12 @@ export function CandidateJobPortal() {
               >
                 <input {...getInputProps()} />
                 <Upload className="mx-auto h-8 w-8 text-secondary dark:text-darkmuted mb-2.5" />
-                <p className="text-xs font-semibold text-primary dark:text-darktext">
+                <BodyText variant="small" className="font-semibold text-primary dark:text-darktext">
                   {isDragActive ? 'Drop your resume here' : 'Drag & drop resume PDF or DOCX'}
-                </p>
-                <p className="text-[10px] text-secondary dark:text-darkmuted mt-1">
+                </BodyText>
+                <Meta className="mt-1 block">
                   Supports file parsing up to 10MB
-                </p>
+                </Meta>
               </div>
 
               {/* Uploading / Parsing States */}
@@ -395,7 +395,7 @@ export function CandidateJobPortal() {
                   </motion.div>
                 )}
                 {uploadStatus === 'success' && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-3.5 p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-start gap-2 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800/40">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-3.5 p-3.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-start gap-2.5 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800/40">
                     <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-none" />
                     <div>
                       <p className="font-bold">Resume Parsed Successfully!</p>
@@ -404,7 +404,7 @@ export function CandidateJobPortal() {
                   </motion.div>
                 )}
                 {uploadStatus === 'error' && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-3.5 p-3 rounded-xl bg-red-50 text-red-800 border border-red-200 text-xs font-semibold dark:bg-red-950/20 dark:text-red-400 dark:border-red-800/40">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-3.5 p-3.5 rounded-xl bg-red-50 text-red-800 border border-red-200 text-xs font-semibold dark:bg-red-950/20 dark:text-red-400 dark:border-red-800/40">
                     <p className="font-bold">Parsing Error</p>
                     <p className="text-[10px] opacity-90 mt-0.5">{errorMessage}</p>
                   </motion.div>
@@ -414,21 +414,21 @@ export function CandidateJobPortal() {
 
             {/* Real-time Skill Validation Card */}
             {resumeParsedData && (
-              <Card className="p-6 border-accent/20 bg-gradient-to-br from-accent/[0.01] to-surface dark:from-darkaccent/[0.01] shadow-sm">
+              <Card className="border-accent/20 bg-gradient-to-br from-accent/[0.01] to-surface dark:from-darkaccent/[0.01] shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
                   <div className="rounded-xl bg-accent/10 p-2 dark:bg-darkaccent/10">
                     <BrainCircuit className="h-4.5 w-4.5 text-accent dark:text-darkaccent" />
                   </div>
-                  <h2 className="font-heading text-sm font-bold tracking-tight">Real-Time Skill Validation</h2>
+                  <CardTitle>Real-Time Skill Validation</CardTitle>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block mb-1.5">
+                    <Caption className="uppercase tracking-wider font-bold block mb-1.5 text-secondary dark:text-darkmuted">
                       Select Target Job
-                    </label>
+                    </Caption>
                     <select
-                      className="hm-input w-full"
+                      className="hm-input w-full bg-white dark:bg-darkbg"
                       value={selectedJobId}
                       onChange={(e) => setSelectedJobId(e.target.value)}
                     >
@@ -455,8 +455,8 @@ export function CandidateJobPortal() {
                         {/* Match score bar */}
                         <div>
                           <div className="mb-1.5 flex justify-between text-xs font-semibold">
-                            <span className="text-secondary dark:text-darkmuted">Match Confidence</span>
-                            <span className="text-accent dark:text-darkaccent font-bold">{match.percentage}%</span>
+                            <Caption className="font-semibold text-secondary dark:text-darkmuted">Match Confidence</Caption>
+                            <span className="text-accent dark:text-darkaccent font-bold text-[14px]">{match.percentage}%</span>
                           </div>
                           <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-darkborder">
                             <div
@@ -469,18 +469,18 @@ export function CandidateJobPortal() {
                         </div>
 
                         {/* Matched & Missing breakdown */}
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {/* Matched */}
                           <div>
-                            <span className="text-[10px] font-bold text-success uppercase tracking-wider block mb-1">
+                            <Caption className="font-bold text-success uppercase tracking-wider block mb-1.5">
                               Matched Skills ({match.matched.length})
-                            </span>
-                            <div className="flex flex-wrap gap-1">
+                            </Caption>
+                            <div className="flex flex-wrap gap-1.5">
                               {match.matched.map((s) => (
-                                <Badge key={s} tone="emerald" className="text-[10px] px-2 py-0.5">{s}</Badge>
+                                <Badge key={s} tone="emerald" className="text-[11px] px-2 py-0.5">{s}</Badge>
                               ))}
                               {match.matched.length === 0 && (
-                                <span className="text-[10px] text-secondary dark:text-darkmuted italic">None</span>
+                                <span className="text-xs text-secondary dark:text-darkmuted italic">None</span>
                               )}
                             </div>
                           </div>
@@ -488,14 +488,14 @@ export function CandidateJobPortal() {
                           {/* Partial Match */}
                           {match.partial.length > 0 && (
                             <div>
-                              <span className="text-[10px] font-bold text-warning uppercase tracking-wider block mb-1">
+                              <Caption className="font-bold text-warning uppercase tracking-wider block mb-1.5">
                                 Partial Matches ({match.partial.length})
-                              </span>
-                              <div className="space-y-1.5">
+                              </Caption>
+                              <div className="space-y-2">
                                 {match.partial.map((p) => (
-                                  <div key={p.skill} className="flex flex-col text-[10px] text-secondary dark:text-darkmuted border-l-2 border-warning/30 pl-2">
+                                  <div key={p.skill} className="flex flex-col text-xs text-secondary dark:text-darkmuted border-l-2 border-warning/40 pl-3 py-0.5">
                                     <span className="font-semibold text-primary dark:text-darktext">{p.skill}</span>
-                                    <span className="text-[9px] text-secondary/70 dark:text-darkmuted/70">{p.evidence}</span>
+                                    <span className="text-[11px] text-secondary/80 dark:text-darkmuted/80">{p.evidence}</span>
                                   </div>
                                 ))}
                               </div>
@@ -504,15 +504,15 @@ export function CandidateJobPortal() {
 
                           {/* Missing */}
                           <div>
-                            <span className="text-[10px] font-bold text-danger uppercase tracking-wider block mb-1">
+                            <Caption className="font-bold text-danger uppercase tracking-wider block mb-1.5">
                               Missing Required Skills ({match.missing.length})
-                            </span>
-                            <div className="flex flex-wrap gap-1">
+                            </Caption>
+                            <div className="flex flex-wrap gap-1.5">
                               {match.missing.map((s) => (
-                                <Badge key={s} tone="red" className="text-[10px] px-2 py-0.5">{s}</Badge>
+                                <Badge key={s} tone="red" className="text-[11px] px-2 py-0.5">{s}</Badge>
                               ))}
                               {match.missing.length === 0 && (
-                                <span className="text-[10px] text-secondary dark:text-darkmuted italic">None</span>
+                                <span className="text-xs text-secondary dark:text-darkmuted italic">None</span>
                               )}
                             </div>
                           </div>
@@ -520,7 +520,7 @@ export function CandidateJobPortal() {
                       </div>
                     );
                   })() : (
-                    <p className="text-[10.5px] text-secondary dark:text-darkmuted italic bg-background/50 dark:bg-darkbg/50 p-2.5 rounded-xl border border-border/50 dark:border-darkborder/50">
+                    <p className="text-xs text-secondary dark:text-darkmuted italic bg-background/50 dark:bg-darkbg/50 p-3 rounded-xl border border-border/50 dark:border-darkborder/50 leading-relaxed">
                       Select a job from the dropdown to validate your resume against its required skills in real-time.
                     </p>
                   )}
@@ -529,15 +529,15 @@ export function CandidateJobPortal() {
             )}
 
             {/* Profile Enrichment Card */}
-            <Card className="p-6">
-              <h2 className="font-heading text-base font-bold tracking-tight mb-4">2. Technical Enrichment</h2>
+            <Card>
+              <CardTitle className="mb-4">2. Technical Enrichment</CardTitle>
               
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block flex items-center gap-1.5">
+                  <Caption className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-secondary dark:text-darkmuted">
                     <Code className="h-3.5 w-3.5" />
                     GitHub Username
-                  </label>
+                  </Caption>
                   <input
                     className="hm-input w-full"
                     placeholder="e.g. sarahchen-dev"
@@ -547,10 +547,10 @@ export function CandidateJobPortal() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block flex items-center gap-1.5">
+                  <Caption className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-secondary dark:text-darkmuted">
                     <Award className="h-3.5 w-3.5" />
                     LeetCode Username
-                  </label>
+                  </Caption>
                   <input
                     className="hm-input w-full"
                     placeholder="e.g. sarahc"
@@ -562,7 +562,7 @@ export function CandidateJobPortal() {
 
               {resumeParsedData?.skills && (
                 <div className="mt-6 pt-5 border-t border-border dark:border-darkborder">
-                  <span className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block mb-2">Parsed Stack</span>
+                  <Caption className="font-bold uppercase tracking-wider block mb-2.5 text-secondary dark:text-darkmuted">Parsed Stack</Caption>
                   <div className="flex flex-wrap gap-1.5 max-h-[140px] overflow-y-auto scrollbar-hide">
                     {resumeParsedData.skills.map((skill: string) => (
                       <Badge key={skill} tone="neutral">{skill}</Badge>
@@ -576,10 +576,10 @@ export function CandidateJobPortal() {
 
           {/* RIGHT PANEL: JOB VACANCIES & MATCHING ASSESSMENT */}
           <div className="lg:col-span-8 space-y-6">
-            <h2 className="font-heading text-lg font-extrabold tracking-tight text-primary dark:text-white flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-accent dark:text-darkaccent" />
-              Active Job Opportunities
-            </h2>
+              <SectionTitle>Active Job Opportunities</SectionTitle>
+            </div>
 
             {jobsLoading ? (
               <div className="space-y-4">
@@ -597,10 +597,10 @@ export function CandidateJobPortal() {
                   const candidateResult = applications[job._id];
 
                   return (
-                    <Card key={job._id} className="p-6">
+                    <Card key={job._id}>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 dark:border-darkborder/50 pb-4 mb-4">
                         <div>
-                          <h3 className="font-heading text-lg font-bold tracking-tight text-primary dark:text-white">{job.title}</h3>
+                          <CardTitle>{job.title}</CardTitle>
                           <div className="flex items-center gap-4 text-xs text-secondary dark:text-darkmuted mt-1 font-semibold">
                             <span className="flex items-center gap-1"><Layers className="h-3.5 w-3.5 text-accent dark:text-darkaccent" /> {job.department ?? 'Engineering'}</span>
                             <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Post Date: {new Date(job.createdAt).toLocaleDateString()}</span>
@@ -638,8 +638,8 @@ export function CandidateJobPortal() {
 
                       <div className="space-y-4">
                         <div>
-                          <span className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block mb-1.5">Vacancy Details</span>
-                          <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed">{job.description}</p>
+                          <Caption className="font-bold uppercase tracking-wider block mb-1.5 text-secondary dark:text-darkmuted">Vacancy Details</Caption>
+                          <BodyText variant="small" color="secondary" className="leading-relaxed">{job.description}</BodyText>
                         </div>
 
                         {/* If Applied: Display match metrics & Gemini explainability rationale */}
@@ -652,11 +652,11 @@ export function CandidateJobPortal() {
                             >
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="p-3.5 rounded-xl bg-background dark:bg-darkbg border border-border/60 dark:border-darkborder/50 text-center">
-                                  <span className="text-[9px] font-bold text-secondary dark:text-darkmuted uppercase block mb-0.5">AI fit Score</span>
+                                  <Caption className="font-bold uppercase block mb-0.5 text-secondary dark:text-darkmuted">AI fit Score</Caption>
                                   <span className="text-xl font-black text-accent dark:text-darkaccent">{candidateResult.matchPercentage}%</span>
                                 </div>
                                 <div className="p-3.5 rounded-xl bg-background dark:bg-darkbg border border-border/60 dark:border-darkborder/50 text-center">
-                                  <span className="text-[9px] font-bold text-secondary dark:text-darkmuted uppercase block mb-0.5">Recommendation</span>
+                                  <Caption className="font-bold uppercase block mb-0.5 text-secondary dark:text-darkmuted">Recommendation</Caption>
                                   <span className={`text-xs font-bold block mt-1 ${
                                     candidateResult.recommendation === 'Strong Hire' || candidateResult.recommendation === 'Hire'
                                       ? 'text-success'
@@ -666,17 +666,17 @@ export function CandidateJobPortal() {
                                   }`}>{candidateResult.recommendation}</span>
                                 </div>
                                 <div className="p-3.5 rounded-xl bg-background dark:bg-darkbg border border-border/60 dark:border-darkborder/50 text-center">
-                                  <span className="text-[9px] font-bold text-secondary dark:text-darkmuted uppercase block mb-0.5">GitHub Commits</span>
+                                  <Caption className="font-bold uppercase block mb-0.5 text-secondary dark:text-darkmuted">GitHub Commits</Caption>
                                   <span className="text-xl font-black text-primary dark:text-white">{candidateResult.githubAnalysis?.totalCommits ?? 0}</span>
                                 </div>
                               </div>
 
                               <div>
-                                <span className="text-[10px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider block mb-2">Requirements Heatmap Coverage</span>
+                                <Caption className="font-bold uppercase tracking-wider block mb-2.5 text-secondary dark:text-darkmuted">Requirements Heatmap Coverage</Caption>
                                 {candidateResult.skillGap && <SkillHeatmap skillGap={candidateResult.skillGap} />}
                               </div>
 
-                              <div className="p-4 rounded-xl bg-background dark:bg-darkbg border border-border/60 dark:border-darkborder/50">
+                              <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-darkbg/30 border border-border dark:border-darkborder/50">
                                 <div className="flex items-center gap-1.5 mb-1.5">
                                   <BrainCircuit className="h-4.5 w-4.5 text-accent dark:text-darkaccent" />
                                   <span className="text-xs font-bold text-primary dark:text-white">Explainable Decision Reasoning</span>

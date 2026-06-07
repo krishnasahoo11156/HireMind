@@ -4,7 +4,7 @@ import { BriefcaseBusiness, Calendar, Clock, FileText, Globe, GraduationCap, Lin
 import { motion, AnimatePresence } from 'framer-motion';
 import { useJob, useApplyJob } from '../../hooks/queries';
 import type { Job } from '../../types';
-import { Badge, Button, Card, PageTitle, SectionTitle, BodyText, Caption } from '../../components/ui';
+import { Badge, Button, Card, PageTitle, SectionTitle, BodyText, Caption, CardTitle } from '../../components/ui';
 import { useCandidateAuth } from '../../firebase/AuthContext';
 
 export function CandidateJobDetail() {
@@ -120,13 +120,13 @@ export function CandidateJobDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
         {/* Main Job details */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="p-6 space-y-6">
+          <Card className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 flex-none">
                 <FileText className="h-5 w-5" />
               </div>
               <div>
-                <SectionTitle>Job Description</SectionTitle>
+                <CardTitle>Job Description</CardTitle>
                 <div className="w-10 h-0.5 bg-accent dark:bg-darkaccent mt-1.5 rounded-full" />
               </div>
             </div>
@@ -135,13 +135,13 @@ export function CandidateJobDetail() {
             </div>
           </Card>
 
-          <Card className="p-6 space-y-6">
+          <Card className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 flex-none">
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <SectionTitle>Key Responsibilities</SectionTitle>
+                <CardTitle>Key Responsibilities</CardTitle>
                 <div className="w-10 h-0.5 bg-emerald-600 dark:bg-emerald-500 mt-1.5 rounded-full" />
               </div>
             </div>
@@ -165,13 +165,13 @@ export function CandidateJobDetail() {
 
         {/* Sidebar Info */}
         <div className="space-y-4">
-          <Card className="p-5 space-y-4">
+          <Card className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 flex-none">
                 <Briefcase className="h-5 w-5" />
               </div>
               <div>
-                <SectionTitle>Role Specifications</SectionTitle>
+                <CardTitle>Role Specifications</CardTitle>
                 <div className="w-10 h-0.5 bg-purple-600 dark:bg-purple-500 mt-1.5 rounded-full" />
               </div>
             </div>
@@ -222,13 +222,13 @@ export function CandidateJobDetail() {
             </div>
           </Card>
 
-          <Card className="p-5 space-y-4">
+          <Card className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 flex-none">
                 <Code className="h-5 w-5" />
               </div>
               <div>
-                <SectionTitle>Required Technical Skills</SectionTitle>
+                <CardTitle>Required Technical Skills</CardTitle>
                 <div className="w-10 h-0.5 bg-blue-600 dark:bg-blue-500 mt-1.5 rounded-full" />
               </div>
             </div>

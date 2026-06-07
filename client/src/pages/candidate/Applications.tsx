@@ -4,7 +4,7 @@ import { BriefcaseBusiness, CheckCircle, Clock, Sparkles, BrainCircuit, Bell, Sh
 import { useJobs, useMyApplications } from '../../hooks/queries';
 import { useCandidateAuth } from '../../firebase/AuthContext';
 import type { Application, Job } from '../../types';
-import { Badge, Card, PageTitle, SectionTitle, BodyText, Caption } from '../../components/ui';
+import { Badge, Card, PageTitle, SectionTitle, BodyText, Caption, CardTitle } from '../../components/ui';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Toast Notification Type
@@ -166,7 +166,7 @@ export function CandidateApplications() {
       {applications.length === 0 ? (
         <Card className="p-8 text-center space-y-3">
           <BriefcaseBusiness className="h-12 w-12 text-secondary mx-auto" />
-          <h3 className="text-lg font-bold text-primary dark:text-darktext">No applications found</h3>
+          <CardTitle>No applications found</CardTitle>
           <BodyText>You haven't applied to any job listings yet.</BodyText>
         </Card>
       ) : (
@@ -217,9 +217,9 @@ export function CandidateApplications() {
                 <Card className="p-6 space-y-4">
                   <div className="flex justify-between items-start border-b border-border pb-4 dark:border-darkborder">
                     <div>
-                      <h3 className="text-xl font-bold text-primary dark:text-darktext">
+                      <CardTitle>
                         {getJobForApp(selectedApp.jobId)?.title || 'Frontend Developer'}
-                      </h3>
+                      </CardTitle>
                       <Caption className="mt-1 block">Application ID: {selectedApp._id}</Caption>
                     </div>
                     <div className="text-right">
@@ -336,7 +336,7 @@ export function CandidateApplications() {
 
                   {/* Tracker Timeline */}
                   <div className="pt-4 space-y-6">
-                    <h4 className="text-sm font-bold text-primary dark:text-darktext">Progress Timeline</h4>
+                    <Caption className="font-bold uppercase tracking-wider block">Progress Timeline</Caption>
                     <div className="relative pl-6 border-l border-gray-200 dark:border-darkborder space-y-6 ml-3">
                       {ALL_STAGES.map((s) => {
                         const state = getStageState(s.key, selectedApp.status);

@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CandidateHas, Recommendation } from '../types';
-import { DisplayTitle, PageTitleText, SectionTitle, CardTitle, BodyText, Caption, PageTitle } from './Typography';
+import { DisplayTitle, PageTitleText, SectionTitle, CardTitle, BodyText, Caption, PageTitle, Meta } from './Typography';
 
-export { DisplayTitle, PageTitleText, SectionTitle, CardTitle, BodyText, Caption, PageTitle };
+export { DisplayTitle, PageTitleText, SectionTitle, CardTitle, BodyText, Caption, PageTitle, Meta };
 
 // ─────────────────────────────────────────────
 // CARD
@@ -16,8 +16,6 @@ export function Card({ children, className = '', hover = false }: { children: Re
     </div>
   );
 }
-
-// PageTitle component is now imported and re-exported from Typography.tsx above.
 
 // ─────────────────────────────────────────────
 // BUTTON
@@ -33,15 +31,15 @@ export function Button({
   size?: 'sm' | 'md' | 'lg';
 }) {
   const variants = {
-    primary: 'bg-primary text-white hover:bg-gray-800 dark:bg-darktext dark:text-darkbg dark:hover:bg-gray-100',
-    secondary: 'border border-border bg-surface text-primary hover:bg-gray-50 dark:border-darkborder dark:bg-darksurface dark:text-darktext dark:hover:bg-darkborder/50',
-    accent: 'bg-accent text-white hover:bg-yellow-800 shadow-sm dark:bg-darkaccent dark:text-darkbg dark:hover:bg-yellow-500',
-    danger: 'bg-danger text-white hover:bg-red-700',
+    primary: 'bg-primary text-white hover:bg-gray-800 dark:bg-darktext dark:text-darkbg dark:hover:bg-gray-100 shadow-sm border border-transparent',
+    secondary: 'border border-border bg-surface text-primary hover:bg-gray-50 dark:border-darkborder dark:bg-darksurface dark:text-darktext dark:hover:bg-darkborder/50 shadow-sm',
+    accent: 'bg-accent text-white hover:bg-yellow-800 shadow-sm dark:bg-darkaccent dark:text-darkbg dark:hover:bg-yellow-500 border border-transparent',
+    danger: 'bg-danger text-white hover:bg-red-700 shadow-sm border border-transparent',
     ghost: 'text-secondary hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder/50 dark:hover:text-darktext'
   };
   const sizes = {
     sm: 'h-8 px-3 text-xs rounded-lg gap-1.5',
-    md: 'h-10 px-4 text-sm font-semibold rounded-xl gap-2',
+    md: 'h-11 px-4 text-sm font-semibold rounded-xl gap-2',
     lg: 'h-12 px-6 text-[15px] font-semibold rounded-xl gap-2'
   };
   return (
@@ -56,17 +54,17 @@ export function Button({
 // ─────────────────────────────────────────────
 export function Badge({ children, tone = 'neutral', className = '' }: { children: ReactNode; tone?: 'neutral' | 'green' | 'emerald' | 'yellow' | 'red' | 'gold' | 'blue' | 'purple'; className?: string }) {
   const tones = {
-    neutral: 'bg-gray-100 text-gray-600 dark:bg-darkborder dark:text-darkmuted',
-    green: 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800/40',
-    emerald: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/40',
-    yellow: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/40',
-    red: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/40',
-    gold: 'bg-yellow-50 text-accent border border-yellow-200 dark:bg-darkaccent/10 dark:text-darkaccent dark:border-darkaccent/20',
-    blue: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/40',
-    purple: 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800/40'
+    neutral: 'bg-gray-100 text-gray-700 border border-gray-200/50 dark:bg-darkborder/35 dark:text-darkmuted dark:border-darkborder/50',
+    green: 'bg-green-50 text-green-800 border border-green-200/60 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800/45',
+    emerald: 'bg-emerald-50 text-emerald-800 border border-emerald-200/60 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800/45',
+    yellow: 'bg-amber-50 text-amber-800 border border-amber-200/60 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800/45',
+    red: 'bg-red-50 text-red-800 border border-red-200/60 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800/45',
+    gold: 'bg-yellow-50 text-accent border border-yellow-200/60 dark:bg-darkaccent/10 dark:text-darkaccent dark:border-darkaccent/25',
+    blue: 'bg-blue-50 text-blue-800 border border-blue-200/60 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800/45',
+    purple: 'bg-purple-50 text-purple-800 border border-purple-200/60 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-800/45'
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tones[tone]} ${className}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${tones[tone]} ${className}`}>
       {children}
     </span>
   );
@@ -81,17 +79,17 @@ export function RecommendationBadge({ recommendation }: { recommendation: Recomm
     recommendation === 'Hire' ? 'emerald' :
     recommendation === 'Maybe' ? 'yellow' : 'red';
   const tones = {
-    neutral: 'bg-gray-100 text-gray-600 dark:bg-darkborder dark:text-darkmuted',
-    green: 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800/40',
-    emerald: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/40',
-    yellow: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/40',
-    red: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/40',
-    gold: 'bg-yellow-50 text-accent border border-yellow-200 dark:bg-darkaccent/10 dark:text-darkaccent dark:border-darkaccent/20',
-    blue: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/40',
-    purple: 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800/40'
+    neutral: 'bg-gray-100 text-gray-700 border border-gray-200/50 dark:bg-darkborder/35 dark:text-darkmuted dark:border-darkborder/50',
+    green: 'bg-green-50 text-green-800 border border-green-200/60 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800/45',
+    emerald: 'bg-emerald-50 text-emerald-800 border border-emerald-200/60 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800/45',
+    yellow: 'bg-amber-50 text-amber-800 border border-amber-200/60 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800/45',
+    red: 'bg-red-50 text-red-800 border border-red-200/60 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800/45',
+    gold: 'bg-yellow-50 text-accent border border-yellow-200/60 dark:bg-darkaccent/10 dark:text-darkaccent dark:border-darkaccent/25',
+    blue: 'bg-blue-50 text-blue-800 border border-blue-200/60 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800/45',
+    purple: 'bg-purple-50 text-purple-800 border border-purple-200/60 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-800/45'
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-[14px] font-semibold ${tones[tone]}`}>
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${tones[tone]}`}>
       {recommendation}
     </span>
   );

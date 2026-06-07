@@ -3,7 +3,7 @@ import { Search, BriefcaseBusiness } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useJobs } from '../../hooks/queries';
 import type { Job } from '../../types';
-import { Badge, Button, Card, EmptyState, PageTitle, SectionTitle, BodyText } from '../../components/ui';
+import { Badge, Button, Card, EmptyState, PageTitle, CardTitle, BodyText } from '../../components/ui';
 
 export function CandidateJobs() {
   const { data, isLoading } = useJobs();
@@ -65,7 +65,7 @@ export function CandidateJobs() {
             <Card key={job._id} hover className="p-5 flex flex-col justify-between min-h-[200px]">
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
-                  <SectionTitle>{job.title}</SectionTitle>
+                  <CardTitle>{job.title}</CardTitle>
                   <Badge tone="neutral">Remote</Badge>
                 </div>
                 <BodyText variant="small" color="secondary" className="line-clamp-3">

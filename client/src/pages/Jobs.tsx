@@ -204,22 +204,22 @@ export function Jobs() {
       />
 
       {/* Filter bar */}
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
         <div className="relative flex-1 max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary dark:text-darkmuted" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary/60 dark:text-darkmuted" />
           <input
-            className="hm-input w-full pl-9"
+            className="hm-input w-full pl-10"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search jobs…"
           />
         </div>
-        <div className="flex gap-1 rounded-xl border border-border bg-background p-1 dark:border-darkborder dark:bg-darkbg">
+        <div className="flex gap-1 rounded-xl border border-border bg-surface p-1 dark:border-darkborder dark:bg-darksurface shadow-sm">
           {(['all', 'active', 'draft'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition-all ${statusFilter === s ? 'bg-surface text-primary shadow-sm dark:bg-darksurface dark:text-darktext' : 'text-secondary hover:text-primary dark:text-darkmuted'}`}
+              className={`rounded-lg px-4.5 py-1.5 text-xs font-semibold capitalize transition-all ${statusFilter === s ? 'bg-background text-primary shadow-sm dark:bg-darkbg dark:text-darktext' : 'text-secondary hover:text-primary dark:text-darkmuted dark:hover:text-darktext'}`}
             >
               {s}
             </button>
@@ -236,7 +236,7 @@ export function Jobs() {
           action={<Button onClick={() => { setOpen(true); setStep(1); }} variant="accent"><Plus className="h-4 w-4" />Create Job</Button>}
         />
       ) : (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((job, i) => {
             const count = realtimeApplications.filter((app) => app.jobId === job._id).length;
             return (
@@ -263,24 +263,24 @@ export function Jobs() {
 
       {/* Create Job Wizard Modal */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/20 p-6 backdrop-blur-sm dark:bg-black/50">
           <motion.div
             initial={{ opacity: 0, scale: 0.97, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="w-full max-w-3xl"
           >
-            <Card className="p-6">
+            <Card className="p-6 shadow-2xl">
               {/* Modal Header */}
               <div className="mb-6 flex items-start justify-between">
                 <div>
                   <SectionTitle>Create Job Wizard</SectionTitle>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-3 flex items-center gap-2">
                     {[1, 2, 3].map((s) => (
                       <div key={s} className="flex items-center gap-1.5">
-                        <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold ${step >= s ? 'bg-accent text-white dark:bg-darkaccent' : 'bg-gray-100 text-secondary dark:bg-darkborder'}`}>
+                        <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${step >= s ? 'bg-accent text-white dark:bg-darkaccent dark:text-darkbg' : 'bg-gray-100 text-secondary dark:bg-darkborder/50 dark:text-darkmuted'}`}>
                           {s}
                         </span>
-                        <span className={`text-xs font-semibold ${step === s ? 'text-primary dark:text-darktext' : 'text-secondary dark:text-darkmuted'}`}>
+                        <span className={`text-xs font-bold ${step === s ? 'text-primary dark:text-darktext' : 'text-secondary dark:text-darkmuted'}`}>
                           {s === 1 ? 'Details' : s === 2 ? 'Requirements' : 'Weights'}
                         </span>
                         {s < 3 && <span className="h-px w-8 bg-border dark:bg-darkborder" />}
@@ -290,7 +290,8 @@ export function Jobs() {
                 </div>
                 <button
                   onClick={() => setOpen(false)}
-                  className="rounded-xl p-2 text-secondary transition hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder"
+                  className="rounded-xl p-2 text-secondary hover:bg-gray-100 hover:text-primary dark:text-darkmuted dark:hover:bg-darkborder/50 transition-colors bg-transparent border-0 cursor-pointer"
+                  aria-label="Close modal"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -441,7 +442,7 @@ export function Jobs() {
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg">
+                      <div className="rounded-2xl border border-border bg-gray-50/50 p-4 dark:border-darkborder dark:bg-darkbg/30">
                         <div className="mb-4 flex items-center gap-2">
                           <BrainCircuit className="h-4 w-4 text-accent dark:text-darkaccent" />
                           <CardTitle>Selected Skills Preview</CardTitle>
@@ -479,7 +480,7 @@ export function Jobs() {
                             max="100"
                             value={githubWeight}
                             onChange={(e) => setGithubWeight(Number(e.target.value))}
-                            className="w-full accent-accent"
+                            className="w-full accent-accent dark:accent-darkaccent cursor-pointer"
                           />
                         </div>
 
@@ -494,7 +495,7 @@ export function Jobs() {
                             max="100"
                             value={leetcodeWeight}
                             onChange={(e) => setLeetcodeWeight(Number(e.target.value))}
-                            className="w-full accent-accent"
+                            className="w-full accent-accent dark:accent-darkaccent cursor-pointer"
                           />
                         </div>
 
@@ -509,11 +510,11 @@ export function Jobs() {
                             max="100"
                             value={educationWeight}
                             onChange={(e) => setEducationWeight(Number(e.target.value))}
-                            className="w-full accent-accent"
+                            className="w-full accent-accent dark:accent-darkaccent cursor-pointer"
                           />
                         </div>
 
-                        <div className="rounded-xl border border-border bg-background p-4 dark:border-darkborder dark:bg-darkbg text-xs font-semibold text-secondary dark:text-darkmuted flex justify-between">
+                        <div className="rounded-xl border border-border bg-gray-50/50 p-4 dark:border-darkborder dark:bg-darkbg/35 text-xs font-bold text-secondary dark:text-darkmuted flex justify-between">
                           <span>Sum total weight:</span>
                           <span className={`${githubWeight + leetcodeWeight + educationWeight === 100 ? 'text-success' : 'text-danger'}`}>
                             {githubWeight + leetcodeWeight + educationWeight}% (Recommended: 100%)
