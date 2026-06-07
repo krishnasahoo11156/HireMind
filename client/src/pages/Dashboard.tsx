@@ -47,7 +47,7 @@ function JobCard({ job, applicationsCount, selectedCount }: { job: Job; applicat
   const statusTone = job.status === 'active' ? 'emerald' : job.status === 'draft' ? 'yellow' : 'neutral';
   return (
     <Link to={`/recruiter/jobs/${job._id}`}>
-      <Card hover className="flex flex-col gap-4 p-5 cursor-pointer">
+      <Card hover className={`flex flex-col gap-4 p-5 cursor-pointer h-full ${selectedCount > 0 ? 'border-emerald-500/20 bg-emerald-500/[0.02] dark:border-emerald-500/10 dark:bg-emerald-500/[0.01]' : ''}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-accent/10 dark:bg-darkaccent/10">
             <BriefcaseBusiness className="h-5 w-5 text-accent dark:text-darkaccent" />
@@ -257,6 +257,9 @@ export function Dashboard() {
   const metrics = analytics.data?.metrics;
   const funnel = analytics.data?.funnel ?? { applied: 0, screened: 0, interviewed: 0, offered: 0, hired: 0 };
   const recentJobs = jobs.data?.jobs.slice(0, 6) ?? [];
+  const recruitedJobs = (jobs.data?.jobs ?? []).filter((job) =>
+    realtimeApplications.some((app) => app.jobId === job._id && app.status === 'Selected')
+  );
   const priorityCandidates = (candidates.data?.candidates ?? [])
     .slice().sort((a, b) => b.aiScore - a.aiScore).slice(0, 5);
   const uploadHref = firstJobId ? `/recruiter/jobs/${firstJobId}` : '/recruiter/jobs';
@@ -388,6 +391,36 @@ export function Dashboard() {
         </div>
       )}
 
+      {/* ── SECTION: Successful Hires ── */}
+      {recruitedJobs.length > 0 && (
+        <div>
+          <SectionHeader
+            title="Successful Hires"
+            action={
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <CheckCircle className="h-4 w-4" /> Position filled successfully
+              </span>
+            }
+          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {recruitedJobs.map((job, i) => {
+              const count = realtimeApplications.filter((app) => app.jobId === job._id).length;
+              const selectedCount = realtimeApplications.filter((app) => app.jobId === job._id && app.status === 'Selected').length;
+              return (
+                <motion.div
+                  key={job._id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                >
+                  <JobCard job={job} applicationsCount={count} selectedCount={selectedCount} />
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── SECTION 5: Recent Jobs ── */}
       <div>
         <SectionHeader title="Recent Jobs" action={
@@ -395,7 +428,7 @@ export function Dashboard() {
             All Jobs <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         } />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {recentJobs.map((job, i) => {
             const count = realtimeApplications.filter((app) => app.jobId === job._id).length;
             const selectedCount = realtimeApplications.filter((app) => app.jobId === job._id && app.status === 'Selected').length;
