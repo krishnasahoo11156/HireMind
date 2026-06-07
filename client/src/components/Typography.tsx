@@ -7,25 +7,25 @@ interface TypographyProps {
 }
 
 /**
- * Display Title
+ * Display Title (H1)
  * Used on: Dashboard, Analytics, Candidate Profile, Job Detail
- * Size: 40px, Bold, Tight line height, letter-spacing -0.04em
+ * Size: 48px, Bold, Tight line height, letter-spacing -0.04em
  */
 export function DisplayTitle({ children, className = '', as: Component = 'h1' }: TypographyProps) {
   return (
-    <Component className={`font-heading text-[40px] font-bold leading-[1.1] tracking-[-0.04em] text-primary dark:text-darktext ${className}`}>
+    <Component className={`font-heading text-[48px] font-bold leading-[1.1] tracking-[-0.04em] text-primary dark:text-darktext ${className}`}>
       {children}
     </Component>
   );
 }
 
 /**
- * Page Title Text component
- * Size: 36px (text-4xl), Bold, line-height 1.2, letter-spacing -0.03em
+ * Page Title Text component (H2)
+ * Size: 36px, Bold, line-height 1.2, letter-spacing -0.03em
  */
-export function PageTitleText({ children, className = '', as: Component = 'h1' }: TypographyProps) {
+export function PageTitleText({ children, className = '', as: Component = 'h2' }: TypographyProps) {
   return (
-    <Component className={`font-heading text-4xl font-bold tracking-tight leading-[1.2] text-primary dark:text-darktext ${className}`}>
+    <Component className={`font-heading text-[36px] font-bold tracking-tight leading-[1.2] text-primary dark:text-darktext ${className}`}>
       {children}
     </Component>
   );
@@ -51,7 +51,7 @@ export function PageTitle({
       <div>
         <PageTitleText>{title}</PageTitleText>
         {subtitle && (
-          <p className="mt-2 text-[15px] leading-relaxed text-secondary dark:text-darkmuted font-sans font-normal">
+          <p className="mt-2 text-[16px] leading-relaxed text-secondary dark:text-darkmuted font-sans font-normal">
             {subtitle}
           </p>
         )}
@@ -62,24 +62,24 @@ export function PageTitle({
 }
 
 /**
- * Section Title
- * Size: 20px (text-xl), Semibold (600), line-height 1.3
+ * Section Title (H3)
+ * Size: 28px, Semibold (600), line-height 1.3
  */
-export function SectionTitle({ children, className = '', as: Component = 'h2' }: TypographyProps) {
+export function SectionTitle({ children, className = '', as: Component = 'h3' }: TypographyProps) {
   return (
-    <Component className={`font-heading text-xl font-semibold tracking-tight leading-[1.3] text-primary dark:text-darktext ${className}`}>
+    <Component className={`font-heading text-[28px] font-semibold tracking-tight leading-[1.3] text-primary dark:text-darktext ${className}`}>
       {children}
     </Component>
   );
 }
 
 /**
- * Card Title
- * Size: 18px, Semibold (600), line-height 1.4
+ * Card Title (H4)
+ * Size: 22px, Semibold (600), line-height 1.4
  */
-export function CardTitle({ children, className = '', as: Component = 'h3' }: TypographyProps) {
+export function CardTitle({ children, className = '', as: Component = 'h4' }: TypographyProps) {
   return (
-    <Component className={`font-heading text-[18px] font-semibold leading-[1.4] text-primary dark:text-darktext ${className}`}>
+    <Component className={`font-heading text-[22px] font-semibold leading-[1.4] text-primary dark:text-darktext ${className}`}>
       {children}
     </Component>
   );
@@ -87,7 +87,7 @@ export function CardTitle({ children, className = '', as: Component = 'h3' }: Ty
 
 /**
  * Body Text
- * Options: Large (16px), Default (14px), Small (13px)
+ * Options: Large (18px), Default (16px), Small (14px)
  */
 export function BodyText({
   children,
@@ -100,9 +100,9 @@ export function BodyText({
   color?: 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'danger';
 }) {
   const sizes = {
-    large: 'text-[16px] font-normal leading-[1.7]',
-    default: 'text-[14px] font-normal leading-[1.6]',
-    small: 'text-[13px] font-medium leading-[1.5]'
+    large: 'text-[18px] font-normal leading-[1.7]',
+    default: 'text-[16px] font-normal leading-[1.6]',
+    small: 'text-[14px] font-medium leading-[1.5]'
   };
 
   const colors = {
@@ -123,11 +123,23 @@ export function BodyText({
 
 /**
  * Caption Text
- * Size: 12px, Medium (500), line-height 1.4, Muted
+ * Size: 14px, Medium (500), line-height 1.4, Muted
  */
 export function Caption({ children, className = '', as: Component = 'span' }: TypographyProps) {
   return (
-    <Component className={`font-sans text-[12px] font-medium leading-[1.4] text-secondary dark:text-darkmuted ${className}`}>
+    <Component className={`font-sans text-[14px] font-medium leading-[1.4] text-secondary dark:text-darkmuted ${className}`}>
+      {children}
+    </Component>
+  );
+}
+
+/**
+ * Meta Text
+ * Size: 12px, Medium (500), line-height 1.4, Muted
+ */
+export function Meta({ children, className = '', as: Component = 'span' }: TypographyProps) {
+  return (
+    <Component className={`font-sans text-[12px] font-medium leading-[1.4] text-secondary dark:text-darkmuted/85 ${className}`}>
       {children}
     </Component>
   );

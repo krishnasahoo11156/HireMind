@@ -7,28 +7,28 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        heading: ['"Plus Jakarta Sans"', 'sans-serif']
+        heading: ['Inter', 'sans-serif']
       },
       colors: {
         // Light mode
-        background: '#FAFAF9',
+        background: '#F8F8F7',
         surface: '#FFFFFF',
         primary: '#111827',
         secondary: '#6B7280',
         accent: '#A16207',
-        success: '#15803D',
+        success: '#166534',
         warning: '#B45309',
         danger: '#B91C1C',
         border: '#E5E7EB',
         foreground: 'hsl(var(--foreground))',
         'muted-foreground': 'hsl(var(--muted-foreground))',
         // Dark mode
-        darkbg: '#0B0F14',
-        darksurface: '#121722',
+        darkbg: '#0F1115',
+        darksurface: '#181B22',
         darktext: '#F9FAFB',
         darkmuted: '#9CA3AF',
         darkaccent: '#D4A017',
-        darkborder: '#232936'
+        darkborder: '#2B303B'
       },
       boxShadow: {
         panel: '0 1px 2px rgba(15, 17, 21, 0.06)',
