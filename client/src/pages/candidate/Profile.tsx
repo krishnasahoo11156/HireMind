@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Link2, Globe, Sparkles, Save, CheckCircle } from 'lucide-react';
-import { Badge, Button, Card, PageTitle, SectionTitle, BodyText } from '../../components/ui';
+import { Badge, Button, Card, PageTitle, SectionTitle, BodyText, CardTitle, Caption } from '../../components/ui';
 import { useCandidateAuth } from '../../firebase/AuthContext';
 
 export function CandidateProfileEdit() {
@@ -163,7 +163,7 @@ export function CandidateProfileEdit() {
         {/* Sidebar credentials summary */}
         <div className="space-y-6">
           <Card className="p-6 space-y-4">
-            <SectionTitle>Social Integrations</SectionTitle>
+            <CardTitle>Social Integrations</CardTitle>
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-secondary dark:text-darkmuted">GitHub Status</span>
