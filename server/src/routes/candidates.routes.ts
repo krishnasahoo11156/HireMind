@@ -4,6 +4,8 @@ import { candidateService } from '../firebase/services/candidateService.js';
 import { resumeService } from '../firebase/services/resumeService.js';
 import { feedbackService } from '../firebase/services/feedbackService.js';
 import { jobService } from '../firebase/services/jobService.js';
+import { applicationService } from '../firebase/services/applicationService.js';
+import { getSocketServer } from '../socket.js';
 import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { getLeetCodeProfile } from '../services/external.js';
 import { getGitHubProfile } from '../services/github.service.js';
@@ -206,6 +208,39 @@ candidatesRouter.post('/:id/feedback', auth, async (req: AuthedRequest, res: Res
       recruiterReason: body.data.reason,
       feedbackAt: new Date() as any
     });
+
+    const appStatus = body.data.decision === 'override_select' || 
+                      (body.data.decision === 'agree' && (candidate.recommendation === 'Strong Hire' || candidate.recommendation === 'Hire'))
+                      ? 'Selected'
+                      : 'Rejected';
+
+    let targetAppId = (candidate as any).applicationId;
+    if (!targetAppId) {
+      const app = await applicationService.findOne({ candidateId: candidate.id, jobId: candidate.jobId });
+      if (app) {
+        targetAppId = app.id;
+      }
+    }
+
+    if (targetAppId) {
+      const application = await applicationService.findById(targetAppId);
+      if (application) {
+        await applicationService.update(targetAppId, { status: appStatus });
+
+        const io = getSocketServer();
+        io.to(`candidate:${application.candidateId}`).emit('tracker:update', {
+          applicationId: targetAppId,
+          status: appStatus,
+          updatedAt: new Date().toISOString()
+        });
+
+        io.to(`job:${candidate.jobId}`).emit('application_status_updated', {
+          ...application,
+          status: appStatus,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
 
     const item = await feedbackService.create({
       candidateId: candidate.id,

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { io as connectSocket, Socket } from 'socket.io-client';
-import { ArrowRight, BarChart3, BriefcaseBusiness, Clock, FilePlus2, Gauge, Sparkles, Users, Bell } from 'lucide-react';
+import { ArrowRight, BarChart3, BriefcaseBusiness, Clock, FilePlus2, Gauge, Sparkles, Users, Bell, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
@@ -43,7 +43,7 @@ function getGreeting() {
 }
 
 // ─── Job Card ──────────────────────────────────────────────────────────────
-function JobCard({ job, applicationsCount }: { job: Job; applicationsCount: number }) {
+function JobCard({ job, applicationsCount, selectedCount }: { job: Job; applicationsCount: number; selectedCount: number }) {
   const statusTone = job.status === 'active' ? 'emerald' : job.status === 'draft' ? 'yellow' : 'neutral';
   return (
     <Link to={`/recruiter/jobs/${job._id}`}>
@@ -64,6 +64,12 @@ function JobCard({ job, applicationsCount }: { job: Job; applicationsCount: numb
               <Sparkles className="h-3 w-3 text-accent dark:text-darkaccent" />
               {job.candidateCount ?? 0} candidate{(job.candidateCount ?? 0) !== 1 ? 's' : ''} analyzed
             </BodyText>
+            {selectedCount > 0 && (
+              <BodyText variant="small" color="secondary" className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                <CheckCircle className="h-3 w-3 text-success" />
+                {selectedCount} candidate{selectedCount !== 1 ? 's' : ''} selected
+              </BodyText>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -392,6 +398,7 @@ export function Dashboard() {
         <div className="grid grid-cols-3 gap-4">
           {recentJobs.map((job, i) => {
             const count = realtimeApplications.filter((app) => app.jobId === job._id).length;
+            const selectedCount = realtimeApplications.filter((app) => app.jobId === job._id && app.status === 'Selected').length;
             return (
               <motion.div
                 key={job._id}
@@ -399,7 +406,7 @@ export function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
               >
-                <JobCard job={job} applicationsCount={count} />
+                <JobCard job={job} applicationsCount={count} selectedCount={selectedCount} />
               </motion.div>
             );
           })}
