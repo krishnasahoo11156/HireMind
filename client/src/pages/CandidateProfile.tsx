@@ -25,7 +25,7 @@ import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import { useAppStore } from '../store/appStore';
 import type { Candidate, GitHubProfile, Job, Resume } from '../types';
-import { Badge, Button, Card, RecommendationBadge, SectionTitle } from '../components/ui';
+import { Badge, Button, Card, RecommendationBadge, SectionTitle, SkillHeatmap, CardTitle, Caption, BodyText } from '../components/ui';
 import { BlindToggle } from '../components/BlindToggle';
 
 const LANG_COLORS = ['#A16207', '#D97706', '#F59E0B', '#6366F1', '#8B5CF6', '#EC4899', '#14B8A6'];
@@ -84,8 +84,13 @@ function getSuggestedQuestions(skillGap: Candidate['skillGap']): string[] {
 
 export function CandidateProfile() {
   const { id = 'candidate_sarah' } = useParams();
+  const theme = useAppStore((state) => state.theme);
   const blindMode = useAppStore((state) => state.blindMode);
   const queryClient = useQueryClient();
+
+  const brandAccent = theme === 'dark' ? '#D4A017' : '#A16207';
+  const gridStroke = theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)';
+  const labelColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
 
   const [decision, setDecision] = useState<'override_select' | 'override_reject' | 'agree' | ''>('');
   const [reason, setReason] = useState('Strong backend skills transferable to frontend');
@@ -170,7 +175,7 @@ export function CandidateProfile() {
   return (
     <div className="space-y-6">
       {/* ── STICKY CONTROL & EXECUTIVE HEADER ── */}
-      <div className="sticky top-[68px] z-10 -mx-8 px-8 py-3 border-b border-border bg-[#F8FAFC]/95 backdrop-blur-md dark:border-darkborder dark:bg-darkbg/95 flex flex-wrap items-center justify-between gap-4 transition-all duration-200">
+      <div className="sticky top-[68px] z-10 -mx-8 px-8 py-3 border-b border-border bg-background/95 backdrop-blur-md dark:border-darkborder dark:bg-darkbg/95 flex flex-wrap items-center justify-between gap-4 transition-all duration-200">
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
@@ -524,95 +529,12 @@ export function CandidateProfile() {
             </div>
           </Card>
 
-          {/* Section 2: Strengths vs Gaps */}
+          {/* Section 2: Match Heatmap Coverage */}
           <Card className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Strengths */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border-b border-border dark:border-darkborder pb-1.5">
-                  <Check className="h-4 w-4 stroke-[3]" />
-                  Strengths (
-                  {candidate.skillGap?.filter((g) => g.candidateHas === 'match').length ?? 0})
-                </div>
-                <ul className="space-y-2">
-                  {candidate.skillGap
-                    ?.filter((g) => g.candidateHas === 'match')
-                    .map((g) => (
-                      <li
-                        key={g.skill}
-                        className="flex items-start gap-2 text-xs text-primary dark:text-darktext font-medium leading-tight"
-                      >
-                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
-                        <div className="flex flex-col">
-                          <span>{g.skill}</span>
-                          {g.evidence && (
-                            <span className="text-[10px] text-secondary dark:text-darkmuted font-normal mt-0.5">
-                              {g.evidence}
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  {(candidate.skillGap?.filter((g) => g.candidateHas === 'match').length ?? 0) ===
-                    0 && <li className="text-xs text-secondary dark:text-darkmuted italic">None</li>}
-                </ul>
-              </div>
-
-              {/* Missing / Gaps */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider border-b border-border dark:border-darkborder pb-1.5">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  Missing / Gaps (
-                  {candidate.skillGap?.filter(
-                    (g) => g.candidateHas === 'missing' || g.candidateHas === 'partial'
-                  ).length ?? 0}
-                  )
-                </div>
-                <ul className="space-y-2.5">
-                  {candidate.skillGap
-                    ?.filter((g) => g.candidateHas === 'missing' || g.candidateHas === 'partial')
-                    .map((g) => {
-                      const isMissing = g.candidateHas === 'missing';
-                      return (
-                        <li
-                          key={g.skill}
-                          className="flex items-start gap-2 text-xs text-primary dark:text-darktext font-medium leading-tight"
-                        >
-                          <span
-                            className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${
-                              isMissing ? 'bg-danger' : 'bg-warning'
-                            }`}
-                          />
-                          <div className="flex flex-col">
-                            <span className="flex items-center gap-2">
-                              {g.skill}
-                              <span
-                                className={`text-[9px] font-bold px-1 rounded uppercase tracking-wider ${
-                                  isMissing
-                                    ? 'bg-red-50 text-danger border border-red-200/50 dark:bg-red-950/20 dark:border-red-900/20'
-                                    : 'bg-amber-50 text-warning border border-amber-200/50 dark:bg-amber-950/20 dark:border-amber-900/20'
-                                }`}
-                              >
-                                {g.candidateHas}
-                              </span>
-                            </span>
-                            {g.evidence && (
-                              <span className="text-[10px] text-secondary dark:text-darkmuted font-normal mt-0.5">
-                                {g.evidence}
-                              </span>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  {(candidate.skillGap?.filter(
-                    (g) => g.candidateHas === 'missing' || g.candidateHas === 'partial'
-                  ).length ?? 0) === 0 && (
-                    <li className="text-xs text-secondary dark:text-darkmuted italic">None</li>
-                  )}
-                </ul>
-              </div>
-            </div>
+            <h3 className="font-heading text-sm font-bold text-primary dark:text-darktext mb-4 uppercase tracking-wider">
+              Requirements Heatmap Coverage
+            </h3>
+            {candidate.skillGap && <SkillHeatmap skillGap={candidate.skillGap} />}
           </Card>
 
           {/* Section 3: Evidence Blocks */}
@@ -716,18 +638,19 @@ export function CandidateProfile() {
                     <div className="h-16 w-full">
                       <ResponsiveContainer>
                         <BarChart data={ghData.activitySeries}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
-                          <XAxis dataKey="day" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+                          <XAxis dataKey="day" tick={{ fontSize: 9, fill: labelColor }} tickLine={false} axisLine={false} />
                           <Tooltip
                             formatter={(v: number) => [`${v} commits`, 'Commits']}
                             contentStyle={{
-                              background: 'var(--color-surface, #fff)',
-                              border: '1px solid var(--color-border, #e2e8f0)',
-                              borderRadius: 6,
-                              fontSize: 10
+                              background: theme === 'dark' ? '#181B22' : '#FFFFFF',
+                              border: `1px solid ${theme === 'dark' ? '#2B303B' : '#E5E7EB'}`,
+                              borderRadius: 8,
+                              fontSize: 10,
+                              color: theme === 'dark' ? '#F9FAFB' : '#111827'
                             }}
                           />
-                          <Bar dataKey="commits" fill="#A16207" radius={[2, 2, 0, 0]} />
+                          <Bar dataKey="commits" fill={brandAccent} radius={[2, 2, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>

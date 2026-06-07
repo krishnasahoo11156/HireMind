@@ -98,30 +98,37 @@ export function ExplanationPanel({ isOpen, onClose, candidateId, candidateName }
       const trimmed = line.trim();
       if (trimmed.startsWith('###')) {
         return (
-          <h4 key={idx} className="mt-4 mb-2 text-sm font-bold text-primary dark:text-darktext flex items-center gap-1.5 border-b border-border pb-1 dark:border-darkborder">
-            {trimmed.replace(/^###\s*/, '')}
-          </h4>
+          <div key={idx} className="relative pl-6 mt-6 first:mt-2 mb-3">
+            {/* Timeline bullet circle */}
+            <div className="absolute left-[-1px] top-1 h-2.5 w-2.5 rounded-full border-2 border-accent bg-surface dark:border-darkaccent dark:bg-darksurface z-10 animate-pulse-ring" />
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-primary dark:text-darktext">
+              {trimmed.replace(/^###\s*/, '')}
+            </h4>
+          </div>
         );
       }
       if (trimmed.startsWith('-')) {
         return (
-          <li key={idx} className="ml-4 list-disc text-xs leading-relaxed text-secondary dark:text-darkmuted mb-1">
-            {trimmed.replace(/^-\s*/, '')}
-          </li>
+          <div key={idx} className="relative pl-6 my-2 text-xs leading-relaxed text-secondary dark:text-darkmuted font-medium">
+            <span className="absolute left-[2px] top-2 h-1.5 w-1.5 rounded-full bg-secondary/40 dark:bg-darkmuted/40" />
+            <span>{trimmed.replace(/^-\s*/, '')}</span>
+          </div>
         );
       }
       if (trimmed.match(/^\d+\./)) {
         return (
-          <h4 key={idx} className="mt-4 mb-2 text-sm font-bold text-accent dark:text-darkaccent flex items-center gap-1.5">
-            {trimmed}
-          </h4>
+          <div key={idx} className="relative pl-6 mt-4 mb-2">
+            <h4 className="text-xs font-bold text-accent dark:text-darkaccent">
+              {trimmed}
+            </h4>
+          </div>
         );
       }
       if (!trimmed) {
         return <div key={idx} className="h-2" />;
       }
       return (
-        <p key={idx} className="text-xs leading-relaxed text-secondary dark:text-darkmuted mb-1.5">
+        <p key={idx} className="pl-6 text-xs leading-relaxed text-secondary dark:text-darkmuted mb-2 font-medium">
           {line}
         </p>
       );
@@ -195,13 +202,15 @@ export function ExplanationPanel({ isOpen, onClose, candidateId, candidateName }
               )}
 
               {!loading && !error && (
-                <div className="space-y-4">
-                  <div className="prose prose-sm dark:prose-invert">
+                <div className="relative pl-1">
+                  {/* Vertical timeline thread */}
+                  <div className="absolute left-[3px] top-4 bottom-4 w-[2px] bg-border dark:bg-darkborder/50" />
+                  <div className="space-y-1">
                     {formatMarkdown(streamingText)}
                   </div>
                   {/* Blinking cursor if still streaming */}
                   {streamingText && !streamingText.endsWith('[DONE]') && (
-                    <span className="inline-block h-4 w-1 animate-pulse bg-accent dark:bg-darkaccent ml-1" />
+                    <span className="inline-block h-4 w-1 animate-pulse bg-accent dark:bg-darkaccent ml-7 mt-2" />
                   )}
                 </div>
               )}
