@@ -157,6 +157,11 @@ export function JobDetail() {
                 <CheckCircle2 className="h-4 w-4 text-success" />
                 <span className="font-semibold text-primary dark:text-darktext">{data?.candidates.length ?? 0}</span> Candidates Analyzed
               </span>
+              <span className="text-border dark:text-darkborder">|</span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="font-semibold text-primary dark:text-darktext">{realtimeApps.filter((app) => app.status === 'Selected').length}</span> Selected
+              </span>
             </div>
           </div>
           <div className="flex flex-shrink-0 items-center gap-3">

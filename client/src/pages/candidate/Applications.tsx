@@ -230,6 +230,39 @@ export function CandidateApplications() {
                     </div>
                   </div>
 
+                  {/* Selected / Rejected Banners */}
+                  {selectedApp.status === 'Selected' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 space-y-2"
+                    >
+                      <div className="flex items-center gap-2 text-base font-extrabold text-emerald-800 dark:text-emerald-400">
+                        <Sparkles className="h-5 w-5 animate-pulse text-emerald-600 dark:text-emerald-400" />
+                        Congratulations!
+                      </div>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed font-semibold">
+                        This particular recruiter has accepted your application. Congratulations on your selection for the {getJobForApp(selectedApp.jobId)?.title || 'role'}! The hiring coordinator will reach out shortly with details.
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {selectedApp.status === 'Rejected' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="rounded-2xl border border-red-500/25 bg-red-500/5 p-5 space-y-2"
+                    >
+                      <div className="flex items-center gap-2 text-base font-extrabold text-red-800 dark:text-red-400">
+                        <X className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        Application Status Update
+                      </div>
+                      <p className="text-xs text-red-700 dark:text-red-300 leading-relaxed">
+                        The recruiter has completed their evaluation for the {getJobForApp(selectedApp.jobId)?.title || 'role'}. While your application was not selected for this specific position, we will keep your profile on file for future opportunities.
+                      </p>
+                    </motion.div>
+                  )}
+
                   {/* AI Scoring Summary Panel (Only visible once Under Review or further) */}
                   {['Under Review', 'Shortlisted', 'Interview', 'Selected', 'Rejected'].includes(selectedApp.status) && selectedApp.aiScore && (
                     <motion.div
