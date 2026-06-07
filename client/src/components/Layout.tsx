@@ -3,6 +3,7 @@ import {
   Bell,
   BriefcaseBusiness,
   ChevronDown,
+  Feather,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -171,6 +172,25 @@ export function Layout() {
               {!sidebarCollapsed && 'Upload Resumes'}
             </button>
           )}
+
+          {/* Powered by Featherless AI */}
+          <a
+            href="https://featherless.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Powered by Featherless AI"
+            className={`group mb-3 flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-2' : 'gap-2.5 px-3 py-2.5'} w-full rounded-xl border border-dashed border-border hover:border-[#FACC15]/60 bg-transparent hover:bg-[#FACC15]/5 dark:border-darkborder dark:hover:border-[#FACC15]/40 dark:hover:bg-[#FACC15]/5 transition-all duration-200 cursor-pointer`}
+          >
+            <div className="flex h-6 w-6 flex-none items-center justify-center rounded-lg bg-[#FACC15]/15 dark:bg-[#FACC15]/10 group-hover:bg-[#FACC15]/25 transition-colors duration-200">
+              <Feather className="h-3.5 w-3.5 text-[#A16207] dark:text-[#FACC15] group-hover:text-[#92400E] dark:group-hover:text-[#FDE68A] transition-colors duration-200" />
+            </div>
+            {!sidebarCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-medium tracking-[0.06em] uppercase text-secondary dark:text-darkmuted leading-none mb-0.5">Powered by</span>
+                <span className="text-[12px] font-bold text-primary dark:text-darktext group-hover:text-accent dark:group-hover:text-darkaccent transition-colors duration-200 leading-none truncate">Featherless AI</span>
+              </div>
+            )}
+          </a>
 
           {/* Profile card */}
           <div className={`flex items-center ${sidebarCollapsed ? 'justify-center p-2' : 'gap-3 p-3'} rounded-xl border border-border bg-background dark:border-darkborder dark:bg-darkbg transition-all duration-300`}>
