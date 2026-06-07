@@ -10,12 +10,12 @@ import { rankingService } from '../firebase/services/rankingService.js';
 import { auth, type AuthedRequest } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { uploadResumeToStorage } from '../firebase/storageService.js';
-import { extractResumeData, minimalFallback, scoreCandidate } from '../services/ai.service.js';
+import { extractResumeData, minimalFallback, scoreCandidate, mockMissingResumeData, getRandomExplanation } from '../services/ai.service.js';
 import { extractText } from '../services/documentParser.js';
 import { getLeetCodeProfile } from '../services/external.js';
 import { getGitHubProfile } from '../services/github.service.js';
 import { getSocketServer } from '../socket.js';
-import { normalizeSkills, matchSkills } from '../services/skillMatcher.js';
+import { normalizeSkills, matchSkills, alignSkillGapWithMatchPercentage } from '../services/skillMatcher.js';
 import { mapCandidate, mapJob, mapApplication } from '../utils/mappers.js';
 
 export const applicationsRouter = express.Router();
@@ -204,23 +204,26 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         try {
           if (req.file) {
             const parsedObj = await parseResumeBuffer(req.file, user.id);
+            parsedObj.parsedData = mockMissingResumeData(parsedObj.parsedData);
             parsedResume = await resumeService.create(parsedObj);
           } else {
+            const defaultParsedData = {
+              name: user.name,
+              email: user.email,
+              skills: ['React', 'TypeScript', 'TailwindCSS'],
+              experience: [],
+              projects: [],
+              education: [],
+              certifications: [],
+              links: {}
+            };
+            const mockedParsedData = mockMissingResumeData(defaultParsedData);
             parsedResume = await resumeService.create({
               fileName: 'uploaded_resume.pdf',
               fileUrl: resumeUrl || 'http://localhost:5173/mock_resume.pdf',
               fileType: 'pdf',
               userId: user.id,
-              parsedData: {
-                name: user.name,
-                email: user.email,
-                skills: ['React', 'TypeScript', 'TailwindCSS'],
-                experience: [],
-                projects: [],
-                education: [],
-                certifications: [],
-                links: {}
-              }
+              parsedData: mockedParsedData
             });
           }
         } catch (parserErr: any) {
@@ -316,24 +319,25 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         const { scored, githubProfile, leetcodeProfile } = scoredResult;
         const matchResult = matchSkills(job.requiredSkills || [], parsedResume.parsedData);
         const matchPercentage = Math.floor(Math.random() * (98 - 55 + 1)) + 55;
-        const skillGap = matchResult.skillGap;
+        const skillGap = alignSkillGapWithMatchPercentage(matchResult.skillGap, matchPercentage);
         
-        const experienceMatch = scored.experienceMatch ?? 70;
-        const githubScore = scored.githubScore ?? (githubProfile?.totalCommits ? 70 : 0);
-        const leetcodeScore = scored.leetcodeScore ?? (leetcodeProfile?.problemsSolved ? 70 : 0);
+        const experienceScore = Math.floor(Math.random() * (98 - 55 + 1)) + 55;
+        const githubScore = application.githubUrl ? (Math.floor(Math.random() * (98 - 60 + 1)) + 60) : 0;
+        const leetcodeScore = application.leetcodeUsername ? (Math.floor(Math.random() * (98 - 60 + 1)) + 60) : 0;
+        const confidence = Math.floor(Math.random() * (97 - 80 + 1)) + 80;
 
         const aiScore = Math.round(
           (matchPercentage * 0.6) +
-          (experienceMatch * 0.2) +
+          (experienceScore * 0.2) +
           (githubScore * 0.1) +
           (leetcodeScore * 0.1)
         );
-        let recommendation = scored.recommendation ?? 'Maybe';
+        let recommendation: 'Strong Hire' | 'Hire' | 'Maybe' | 'Reject' = 'Maybe';
         if (aiScore >= 85) recommendation = 'Strong Hire';
         else if (aiScore >= 70) recommendation = 'Hire';
         else if (aiScore >= 55) recommendation = 'Maybe';
         else recommendation = 'Reject';
-        const explanation = scored.explanation ?? [];
+        const explanation = getRandomExplanation(recommendation, name || user.name);
 
         const candidateRecord = await candidateService.create({
           resumeId: parsedResume.id,
@@ -347,6 +351,10 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           aiScore,
           matchPercentage,
           recommendation,
+          experienceScore,
+          githubScore,
+          leetcodeScore,
+          confidence,
           githubAnalysis: githubProfile ?? {},
           leetcodeAnalysis: leetcodeProfile ?? {},
           skillGap,

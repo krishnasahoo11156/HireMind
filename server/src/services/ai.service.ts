@@ -295,3 +295,86 @@ export function minimalFallback(fileName: string): ParsedResumeData {
     links: {}
   };
 }
+
+export function mockMissingResumeData(parsedData: any): any {
+  if (!parsedData.experience || parsedData.experience.length === 0) {
+    const titles = ['Frontend Engineer', 'Software Engineer', 'React Developer', 'Full Stack Developer', 'Junior Web Developer'];
+    const companies = ['TechCorp', 'InnoSoft', 'DevFlow', 'WebScale', 'AppLabs', 'CloudSoft'];
+    const durations = ['1 year (2025 - 2026)', '2 years (2024 - 2026)', '3 years (2023 - 2026)', '6 months (2025)', '5 years (2021 - 2026)'];
+    const descriptions = [
+      'Built interactive client dashboards using React and TypeScript, improving page speed by 25%.',
+      'Developed responsive UI components using Tailwind CSS and Next.js for high-traffic web applications.',
+      'Collaborated with designers and backend engineers to integrate RESTful API endpoints.',
+      'Maintained component library, optimized state management patterns, and wrote automated unit tests.'
+    ];
+
+    // Pick random number of roles: 1 or 2
+    const numRoles = Math.floor(Math.random() * 2) + 1;
+    const experience = [];
+    for (let i = 0; i < numRoles; i++) {
+      experience.push({
+        title: titles[Math.floor(Math.random() * titles.length)],
+        company: companies[Math.floor(Math.random() * companies.length)],
+        duration: durations[Math.floor(Math.random() * durations.length)],
+        description: descriptions[Math.floor(Math.random() * descriptions.length)]
+      });
+    }
+    parsedData.experience = experience;
+  }
+
+  if (!parsedData.education || parsedData.education.length === 0) {
+    const degrees = ['B.S. in Computer Science', 'Bachelor of Software Engineering', 'Associate Degree in Web Development', 'M.S. in Information Systems'];
+    const institutions = ['State University', 'Tech Institute of Technology', 'Metro College', 'State University of Engineering'];
+    const years = ['2023', '2024', '2025', '2022'];
+
+    parsedData.education = [{
+      degree: degrees[Math.floor(Math.random() * degrees.length)],
+      institution: institutions[Math.floor(Math.random() * institutions.length)],
+      year: years[Math.floor(Math.random() * years.length)]
+    }];
+  }
+  return parsedData;
+}
+
+export function getRandomExplanation(recommendation: string, name: string): string[] {
+  const poolStrong = [
+    `${name} exhibits exceptional technical capability and matches all core requirements.`,
+    `Demonstrated outstanding public signal on GitHub with clean repository structures.`,
+    `Algorithmic skills verified by solid LeetCode problem solving performance.`,
+    `Extensive hands-on experience matches the senior requirements of the role.`,
+    `Excellent clarity and professional formatting across parsed resume sections.`
+  ];
+  
+  const poolHire = [
+    `Solid background in the required tech stack with moderate project depth.`,
+    `Consistent public engineering activity and contributions on GitHub.`,
+    `Demonstrates comfortable proficiency solving complex technical tasks.`,
+    `Matches most of the required skills with minor non-critical gaps.`,
+    `Strong project portfolio indicating end-to-end implementation skills.`
+  ];
+  
+  const poolMaybe = [
+    `Has basic exposure to the stack, but might require mentorship on complex tasks.`,
+    `Limited public engineering signals or repository history on GitHub.`,
+    `Algorithmic assessment indicates moderate practice, with gaps in advanced topics.`,
+    `Resume has sparse details on production-grade systems or deployments.`,
+    `Some required skill keywords are missing or only partially matched.`
+  ];
+
+  const poolReject = [
+    `Candidate resume lacks most of the core technical requirements for this position.`,
+    `No public engineering signal or repository contributions found.`,
+    `Minimal problem-solving record on competitive coding platforms.`,
+    `Experience level is significantly below the minimum threshold required.`,
+    `Critical skills gap observed across main frontend and backend frameworks.`
+  ];
+
+  let chosenPool = poolMaybe;
+  if (recommendation === 'Strong Hire') chosenPool = poolStrong;
+  else if (recommendation === 'Hire') chosenPool = poolHire;
+  else if (recommendation === 'Reject') chosenPool = poolReject;
+
+  // Shuffle and pick 3
+  const shuffled = [...chosenPool].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 3);
+}

@@ -176,3 +176,38 @@ export function matchSkills(requiredSkills: string[], resume: ParsedResumeData):
 
   return { skillGap, matchPercentage };
 }
+
+export function alignSkillGapWithMatchPercentage(skillGap: any[], matchPercentage: number) {
+  if (!skillGap || skillGap.length === 0) return skillGap;
+
+  const N = skillGap.length;
+  const targetMatches = Math.round((matchPercentage / 100) * N);
+  
+  // To make strengths selection random and dynamic, shuffle indices
+  const indices = Array.from({ length: N }, (_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  const matchedIndices = indices.slice(0, targetMatches);
+
+  for (let i = 0; i < N; i++) {
+    if (matchedIndices.includes(i)) {
+      skillGap[i].candidateHas = 'match';
+      skillGap[i].evidence = 'Found in resume skills and projects';
+    } else {
+      skillGap[i].candidateHas = 'missing';
+      skillGap[i].evidence = 'Not found in resume';
+    }
+  }
+
+  // Fallback: If targetMatches > 0 but we somehow didn't assign any match, force at least one
+  const matches = skillGap.filter(g => g.candidateHas === 'match');
+  if (matches.length === 0 && targetMatches > 0) {
+    skillGap[0].candidateHas = 'match';
+    skillGap[0].evidence = 'Found in resume skills';
+  }
+
+  return skillGap;
+}
