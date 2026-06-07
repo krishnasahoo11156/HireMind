@@ -197,10 +197,10 @@ export function JobDetail() {
 
       {/* ── Tab Content ── */}
       {activeTab === 'Overview' && (
-        <div className="grid grid-cols-[1fr_360px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
           <div className="space-y-6">
             {/* Job Intelligence */}
-            <Card className="p-6">
+            <Card>
               <div className="mb-4 flex items-center gap-2">
                 <div className="rounded-xl bg-accent/10 p-2 dark:bg-darkaccent/10">
                   <Tag className="h-4 w-4 text-accent dark:text-darkaccent" />
@@ -650,7 +650,7 @@ export function JobDetail() {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-border bg-background p-3.5 dark:border-darkborder dark:bg-darkbg">
+    <div className="rounded-xl border border-border bg-gray-50/50 p-3.5 dark:border-darkborder dark:bg-darkbg/30">
       <Caption className="block font-semibold uppercase tracking-wider">{label}</Caption>
       <BodyText variant="default" className="mt-1.5 font-semibold">
         {value}
