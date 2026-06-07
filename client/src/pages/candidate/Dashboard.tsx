@@ -357,6 +357,7 @@ export function CandidateDashboard() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
