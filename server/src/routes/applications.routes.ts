@@ -242,8 +242,8 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           );
 
           const scoringPromise = (async () => {
-            const githubProfile = user.githubUrl ? await getGitHubProfile(user.githubUrl.split('/').pop() || '') : null;
-            const leetcodeProfile = user.leetcodeUsername ? await getLeetCodeProfile(user.leetcodeUsername) : null;
+            const githubProfile = application.githubUrl ? await getGitHubProfile(application.githubUrl.split('/').pop() || '') : null;
+            const leetcodeProfile = application.leetcodeUsername ? await getLeetCodeProfile(application.leetcodeUsername) : null;
             
             console.log("AI Request inputs:", {
               jobTitle: job.title,
@@ -276,7 +276,16 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
         const matchPercentage = matchResult.matchPercentage;
         const skillGap = matchResult.skillGap;
         
-        const aiScore = scored.aiScore ?? 70;
+        const experienceMatch = scored.experienceMatch ?? 70;
+        const githubScore = scored.githubScore ?? (githubProfile?.totalCommits ? 70 : 0);
+        const leetcodeScore = scored.leetcodeScore ?? (leetcodeProfile?.problemsSolved ? 70 : 0);
+
+        const aiScore = Math.round(
+          (matchPercentage * 0.6) +
+          (experienceMatch * 0.2) +
+          (githubScore * 0.1) +
+          (leetcodeScore * 0.1)
+        );
         const recommendation = scored.recommendation ?? 'Maybe';
         const explanation = scored.explanation ?? [];
 
@@ -298,7 +307,11 @@ applicationsRouter.post('/', auth, upload.single('file'), async (req: AuthedRequ
           explanation,
           recruiterDecision: 'pending',
           recruiterReason: '',
-          whyApplying: whyApplying || ''
+          whyApplying: whyApplying || '',
+          githubUrl: application.githubUrl || '',
+          linkedinUrl: application.linkedinUrl || '',
+          portfolioUrl: application.portfolioUrl || '',
+          leetcodeUsername: application.leetcodeUsername || ''
         });
 
         console.log("Candidate Saved");
@@ -394,6 +407,12 @@ applicationsRouter.post('/analyze', auth, upload.single('file'), async (req: Aut
       return;
     }
 
+    const appRecord = await applicationService.findById(applicationId);
+    if (!appRecord) {
+      res.status(404).json({ error: 'Application not found' });
+      return;
+    }
+
     let resumeUrl = '';
     let parsedResume = null;
     let rawText = '';
@@ -437,8 +456,7 @@ applicationsRouter.post('/analyze', auth, upload.single('file'), async (req: Aut
       if (!resumeSnap.empty) {
         parsedResume = docToObject<FirestoreResume>(resumeSnap.docs[0]);
       } else {
-        const existingApp = await applicationService.findById(applicationId);
-        const url = existingApp?.resumeUrl || '';
+        const url = appRecord.resumeUrl || '';
         if (url) {
           parsedResume = await resumeService.create({
             fileName: url.split('/').pop() || 'resume.pdf',
@@ -535,8 +553,8 @@ applicationsRouter.post('/analyze', auth, upload.single('file'), async (req: Aut
           );
 
           const scoringPromise = (async () => {
-            const githubProfile = user.githubUrl ? await getGitHubProfile(user.githubUrl.split('/').pop() || '') : null;
-            const leetcodeProfile = user.leetcodeUsername ? await getLeetCodeProfile(user.leetcodeUsername) : null;
+            const githubProfile = appRecord.githubUrl ? await getGitHubProfile(appRecord.githubUrl.split('/').pop() || '') : null;
+            const leetcodeProfile = appRecord.leetcodeUsername ? await getLeetCodeProfile(appRecord.leetcodeUsername) : null;
             
             console.log("AI Request inputs:", {
               jobTitle: job.title,
@@ -569,7 +587,16 @@ applicationsRouter.post('/analyze', auth, upload.single('file'), async (req: Aut
         const matchPercentage = matchResult.matchPercentage;
         const skillGap = matchResult.skillGap;
         
-        const aiScore = scored.aiScore ?? 70;
+        const experienceMatch = scored.experienceMatch ?? 70;
+        const githubScore = scored.githubScore ?? (githubProfile?.totalCommits ? 70 : 0);
+        const leetcodeScore = scored.leetcodeScore ?? (leetcodeProfile?.problemsSolved ? 70 : 0);
+
+        const aiScore = Math.round(
+          (matchPercentage * 0.6) +
+          (experienceMatch * 0.2) +
+          (githubScore * 0.1) +
+          (leetcodeScore * 0.1)
+        );
         const recommendation = scored.recommendation ?? 'Maybe';
         const explanation = scored.explanation ?? [];
 
@@ -591,7 +618,11 @@ applicationsRouter.post('/analyze', auth, upload.single('file'), async (req: Aut
           explanation,
           recruiterDecision: 'pending',
           recruiterReason: '',
-          whyApplying: whyApplying || ''
+          whyApplying: whyApplying || '',
+          githubUrl: appRecord.githubUrl || '',
+          linkedinUrl: appRecord.linkedinUrl || '',
+          portfolioUrl: appRecord.portfolioUrl || '',
+          leetcodeUsername: appRecord.leetcodeUsername || ''
         });
 
         console.log("Candidate Saved");

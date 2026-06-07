@@ -24,6 +24,10 @@ export interface FirestoreCandidate {
   feedbackAt?: admin.firestore.Timestamp;
   createdAt?: admin.firestore.Timestamp;
   updatedAt?: admin.firestore.Timestamp;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  leetcodeUsername?: string;
 }
 
 export const candidateService = {
@@ -48,7 +52,21 @@ export const candidateService = {
     if (filters?.jobId) q = q.where('jobId', '==', filters.jobId);
     const snap = await q.get();
     const list = snapshotToArray<FirestoreCandidate>(snap);
-    return list.sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
+
+    const getLinksCount = (c: FirestoreCandidate) => {
+      let count = 0;
+      if (c.githubUrl || (c.githubAnalysis && Object.keys(c.githubAnalysis).length > 0 && c.githubAnalysis.username)) count++;
+      if (c.leetcodeUsername || (c.leetcodeAnalysis && Object.keys(c.leetcodeAnalysis).length > 0 && c.leetcodeAnalysis.username)) count++;
+      if (c.linkedinUrl) count++;
+      if (c.portfolioUrl) count++;
+      return count;
+    };
+
+    return list.sort((a, b) => {
+      const scoreDiff = (b.aiScore ?? 0) - (a.aiScore ?? 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return getLinksCount(b) - getLinksCount(a);
+    });
   },
 
   async create(data: Omit<FirestoreCandidate, 'id'>): Promise<FirestoreCandidate> {

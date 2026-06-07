@@ -104,7 +104,9 @@ candidatesRouter.post('/analyze', auth, async (req: AuthedRequest, res: Response
       skillGap,
       explanation,
       recruiterDecision: 'pending',
-      recruiterReason: ''
+      recruiterReason: '',
+      githubUrl: body.data.githubUsername ? `https://github.com/${body.data.githubUsername}` : '',
+      leetcodeUsername: body.data.leetcodeUsername || ''
     });
 
     res.status(201).json({ candidate });

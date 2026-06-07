@@ -405,7 +405,6 @@ export function CandidateJobDetail() {
                         <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary dark:text-darkmuted" />
                         <input
                           type="url"
-                          required
                           className="hm-input w-full pl-9"
                           value={githubUrl}
                           onChange={(e) => setGithubUrl(e.target.value)}
@@ -421,7 +420,6 @@ export function CandidateJobDetail() {
                         <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary dark:text-darkmuted" />
                         <input
                           type="url"
-                          required
                           className="hm-input w-full pl-9"
                           value={linkedinUrl}
                           onChange={(e) => setLinkedinUrl(e.target.value)}
@@ -456,7 +454,6 @@ export function CandidateJobDetail() {
                         </span>
                         <input
                           type="text"
-                          required
                           className="hm-input w-full pl-9"
                           value={leetcodeUsername}
                           onChange={(e) => setLeetcodeUsername(e.target.value)}
