@@ -253,63 +253,6 @@ export function CandidateDashboard() {
         </div>
       )}
 
-      {/* ── Job Directory List ── */}
-      <div className="space-y-4">
-        <SectionHeader
-          title="Open Job Opportunities"
-          action={
-            <Link to="/candidate/jobs" className="flex items-center gap-1 text-sm font-medium text-accent dark:text-darkaccent hover:underline">
-              Explore All Jobs <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          }
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activeJobs.map((job, i) => (
-            <motion.div
-              key={job._id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Card hover className="p-5 flex flex-col justify-between h-full min-h-[200px]">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <CardTitle>{job.title}</CardTitle>
-                    <Badge tone="neutral">Remote</Badge>
-                  </div>
-                  <BodyText variant="small" color="secondary" className="line-clamp-2">
-                    {job.description}
-                  </BodyText>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {job.extractedData?.skills.slice(0, 4).map((s) => (
-                      <Badge key={s} tone="neutral">{s}</Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-6 flex justify-between items-center border-t border-border pt-4 dark:border-darkborder">
-                  <div className="flex flex-col text-left">
-                    <span className="text-xs text-secondary dark:text-darkmuted">
-                      Exp: {job.extractedData?.experience || '3-5 years'}
-                    </span>
-                    <span className="text-[10px] text-secondary/80 dark:text-darkmuted/80 mt-0.5">
-                      Posted by: <span className="font-semibold text-primary dark:text-darktext">{job.creatorName || 'Recruiter'}</span>
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Link to={`/candidate/jobs/${job._id}`}>
-                      <Button variant="ghost" size="sm">View Details</Button>
-                    </Link>
-                    <Link to={`/candidate/jobs/${job._id}?apply=true`}>
-                      <Button variant="accent" size="sm">Apply Now</Button>
-                    </Link>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
