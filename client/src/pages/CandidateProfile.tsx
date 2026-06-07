@@ -175,137 +175,110 @@ export function CandidateProfile() {
   return (
     <div className="space-y-6">
       {/* ── STICKY CONTROL & EXECUTIVE HEADER ── */}
-      <div className="sticky top-[68px] z-10 -mx-8 px-8 py-3 border-b border-border bg-background/95 backdrop-blur-md dark:border-darkborder dark:bg-darkbg/95 flex flex-wrap items-center justify-between gap-4 transition-all duration-200">
+      <div className="sticky top-[68px] z-10 -mt-8 -mx-8 mb-6 px-8 py-2.5 border-b border-border bg-background/95 backdrop-blur-md dark:border-darkborder dark:bg-darkbg/95 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-200">
         <div className="flex items-center gap-3">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-secondary dark:text-darkmuted">
-                Candidate Profile
-              </span>
-              <span className="h-1 w-1 rounded-full bg-secondary/50 dark:bg-darkmuted/50" />
-              <span className="text-[10px] font-semibold text-secondary dark:text-darkmuted">
-                {data.data?.job.title}
-              </span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">
+              <span>Candidates</span>
+              <span className="opacity-40">/</span>
+              <span className="truncate max-w-[120px]">{data.data?.job.title}</span>
             </div>
-            <h1 className="text-lg font-bold tracking-tight text-primary dark:text-darktext mt-0.5">
-              {displayName}
-            </h1>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-base font-bold tracking-tight text-primary dark:text-darktext">
+                {displayName}
+              </h1>
+              <div className="flex items-center gap-1.5">
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  candidate.matchPercentage >= 75
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                    : candidate.matchPercentage >= 50
+                    ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                    : 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400'
+                }`}>
+                  {candidate.matchPercentage}% Match
+                </span>
+                <RecommendationBadge recommendation={candidate.recommendation} />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-4 border-r border-border pr-4 dark:border-darkborder">
-            <div className="flex flex-col text-right">
-              <span className="text-[10px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">
-                Overall Match
-              </span>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Download Resume */}
+          {resume.fileUrl && (
+            <a
+              href={resume.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-primary shadow-sm hover:bg-gray-50 dark:border-darkborder dark:bg-darksurface dark:text-darktext dark:hover:bg-darkborder/50"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download Resume
+            </a>
+          )}
+
+          {/* Decision Actions */}
+          {hasSubmittedDecision ? (
+            <div className="flex items-center gap-2">
               <span
-                className={`text-sm font-bold mt-0.5 ${
-                  candidate.matchPercentage >= 75
-                    ? 'text-success'
-                    : candidate.matchPercentage >= 50
-                    ? 'text-warning'
-                    : 'text-danger'
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                  candidate.recruiterDecision === 'override_select' ||
+                  candidate.recruiterDecision === 'agree'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/40'
+                    : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/40'
                 }`}
               >
-                {candidate.matchPercentage}%
+                Recruiter:{' '}
+                {candidate.recruiterDecision === 'override_select' ||
+                candidate.recruiterDecision === 'agree'
+                  ? 'Selected'
+                  : 'Rejected'}
               </span>
-            </div>
-            <div className="flex flex-col text-right">
-              <span className="text-[10px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">
-                AI Recommendation
-              </span>
-              <span className="mt-0.5">
-                <RecommendationBadge recommendation={candidate.recommendation} />
-              </span>
-            </div>
-            <div className="flex flex-col text-right">
-              <span className="text-[10px] font-semibold text-secondary dark:text-darkmuted uppercase tracking-wider">
-                Confidence
-              </span>
-              <span className="text-sm font-semibold text-primary dark:text-darktext mt-0.5">
-                {candidate.confidence ?? 92}%
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Download Resume */}
-            {resume.fileUrl && (
-              <a
-                href={resume.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-primary shadow-sm hover:bg-gray-50 dark:border-darkborder dark:bg-darksurface dark:text-darktext dark:hover:bg-darkborder/50"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-secondary hover:text-primary dark:text-darkmuted dark:hover:text-darktext"
+                onClick={() => {
+                  setDecision('');
+                  setShowOverrideForm(false);
+                }}
               >
-                <Download className="h-3.5 w-3.5" />
-                Download Resume
-              </a>
-            )}
-
-            {/* Decision Actions */}
-            {hasSubmittedDecision ? (
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${
-                    candidate.recruiterDecision === 'override_select' ||
-                    candidate.recruiterDecision === 'agree'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/40'
-                      : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/40'
-                  }`}
-                >
-                  Recruiter:{' '}
-                  {candidate.recruiterDecision === 'override_select' ||
-                  candidate.recruiterDecision === 'agree'
-                    ? 'Selected'
-                    : 'Rejected'}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs text-secondary hover:text-primary dark:text-darkmuted dark:hover:text-darktext"
-                  onClick={() => {
-                    setDecision('');
-                    setShowOverrideForm(false);
-                  }}
-                >
-                  Change
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 px-3 text-xs border border-border bg-surface text-secondary hover:bg-red-50 hover:text-danger hover:border-danger/20 dark:border-darkborder dark:bg-darksurface dark:text-darkmuted dark:hover:bg-red-950/20 dark:hover:text-red-400"
-                  onClick={() => handleTriggerDecision('override_reject')}
-                >
-                  <XCircle className="h-3.5 w-3.5 text-danger" />
-                  Reject
-                </Button>
-                <Button
-                  variant="accent"
-                  size="sm"
-                  className="h-9 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm dark:bg-emerald-600 dark:hover:bg-emerald-500"
-                  onClick={() => handleTriggerDecision('override_select')}
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Select Candidate
-                </Button>
-              </div>
-            )}
-
-            <div className="border-l border-border pl-2 dark:border-darkborder">
-              <BlindToggle />
+                Change
+              </Button>
             </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 text-xs border border-border bg-surface text-secondary hover:bg-red-50 hover:text-danger hover:border-danger/20 dark:border-darkborder dark:bg-darksurface dark:text-darkmuted dark:hover:bg-red-950/20 dark:hover:text-red-400"
+                onClick={() => handleTriggerDecision('override_reject')}
+              >
+                <XCircle className="h-3.5 w-3.5 text-danger" />
+                Reject
+              </Button>
+              <Button
+                variant="accent"
+                size="sm"
+                className="h-9 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                onClick={() => handleTriggerDecision('override_select')}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Select Candidate
+              </Button>
+            </div>
+          )}
+
+          <div className="border-l border-border pl-2 dark:border-darkborder">
+            <BlindToggle />
           </div>
         </div>
       </div>
 
       {/* ── MAIN 3-COLUMN DESKTOP GRID ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ── COLUMN 1: CANDIDATE OVERVIEW (20% -> col-span-2) ── */}
-        <div className="space-y-6 lg:col-span-2">
+        {/* ── COLUMN 1: CANDIDATE OVERVIEW (25% -> col-span-3) ── */}
+        <div className="space-y-6 lg:col-span-3">
           <Card className="p-5 flex flex-col space-y-4">
             <div className="flex flex-col items-center text-center pb-4 border-b border-border dark:border-darkborder">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-accent/10 to-yellow-600/10 text-xl font-bold text-accent dark:from-darkaccent/10 dark:to-yellow-500/10 dark:text-darkaccent shadow-sm border border-accent/20">
@@ -443,8 +416,8 @@ export function CandidateProfile() {
           </Card>
         </div>
 
-        {/* ── COLUMN 2: PRIMARY DECISION AREA (55% -> col-span-7) ── */}
-        <div className="space-y-6 lg:col-span-7">
+        {/* ── COLUMN 2: PRIMARY DECISION AREA (50% -> col-span-6) ── */}
+        <div className="space-y-6 lg:col-span-6">
           {/* Section 1: Match Overview (Hero Component) */}
           <Card className="p-6">
             <div className="flex flex-col md:flex-row items-center gap-8">
