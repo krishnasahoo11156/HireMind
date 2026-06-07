@@ -28,6 +28,10 @@ export interface FirestoreCandidate {
   linkedinUrl?: string;
   portfolioUrl?: string;
   leetcodeUsername?: string;
+  experienceScore?: number;
+  githubScore?: number;
+  leetcodeScore?: number;
+  confidence?: number;
 }
 
 export const candidateService = {

@@ -4,6 +4,7 @@ import {
   BrainCircuit,
   CheckCircle2,
   Github,
+  Linkedin,
   Lightbulb,
   Send,
   Shield,
@@ -218,7 +219,7 @@ export function CandidateProfile() {
                 Confidence
               </span>
               <span className="text-sm font-semibold text-primary dark:text-darktext mt-0.5">
-                92%
+                {candidate.confidence ?? 92}%
               </span>
             </div>
           </div>
@@ -400,7 +401,7 @@ export function CandidateProfile() {
                       : 'bg-gray-100 text-gray-500 dark:bg-darkborder dark:text-darkmuted'
                   }`}
                 >
-                  {candidate.githubAnalysis.username ? 'Connected' : 'Missing'}
+                  {candidate.githubAnalysis.username ? 'Connected' : 'Not Connected'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
@@ -415,7 +416,22 @@ export function CandidateProfile() {
                       : 'bg-gray-100 text-gray-500 dark:bg-darkborder dark:text-darkmuted'
                   }`}
                 >
-                  {candidate.leetcodeAnalysis.username ? 'Connected' : 'Missing'}
+                  {candidate.leetcodeAnalysis.username ? 'Connected' : 'Not Connected'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-secondary dark:text-darkmuted flex items-center gap-1">
+                  <Linkedin className="h-3 w-3" />
+                  LinkedIn
+                </span>
+                <span
+                  className={`text-[9px] font-bold rounded-full px-2 py-0.5 ${
+                    candidate.linkedinUrl
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                      : 'bg-gray-100 text-gray-500 dark:bg-darkborder dark:text-darkmuted'
+                  }`}
+                >
+                  {candidate.linkedinUrl ? 'Connected' : 'Not Connected'}
                 </span>
               </div>
             </div>
@@ -475,14 +491,14 @@ export function CandidateProfile() {
               <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { label: 'Skills Alignment', value: candidate.matchPercentage },
-                  { label: 'Experience Match', value: Math.min(100, candidate.aiScore + 5) },
+                  { label: 'Experience Match', value: candidate.experienceScore ?? Math.min(100, candidate.aiScore + 5) },
                   {
                     label: 'Problem Solving',
-                    value: Math.min(100, candidate.leetcodeAnalysis?.contestRating ? 80 : 60)
+                    value: candidate.leetcodeScore ?? Math.min(100, candidate.leetcodeAnalysis?.contestRating ? 80 : 60)
                   },
                   {
                     label: 'GitHub Activity',
-                    value: Math.min(100, (candidate.githubAnalysis?.contributions ?? 0) * 2)
+                    value: candidate.githubScore ?? Math.min(100, (candidate.githubAnalysis?.contributions ?? 0) * 2)
                   }
                 ].map((sub) => (
                   <div key={sub.label} className="flex flex-col space-y-1">
@@ -827,7 +843,7 @@ export function CandidateProfile() {
                 <span className="text-[9px] font-bold text-secondary dark:text-darkmuted uppercase tracking-wider">
                   Confidence
                 </span>
-                <span className="text-sm font-bold text-primary dark:text-darktext mt-1">92%</span>
+                <span className="text-sm font-bold text-primary dark:text-darktext mt-1">{candidate.confidence ?? 92}%</span>
               </div>
             </div>
 

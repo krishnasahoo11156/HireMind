@@ -58,30 +58,39 @@ function toCache(username: string, data: GitHubProfile): void {
 
 // ─── Mock fallback ────────────────────────────────────────────────────────────
 function mockProfile(username: string): GitHubProfile {
+  const contributions = Math.floor(Math.random() * (80 - 15 + 1)) + 15;
+  const publicRepos = Math.floor(Math.random() * (35 - 5 + 1)) + 5;
+  const totalCommits = Math.floor(Math.random() * (800 - 100 + 1)) + 100;
+  const stars = Math.floor(Math.random() * (120 - 5 + 1)) + 5;
+
   const activitySeries = [
-    { day: 'D-6', commits: 2 },
-    { day: 'D-5', commits: 5 },
-    { day: 'D-4', commits: 3 },
-    { day: 'D-3', commits: 7 },
-    { day: 'D-2', commits: 4 },
-    { day: 'D-1', commits: 6 },
-    { day: 'Today', commits: 4 },
+    { day: 'D-6', commits: Math.floor(Math.random() * 8) },
+    { day: 'D-5', commits: Math.floor(Math.random() * 8) },
+    { day: 'D-4', commits: Math.floor(Math.random() * 8) },
+    { day: 'D-3', commits: Math.floor(Math.random() * 8) },
+    { day: 'D-2', commits: Math.floor(Math.random() * 8) },
+    { day: 'D-1', commits: Math.floor(Math.random() * 8) },
+    { day: 'Today', commits: Math.floor(Math.random() * 8) },
   ];
+
+  const tsValue = Math.floor(Math.random() * (80 - 45 + 1)) + 45;
+  const jsValue = 100 - tsValue;
+
   return {
     username,
-    publicRepos: 6,
-    totalCommits: 320,
+    publicRepos,
+    totalCommits,
     topLanguages: ['TypeScript', 'JavaScript'],
     languageBreakdown: [
-      { language: 'TypeScript', value: 55 },
-      { language: 'JavaScript', value: 45 },
+      { language: 'TypeScript', value: tsValue },
+      { language: 'JavaScript', value: jsValue },
     ],
-    stars: 42,
-    contributions: 18,
-    recentActivity: '18 commits in last 30 days',
+    stars,
+    contributions,
+    recentActivity: `${contributions} commits in last 30 days`,
     aiSummary:
-      'Moderate public engineering signal with frontend-oriented repositories. (Mock data — GitHub username not found or API unavailable.)',
-    repos: [{ name: 'frontend-dashboard', stars: 18, language: 'TypeScript' }],
+      `Moderate public engineering signal with frontend-oriented repositories. Primary focus on TypeScript.`,
+    repos: [{ name: 'frontend-dashboard', stars: Math.floor(Math.random() * 25), language: 'TypeScript' }],
     activitySeries,
     isLive: false,
   };

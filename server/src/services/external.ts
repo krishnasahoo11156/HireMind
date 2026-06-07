@@ -33,18 +33,32 @@ export function getGithubProfile(username: string) {
 
 export function getLeetCodeProfile(username: string) {
   if (leetcodeCache.has(username)) return leetcodeCache.get(username);
-  const match = db.candidates.find((candidate) => candidate.leetcodeAnalysis.username === username);
-  const profile = match?.leetcodeAnalysis ?? {
+  const match = db.candidates.find((candidate) => candidate.leetcodeAnalysis?.username === username);
+  if (match?.leetcodeAnalysis) {
+    return match.leetcodeAnalysis;
+  }
+  
+  const problemsSolved = Math.floor(Math.random() * (450 - 50 + 1)) + 50;
+  const easy = Math.floor(problemsSolved * 0.4);
+  const medium = Math.floor(problemsSolved * 0.5);
+  const hard = problemsSolved - easy - medium;
+  const contestRating = Math.floor(Math.random() * (2200 - 1200 + 1)) + 1200;
+  const globalRanking = Math.floor(Math.random() * (200000 - 10000 + 1)) + 10000;
+  const percentile = (100 - (globalRanking / 400000 * 100)).toFixed(1);
+
+  const profile = {
     username,
-    problemsSolved: 140,
-    easy: 80,
-    medium: 52,
-    hard: 8,
-    contestRating: 1500,
-    globalRanking: 140000,
-    percentile: 'Top 45%',
-    activityLevel: 'Moderate',
-    aiSummary: 'Adequate problem-solving practice for mid-level interviews.'
+    problemsSolved,
+    easy,
+    medium,
+    hard,
+    contestRating,
+    globalRanking,
+    percentile: `Top ${percentile}%`,
+    activityLevel: contestRating > 1800 ? 'High' : 'Moderate',
+    aiSummary: contestRating > 1800 
+      ? 'Strong problem-solving capability under timed contest environments.'
+      : 'Adequate problem-solving practice for software engineering roles.'
   };
   leetcodeCache.set(username, profile);
   return profile;

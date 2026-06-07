@@ -123,6 +123,14 @@ export interface Candidate {
   aiScore: number;
   matchPercentage: number;
   recommendation: Recommendation;
+  experienceScore?: number;
+  githubScore?: number;
+  leetcodeScore?: number;
+  confidence?: number;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  leetcodeUsername?: string;
   githubAnalysis: {
     username: string;
     publicRepos: number;
