@@ -32,6 +32,12 @@ export function CandidateProfileEdit() {
     e.preventDefault();
     setError('');
     setSaved(false);
+
+    if (!name.trim() || !email.trim()) {
+      setError('You have to fill in the name and email compulsorily.');
+      return;
+    }
+
     try {
       await updateProfile({
         name,
@@ -87,7 +93,6 @@ export function CandidateProfileEdit() {
                   <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary dark:text-darkmuted" />
                   <input
                     type="url"
-                    required
                     value={githubUrl}
                     onChange={(e) => setGithubUrl(e.target.value)}
                     className="hm-input w-full pl-9"
@@ -101,7 +106,6 @@ export function CandidateProfileEdit() {
                   <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary dark:text-darkmuted" />
                   <input
                     type="url"
-                    required
                     value={linkedinUrl}
                     onChange={(e) => setLinkedinUrl(e.target.value)}
                     className="hm-input w-full pl-9"
@@ -128,7 +132,6 @@ export function CandidateProfileEdit() {
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary dark:text-darkmuted" />
                   <input
                     type="text"
-                    required
                     value={leetcodeUsername}
                     onChange={(e) => setLeetcodeUsername(e.target.value)}
                     className="hm-input w-full pl-9"
