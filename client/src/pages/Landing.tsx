@@ -30,7 +30,7 @@ import {
   X
 } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
-import { Button, Badge, Card, ScoreBar } from '../components/ui';
+import { Button, Badge, Card, ScoreBar, DisplayTitle, PageTitleText, SectionTitle, CardTitle, BodyText, Caption, Meta } from '../components/ui';
 import { api } from '../lib/api';
 import { useAuth } from '../firebase/AuthContext';
 
@@ -194,27 +194,27 @@ export default function Landing() {
     <div className="min-h-screen bg-background text-primary dark:bg-darkbg dark:text-darktext selection:bg-accent/20 transition-colors duration-300">
       
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-surface/80 backdrop-blur-md dark:border-darkborder/50 dark:bg-darksurface/80">
+      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-surface/85 backdrop-blur-md dark:border-darkborder/50 dark:bg-darksurface/85">
         <div className="mx-auto flex max-w-7xl h-16 items-center justify-between px-6">
           <div className="flex items-center gap-3">
             {/* Logo monogram */}
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#C88908] to-[#A16207] dark:from-[#D4A017] dark:to-[#A16207] shadow-md shadow-accent/10">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-800 dark:from-neutral-100 dark:to-neutral-200 border border-transparent shadow-sm">
               <svg className="h-5 w-5" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <line x1="30" y1="75" x2="30" y2="25" stroke="white" strokeWidth="6" strokeLinecap="round" />
-                <line x1="70" y1="75" x2="70" y2="25" stroke="white" strokeWidth="6" strokeLinecap="round" />
-                <line x1="30" y1="50" x2="70" y2="50" stroke="white" strokeWidth="6" strokeLinecap="round" />
-                <circle cx="30" cy="25" r="7" fill="white" />
-                <circle cx="30" cy="75" r="7" fill="white" />
-                <circle cx="70" cy="25" r="7" fill="white" />
-                <circle cx="70" cy="75" r="7" fill="white" />
-                <circle cx="50" cy="50" r="8.5" fill="white" stroke="#A16207" strokeWidth="2.5" />
+                <line x1="30" y1="75" x2="30" y2="25" stroke={theme === 'dark' ? 'black' : 'white'} strokeWidth="6" strokeLinecap="round" />
+                <line x1="70" y1="75" x2="70" y2="25" stroke={theme === 'dark' ? 'black' : 'white'} strokeWidth="6" strokeLinecap="round" />
+                <line x1="30" y1="50" x2="70" y2="50" stroke={theme === 'dark' ? 'black' : 'white'} strokeWidth="6" strokeLinecap="round" />
+                <circle cx="30" cy="25" r="7" fill={theme === 'dark' ? 'black' : 'white'} />
+                <circle cx="30" cy="75" r="7" fill={theme === 'dark' ? 'black' : 'white'} />
+                <circle cx="70" cy="25" r="7" fill={theme === 'dark' ? 'black' : 'white'} />
+                <circle cx="70" cy="75" r="7" fill={theme === 'dark' ? 'black' : 'white'} />
+                <circle cx="50" cy="50" r="8.5" fill={theme === 'dark' ? 'black' : 'white'} stroke={theme === 'dark' ? 'white' : 'black'} strokeWidth="2.5" />
               </svg>
             </div>
-            <span className="font-heading text-xl font-extrabold tracking-[-0.03em]">HireMind</span>
+            <span className="font-sans text-xl font-extrabold tracking-[-0.03em]">HireMind</span>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-secondary dark:text-darkmuted">
+          <nav className="hidden md:flex items-center gap-8 text-[13px] font-semibold text-secondary dark:text-darkmuted">
             <a href="#features" className="hover:text-primary dark:hover:text-darktext transition-colors">Features</a>
             <a href="#paths" className="hover:text-primary dark:hover:text-darktext transition-colors">User Paths</a>
             <a href="#metrics" className="hover:text-primary dark:hover:text-darktext transition-colors">Performance</a>
@@ -300,13 +300,13 @@ export default function Landing() {
             {/* Hero Left Content */}
             <div className="lg:col-span-5 text-center lg:text-left space-y-6">
               
-              <h1 className="font-heading text-4xl sm:text-5xl lg:text-[54px] font-extrabold tracking-[-0.04em] leading-[1.08] text-primary dark:text-white">
-                Find the Perfect<br />
-                Developer for Your Team.
+              <h1 className="font-sans text-4xl sm:text-5xl lg:text-[48px] font-extrabold tracking-[-0.04em] leading-[1.1] text-primary dark:text-white">
+                Explainable Hiring Intelligence<br />
+                for Modern Tech Teams.
               </h1>
               
-              <p className="text-base sm:text-lg leading-relaxed text-secondary dark:text-darkmuted max-w-lg mx-auto lg:mx-0">
-                AI-powered hiring intelligence that analyzes resumes, GitHub activity, coding profiles, and job requirements to identify the best candidates with transparent explanations.
+              <p className="text-[16px] leading-relaxed text-secondary dark:text-darkmuted max-w-lg mx-auto lg:mx-0 font-sans font-normal">
+                Analyze resumes, inspect GitHub open-source contributions, evaluate LeetCode algorithms, and rank candidates with fully explainable AI decisions.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -577,18 +577,18 @@ export default function Landing() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-5 space-y-5">
               <span className="text-xs font-bold text-accent dark:text-darkaccent uppercase tracking-wider">Feature 01</span>
-              <h3 className="font-heading text-3xl font-extrabold tracking-tight">Explainable AI Scoring & Match Reasoning</h3>
-              <p className="text-secondary dark:text-darkmuted text-base leading-relaxed">
+              <SectionTitle>Explainable AI Scoring & Match Reasoning</SectionTitle>
+              <BodyText color="secondary" className="leading-relaxed">
                 No black-box decisions. HireMind breaks down every candidate match score into clear strengths, key skill gaps, and a logical textual reasoning explanation so recruiters understand the "Why" behind the AI.
-              </p>
+              </BodyText>
             </div>
             
             <div className="lg:col-span-7">
-              <div className="rounded-2xl border border-border/80 bg-white p-6 dark:border-darkborder/60 dark:bg-darksurface shadow-lg">
+              <Card className="shadow-lg">
                 <div className="flex items-center justify-between border-b border-border/60 dark:border-darkborder/50 pb-3 mb-4">
                   <div className="flex items-center gap-2.5">
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-xs font-black text-white">🥇</span>
-                    <span className="text-sm font-bold">Sarah Chen</span>
+                    <span className="text-sm font-bold text-primary dark:text-darktext">Sarah Chen</span>
                     <span className="text-[10px] text-secondary dark:text-darkmuted">Frontend Developer Candidate</span>
                   </div>
                   <Badge tone="green">94% Fit</Badge>
@@ -610,7 +610,7 @@ export default function Landing() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
 
@@ -618,7 +618,7 @@ export default function Landing() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Visual Column */}
             <div className="lg:col-span-7 order-last lg:order-first">
-              <div className="rounded-2xl border border-border/80 bg-white p-6 dark:border-darkborder/60 dark:bg-darksurface shadow-lg">
+              <Card className="shadow-lg">
                 <div className="flex items-center justify-between border-b border-border/60 dark:border-darkborder/50 pb-3 mb-4">
                   <span className="text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted">Interactive Skill Matrix</span>
                   
@@ -652,10 +652,10 @@ export default function Landing() {
                         key={skill.name}
                         className={`flex flex-col gap-1 p-3 rounded-xl border ${
                           skill.status === 'match'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800/40'
+                            ? 'hm-heat-match'
                             : skill.status === 'partial'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800/40'
-                            : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800/40'
+                            ? 'hm-heat-partial'
+                            : 'hm-heat-missing'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -671,16 +671,16 @@ export default function Landing() {
                     ))}
                   </div>
                 </div>
-              </div>
+              </Card>
             </div>
 
             {/* Content Column */}
             <div className="lg:col-span-5 space-y-5">
               <span className="text-xs font-bold text-accent dark:text-darkaccent uppercase tracking-wider">Feature 02</span>
-              <h3 className="font-heading text-3xl font-extrabold tracking-tight">Interactive Skill Gap Heatmap</h3>
-              <p className="text-secondary dark:text-darkmuted text-base leading-relaxed">
+              <SectionTitle>Interactive Skill Gap Heatmap</SectionTitle>
+              <BodyText color="secondary" className="leading-relaxed">
                 Compare candidate technical stacks side-by-side against job requirements. Color-coded evaluation cells instantly highlight direct matches, partial alignments, and missing requirements, saving hours of manual resume scrubbing.
-              </p>
+              </BodyText>
             </div>
           </div>
 
@@ -688,25 +688,25 @@ export default function Landing() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-5 space-y-5">
               <span className="text-xs font-bold text-accent dark:text-darkaccent uppercase tracking-wider">Feature 03</span>
-              <h3 className="font-heading text-3xl font-extrabold tracking-tight">Bias-Free Blind Screening</h3>
-              <p className="text-secondary dark:text-darkmuted text-base leading-relaxed">
+              <SectionTitle>Bias-Free Blind Screening</SectionTitle>
+              <BodyText color="secondary" className="leading-relaxed">
                 Remove unconscious bias from your early screening stages. With a single click, toggle Blind Mode to redact candidate names, profile avatars, and contact details, replacing them with anonymous identifiers while keeping score and skill matching intact.
-              </p>
+              </BodyText>
               
               {/* Interactive toggle control */}
               <div className="pt-2">
-                <button
+                <Button
                   onClick={() => setBlindMode(!blindMode)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-4.5 py-2.5 text-sm font-semibold shadow-sm hover:bg-gray-50 dark:border-darkborder dark:bg-darksurface dark:hover:bg-darkborder/50 transition-all"
+                  variant="secondary"
                 >
                   {blindMode ? <Eye className="h-4.5 w-4.5 text-accent dark:text-darkaccent" /> : <EyeOff className="h-4.5 w-4.5 text-accent dark:text-darkaccent" />}
                   <span>{blindMode ? 'Disable Blind Mode' : 'Enable Blind Mode'}</span>
-                </button>
+                </Button>
               </div>
             </div>
 
             <div className="lg:col-span-7">
-              <div className="rounded-2xl border border-border/80 bg-white p-6 dark:border-darkborder/60 dark:bg-darksurface shadow-lg">
+              <Card className="shadow-lg">
                 <div className="flex items-center justify-between border-b border-border/60 dark:border-darkborder/50 pb-3 mb-4">
                   <span className="text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted">Screening Profile Preview</span>
                   <Badge tone={blindMode ? 'gold' : 'blue'}>{blindMode ? 'Blind Mode Active' : 'Standard View'}</Badge>
@@ -719,7 +719,7 @@ export default function Landing() {
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-base font-extrabold">
+                    <div className="text-base font-extrabold text-primary dark:text-darktext">
                       {blindMode ? 'Candidate-SCHN' : 'Sarah Chen'}
                     </div>
                     <div className="text-xs text-secondary dark:text-darkmuted font-semibold">
@@ -738,7 +738,7 @@ export default function Landing() {
                     <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 block mt-1">Strong Hire</span>
                   </div>
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
 
@@ -746,16 +746,17 @@ export default function Landing() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Visual Column */}
             <div className="lg:col-span-7 order-last lg:order-first">
-              <div className="rounded-2xl border border-border/80 bg-white p-6 dark:border-darkborder/60 dark:bg-darksurface shadow-lg">
+              <Card className="shadow-lg">
                 <div className="flex items-center justify-between border-b border-border/60 dark:border-darkborder/50 pb-3 mb-4">
                   <span className="text-xs font-bold uppercase tracking-wider text-secondary dark:text-darkmuted">Pipeline Board</span>
-                  <button
+                  <Button
                     onClick={handleAdvanceCandidate}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-border bg-white text-accent hover:bg-gray-50 dark:border-darkborder dark:bg-darkbg dark:text-darkaccent dark:hover:bg-darkborder/50 transition-colors"
+                    variant="secondary"
+                    size="sm"
                   >
                     <Play className="h-3 w-3 fill-accent stroke-none dark:fill-darkaccent" />
                     Advance Candidate
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Pipeline columns */}
@@ -779,9 +780,9 @@ export default function Landing() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                                className="p-2 rounded-lg bg-white border border-border/60 dark:border-darkborder/40 dark:bg-darksurface shadow-sm text-left cursor-grab"
+                                className="p-2 rounded-lg bg-surface border border-border/60 dark:border-darkborder/40 dark:bg-darksurface shadow-sm text-left cursor-grab"
                               >
-                                <span className="text-[9px] font-bold truncate block">{c.name}</span>
+                                <span className="text-[9px] font-bold truncate block text-primary dark:text-darktext">{c.name}</span>
                                 <div className="flex items-center justify-between mt-1 text-[8px] font-semibold text-accent dark:text-darkaccent">
                                   <span>{c.match}% match</span>
                                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -793,16 +794,16 @@ export default function Landing() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             </div>
 
             {/* Content Column */}
             <div className="lg:col-span-5 space-y-5">
               <span className="text-xs font-bold text-accent dark:text-darkaccent uppercase tracking-wider">Feature 04</span>
-              <h3 className="font-heading text-3xl font-extrabold tracking-tight">Real-Time Hiring Pipeline Kanban</h3>
-              <p className="text-secondary dark:text-darkmuted text-base leading-relaxed">
+              <SectionTitle>Real-Time Hiring Pipeline Kanban</SectionTitle>
+              <BodyText color="secondary" className="leading-relaxed">
                 Automated applicant progression tracking. Drag and drop candidate cards or allow AI to auto-advance candidates through columns based on real-time parsed details and scoring evaluations.
-              </p>
+              </BodyText>
             </div>
           </div>
 
@@ -813,29 +814,29 @@ export default function Landing() {
       <section id="metrics" className="py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface shadow-sm hover:shadow-md transition-shadow text-center space-y-2">
+            <Card hover className="p-8 text-center space-y-2">
               <p className="font-heading text-5xl font-black text-accent dark:text-darkaccent leading-none tracking-tight">95%</p>
               <p className="text-sm font-bold text-primary dark:text-white">Screening Accuracy</p>
               <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed">Validated against recruiter hiring decisions and feedback overrides.</p>
-            </div>
+            </Card>
 
-            <div className="p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface shadow-sm hover:shadow-md transition-shadow text-center space-y-2">
+            <Card hover className="p-8 text-center space-y-2">
               <p className="font-heading text-5xl font-black text-accent dark:text-darkaccent leading-none tracking-tight">10x</p>
               <p className="text-sm font-bold text-primary dark:text-white">Faster Hiring</p>
               <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed">Accelerating screening times from weeks to minutes in batches.</p>
-            </div>
+            </Card>
 
-            <div className="p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface shadow-sm hover:shadow-md transition-shadow text-center space-y-2">
+            <Card hover className="p-8 text-center space-y-2">
               <p className="font-heading text-5xl font-black text-accent dark:text-darkaccent leading-none tracking-tight">70%</p>
               <p className="text-sm font-bold text-primary dark:text-white">Time Saved</p>
               <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed">Automated parsing and GitHub summaries eliminate manual reviews.</p>
-            </div>
+            </Card>
 
-            <div className="p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface shadow-sm hover:shadow-md transition-shadow text-center space-y-2">
+            <Card hover className="p-8 text-center space-y-2">
               <p className="font-heading text-5xl font-black text-accent dark:text-darkaccent leading-none tracking-tight">100%</p>
               <p className="text-sm font-bold text-primary dark:text-white">Transparent Decisions</p>
               <p className="text-xs text-secondary dark:text-darkmuted leading-relaxed">No black box scoring; full reasoning summaries provided for all profiles.</p>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
@@ -844,12 +845,12 @@ export default function Landing() {
       <section id="testimonials" className="py-20 md:py-28 bg-surface/30 dark:bg-darksurface/20 border-y border-border/60 dark:border-darkborder/50">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
-            <h2 className="font-heading text-3xl font-extrabold tracking-tight text-primary dark:text-white">What Hiring Teams Say</h2>
+            <PageTitleText as="h2" className="text-center">What Hiring Teams Say</PageTitleText>
             <p className="text-secondary dark:text-darkmuted text-base">Loved by scale-up and enterprise recruiting teams globally.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 md:p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+            <Card hover className="p-6 md:p-8 flex flex-col justify-between">
               <div>
                 <Quote className="h-7 w-7 text-accent/25 dark:text-darkaccent/25 mb-4" />
                 <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
@@ -857,15 +858,15 @@ export default function Landing() {
                 </p>
               </div>
               <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border/60 dark:border-darkborder/50">
-                <div className="h-9 w-9 rounded-full bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">MK</div>
+                <div className="h-9 w-9 rounded-full bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent flex items-center justify-center font-bold text-xs">MK</div>
                 <div>
-                  <span className="text-xs font-bold block">Maya Kapoor</span>
+                  <span className="text-xs font-bold block text-primary dark:text-darktext">Maya Kapoor</span>
                   <span className="text-[10px] text-secondary dark:text-darkmuted uppercase font-semibold tracking-wider">VP of Talent, Acme Corp</span>
                 </div>
               </div>
-            </div>
+            </Card>
 
-            <div className="p-6 md:p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+            <Card hover className="p-6 md:p-8 flex flex-col justify-between">
               <div>
                 <Quote className="h-7 w-7 text-accent/25 dark:text-darkaccent/25 mb-4" />
                 <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
@@ -873,15 +874,15 @@ export default function Landing() {
                 </p>
               </div>
               <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border/60 dark:border-darkborder/50">
-                <div className="h-9 w-9 rounded-full bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">JH</div>
+                <div className="h-9 w-9 rounded-full bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent flex items-center justify-center font-bold text-xs">JH</div>
                 <div>
-                  <span className="text-xs font-bold block">Jason Harris</span>
+                  <span className="text-xs font-bold block text-primary dark:text-darktext">Jason Harris</span>
                   <span className="text-[10px] text-secondary dark:text-darkmuted uppercase font-semibold tracking-wider">Head of Engineering, Velo Systems</span>
                 </div>
               </div>
-            </div>
+            </Card>
 
-            <div className="p-6 md:p-8 rounded-2xl border border-border/80 bg-white dark:border-darkborder/60 dark:bg-darksurface flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+            <Card hover className="p-6 md:p-8 flex flex-col justify-between">
               <div>
                 <Quote className="h-7 w-7 text-accent/25 dark:text-darkaccent/25 mb-4" />
                 <p className="text-sm text-secondary dark:text-darkmuted italic leading-relaxed">
@@ -889,13 +890,13 @@ export default function Landing() {
                 </p>
               </div>
               <div className="flex items-center gap-3 mt-6 pt-4 border-t border-border/60 dark:border-darkborder/50">
-                <div className="h-9 w-9 rounded-full bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">SD</div>
+                <div className="h-9 w-9 rounded-full bg-accent/10 text-accent dark:bg-darkaccent/10 dark:text-darkaccent flex items-center justify-center font-bold text-xs">SD</div>
                 <div>
-                  <span className="text-xs font-bold block">Samantha Davis</span>
+                  <span className="text-xs font-bold block text-primary dark:text-darktext">Samantha Davis</span>
                   <span className="text-[10px] text-secondary dark:text-darkmuted uppercase font-semibold tracking-wider">Lead Recruiter, CloudScale</span>
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
@@ -905,9 +906,9 @@ export default function Landing() {
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_400px_at_50%_150px,#C88908,transparent)] opacity-10 dark:opacity-5" />
         
         <div className="mx-auto max-w-4xl px-6 space-y-8">
-          <h2 className="font-heading text-4xl sm:text-5xl font-extrabold tracking-tight text-primary dark:text-white leading-tight">
+          <PageTitleText as="h2" className="text-center">
             Build Better Teams With AI.
-          </h2>
+          </PageTitleText>
           <p className="text-secondary dark:text-darkmuted text-base sm:text-lg max-w-lg mx-auto leading-relaxed">
             Unlock explainable recruiting intelligence and parse technical candidates instantly with structured scoring.
           </p>
@@ -954,7 +955,7 @@ export default function Landing() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-2xl dark:border-darkborder dark:bg-darksurface z-10"
+              className="relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl dark:border-darkborder dark:bg-darksurface z-10"
             >
               <button
                 onClick={() => setShowDemoModal(false)}

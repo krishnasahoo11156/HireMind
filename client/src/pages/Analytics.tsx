@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { api } from '../lib/api';
 import type { DashboardAnalytics } from '../types';
 import { Card, PageTitle, StatCard, DisplayTitle, SectionTitle, CardTitle, BodyText, Caption } from '../components/ui';
+import { useAppStore } from '../store/appStore';
 
 // ─── Chart Card ────────────────────────────────────────────────────────────
 function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactElement }) {
@@ -41,6 +42,8 @@ function CustomTooltip({ active, payload, label }: any) {
 
 // ─── Analytics ─────────────────────────────────────────────────────────────
 export function Analytics() {
+  const theme = useAppStore((state) => state.theme);
+  
   const analytics = useQuery({
     queryKey: ['analytics'],
     queryFn: () => api.analytics() as Promise<DashboardAnalytics>
@@ -54,8 +57,17 @@ export function Analytics() {
       }))
     : [];
 
-  const COLORS = ['#6366F1', '#8B5CF6', '#F59E0B', '#F97316', '#22C55E'];
-  const DONUT_COLORS = ['#15803D', '#B45309'];
+  const colors = theme === 'dark'
+    ? ['#F9FAFB', '#D1D5DB', '#9CA3AF', '#4B5563', '#374151']
+    : ['#111827', '#374151', '#4B5563', '#9CA3AF', '#D1D5DB'];
+
+  const donutColors = theme === 'dark'
+    ? ['#10B981', '#374151']
+    : ['#059669', '#9CA3AF'];
+
+  const brandAccent = theme === 'dark' ? '#D4A017' : '#A16207';
+  const gridStroke = theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)';
+  const labelColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
 
   return (
     <>
@@ -101,13 +113,13 @@ export function Analytics() {
         <div className="grid grid-cols-2 gap-6">
           <ChartCard title="Hiring Funnel" subtitle="Candidates at each stage of the pipeline">
             <BarChart data={funnelData} barCategoryGap="30%">
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
-              <XAxis dataKey="stage" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+              <XAxis dataKey="stage" tick={{ fontSize: 12, fill: labelColor }} stroke={gridStroke} />
+              <YAxis tick={{ fontSize: 12, fill: labelColor }} stroke={gridStroke} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="value" radius={[8, 8, 0, 0]}>
                 {funnelData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  <Cell key={i} fill={colors[i % colors.length]} />
                 ))}
               </Bar>
             </BarChart>
@@ -115,15 +127,15 @@ export function Analytics() {
 
           <ChartCard title="Recruiter Activity" subtitle="Resume reviews per day">
             <LineChart data={data?.activity ?? []}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
-              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+              <XAxis dataKey="day" tick={{ fontSize: 12, fill: labelColor }} stroke={gridStroke} />
+              <YAxis tick={{ fontSize: 12, fill: labelColor }} stroke={gridStroke} />
               <Tooltip content={<CustomTooltip />} />
               <Line
                 type="monotone"
                 dataKey="resumes"
                 name="Resumes"
-                stroke="#6366F1"
+                stroke={brandAccent}
                 strokeWidth={2.5}
                 dot={false}
                 activeDot={{ r: 5 }}
@@ -146,7 +158,7 @@ export function Analytics() {
                 strokeWidth={0}
               >
                 {(data?.aiPerformance ?? []).map((_, i) => (
-                  <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                  <Cell key={i} fill={donutColors[i % donutColors.length]} />
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
@@ -160,11 +172,11 @@ export function Analytics() {
 
           <ChartCard title="Override Reasons" subtitle="Why recruiters disagreed with AI">
             <BarChart data={data?.overrideReasons ?? []} layout="vertical" barCategoryGap="25%">
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.04)" />
-              <XAxis type="number" tick={{ fontSize: 12 }} />
-              <YAxis type="category" dataKey="reason" width={150} tick={{ fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={gridStroke} />
+              <XAxis type="number" tick={{ fontSize: 12, fill: labelColor }} stroke={gridStroke} />
+              <YAxis type="category" dataKey="reason" width={150} tick={{ fontSize: 11, fill: labelColor }} stroke={gridStroke} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" fill="#F59E0B" radius={[0, 8, 8, 0]} />
+              <Bar dataKey="count" fill={brandAccent} radius={[0, 8, 8, 0]} />
             </BarChart>
           </ChartCard>
         </div>
