@@ -283,8 +283,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Update directly in Firestore local document as well
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
-    await updateDoc(userDocRef, payload);
+    try {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      await updateDoc(userDocRef, payload);
+    } catch (err: any) {
+      console.warn('[AuthContext] Direct Firestore profile update failed/permission denied, relying on API update:', err.message || err);
+    }
 
     // Read directly from Firestore (falls back to API if permission issue occurs)
     const appUser = await fetchAppUser(firebaseUser.uid, idToken);
