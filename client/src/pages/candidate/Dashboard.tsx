@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 import { ArrowRight, BriefcaseBusiness, Sparkles, User, FileText, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -20,6 +23,45 @@ export function CandidateDashboard() {
 
   const activeJobs = jobsQuery.data?.jobs ?? [];
   const applications = myAppsQuery.data?.applications ?? [];
+
+  const [realtimeApplications, setRealtimeApplications] = useState<Application[]>([]);
+  const [hasLoadedRealtime, setHasLoadedRealtime] = useState(false);
+  const [confetti, setConfetti] = useState<Array<{ id: number; left: string; delay: string; color: string; size: string }>>([]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const q = query(
+      collection(db, 'applications'),
+      where('candidateId', '==', user.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list: Application[] = [];
+      snapshot.forEach((doc) => {
+        list.push({ _id: doc.id, ...doc.data() } as Application);
+      });
+      setRealtimeApplications(list);
+      setHasLoadedRealtime(true);
+    });
+
+    return unsubscribe;
+  }, [user?.id]);
+
+  useEffect(() => {
+    const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#f43f5e'];
+    const list = Array.from({ length: 25 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 5}s`,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: `${Math.random() * 6 + 6}px`
+    }));
+    setConfetti(list);
+  }, []);
+
+  const displayApps = hasLoadedRealtime ? realtimeApplications : applications;
+  const selectedApplications = displayApps.filter((app) => app.status === 'Selected');
   
   // Calculate profile completeness based on actual user profile data in Firebase
   let fieldsFilled = 0;
@@ -28,7 +70,7 @@ export function CandidateDashboard() {
   if (user?.githubUrl) fieldsFilled++;
   if (user?.linkedinUrl) fieldsFilled++;
   if (user?.leetcodeUsername) fieldsFilled++;
-  if (applications.length > 0) fieldsFilled++;
+  if (displayApps.length > 0) fieldsFilled++;
   const profileCompleteness = Math.round((fieldsFilled / totalFields) * 100);
 
   if (jobsQuery.isLoading || myAppsQuery.isLoading) {
@@ -42,6 +84,62 @@ export function CandidateDashboard() {
 
   return (
     <div className="space-y-10">
+      {/* ── Congratulations Banner ── */}
+      {selectedApplications.length > 0 && (
+        <div className="space-y-4">
+          {selectedApplications.map((app) => {
+            const matchedJob = activeJobs.find((j) => j._id === app.jobId);
+            return (
+              <motion.div
+                key={app._id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative overflow-hidden rounded-2xl border border-emerald-500/30 dark:border-emerald-400/30 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/15 p-6 md:p-8 animate-congrats-gradient"
+              >
+                {/* Confetti decoration */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  {confetti.map((c) => (
+                    <div
+                      key={c.id}
+                      className="floating-confetti"
+                      style={{
+                        left: c.left,
+                        animationDelay: c.delay,
+                        backgroundColor: c.color,
+                        width: c.size,
+                        height: c.size,
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div className="space-y-3">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 animate-pulse-ring">
+                      <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      Congratulations!
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-emerald-950 dark:text-emerald-200 font-sans">
+                      You have been selected as {matchedJob?.title || 'a Developer'}! 🎉
+                    </h2>
+                    <p className="text-sm text-emerald-800/80 dark:text-emerald-300/80 font-medium max-w-2xl leading-relaxed">
+                      This particular recruiter has accepted your application. Congratulations on your selection! The hiring coordinator will reach out shortly with details.
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 w-full md:w-auto">
+                    <Link to="/candidate/applications">
+                      <Button variant="accent" size="lg" className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/25">
+                        View Next Steps <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Welcome Banner ── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -109,7 +207,7 @@ export function CandidateDashboard() {
       </motion.div>
 
       {/* ── Active Applications Strip ── */}
-      {applications.length > 0 && (
+      {displayApps.length > 0 && (
         <div className="space-y-4">
           <SectionHeader
             title="Your Applications"
@@ -120,7 +218,7 @@ export function CandidateDashboard() {
             }
           />
           <div className="grid grid-cols-1 gap-4">
-            {applications.map((app) => {
+            {displayApps.map((app) => {
               const matchedJob = activeJobs.find((j) => j._id === app.jobId);
               return (
                 <Card key={app._id} className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
