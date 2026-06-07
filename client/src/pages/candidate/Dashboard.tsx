@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { ArrowRight, BriefcaseBusiness, Sparkles, User, FileText, CheckCircle } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, Sparkles, User, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useJobs, useMyApplications } from '../../hooks/queries';
@@ -17,7 +17,7 @@ function getGreeting() {
 }
 
 export function CandidateDashboard() {
-  const { user } = useCandidateAuth();
+  const { user, firebaseUser } = useCandidateAuth();
   const jobsQuery = useJobs();
   const myAppsQuery = useMyApplications();
 
@@ -62,6 +62,66 @@ export function CandidateDashboard() {
 
   const displayApps = hasLoadedRealtime ? realtimeApplications : applications;
   const selectedApplications = displayApps.filter((app) => app.status === 'Selected');
+
+  const notifications = [];
+
+  if (!user?.linkedinUrl) {
+    notifications.push({
+      id: 'linkedin',
+      type: 'warning',
+      title: 'LinkedIn Disconnected',
+      message: 'Connect your LinkedIn profile to improve search matches and let recruiters verify your history.',
+      actionLabel: 'Connect LinkedIn',
+      link: '/candidate/profile'
+    });
+  }
+
+  if (!user?.githubUrl) {
+    notifications.push({
+      id: 'github',
+      type: 'info',
+      title: 'GitHub Disconnected',
+      message: 'Showcase your coding contributions and repositories by linking your GitHub profile.',
+      actionLabel: 'Link GitHub',
+      link: '/candidate/profile'
+    });
+  }
+
+  if (!user?.leetcodeUsername) {
+    notifications.push({
+      id: 'leetcode',
+      type: 'info',
+      title: 'LeetCode Disconnected',
+      message: 'Showcase your algorithmic challenge score and rating by connecting your LeetCode account.',
+      actionLabel: 'Link LeetCode',
+      link: '/candidate/profile'
+    });
+  }
+
+  // Google provider check
+  const isGoogleLinked = firebaseUser?.providerData?.some((p) => p.providerId === 'google.com');
+  if (!isGoogleLinked) {
+    notifications.push({
+      id: 'google',
+      type: 'security',
+      title: 'Google Account Disconnected',
+      message: 'Your Google sign-in is not connected. Enable single sign-on (SSO) for easy passwordless login.',
+      actionLabel: 'Link Google Account',
+      link: '/candidate/profile'
+    });
+  }
+
+  // Phone number check
+  if (!firebaseUser?.phoneNumber) {
+    notifications.push({
+      id: 'phone',
+      type: 'warning',
+      title: 'Contact Number Missing',
+      message: 'No phone number linked to your profile. Please add your contact number for direct outreach and security alerts.',
+      actionLabel: 'Add Phone Number',
+      link: '/candidate/profile'
+    });
+  }
   
   // Calculate profile completeness based on actual user profile data in Firebase
   let fieldsFilled = 0;
@@ -205,6 +265,51 @@ export function CandidateDashboard() {
           </Link>
         </div>
       </motion.div>
+
+      {/* ── Action Center / Notifications Section ── */}
+      {notifications.length > 0 && (
+        <div className="space-y-4">
+          <SectionHeader
+            title={`Action Center (${notifications.length} recommendation${notifications.length > 1 ? 's' : ''})`}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {notifications.map((notif) => {
+              let iconColor = 'text-amber-500 bg-amber-50 dark:bg-amber-950/20';
+              let borderColor = 'border-amber-500/20';
+              if (notif.type === 'info') {
+                iconColor = 'text-accent bg-accent/10 dark:bg-darkaccent/10';
+                borderColor = 'border-accent/20';
+              } else if (notif.type === 'security') {
+                iconColor = 'text-rose-500 bg-rose-50 dark:bg-rose-950/20';
+                borderColor = 'border-rose-500/20';
+              }
+              
+              return (
+                <Card key={notif.id} className={`p-4 flex flex-col justify-between gap-4 border ${borderColor}`}>
+                  <div className="flex gap-3 items-start">
+                    <div className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${iconColor}`}>
+                      <AlertCircle className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-1">
+                      <CardTitle className="text-sm">{notif.title}</CardTitle>
+                      <BodyText variant="small" color="secondary" className="leading-relaxed">
+                        {notif.message}
+                      </BodyText>
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-1 border-t border-border/50 dark:border-darkborder/50">
+                    <Link to={notif.link}>
+                      <Button variant="ghost" size="sm" className="text-xs text-accent dark:text-darkaccent hover:underline px-2 h-8">
+                        {notif.actionLabel} <ArrowRight className="h-3 w-3" />
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Active Applications Strip ── */}
       {displayApps.length > 0 && (
